@@ -29,6 +29,9 @@ public sealed class DryRunExecutionEngine : IExecutionEngine
             TotalCounties: request.Plan.Counties.Count,
             ExistingDatabases: existing,
             MissingDatabases: missing,
+            ProcessedCounties: 0,
+            CachedCounties: 0,
+            OutputFiles: Array.Empty<string>(),
             Logs: logs,
             Errors: errors);
     }

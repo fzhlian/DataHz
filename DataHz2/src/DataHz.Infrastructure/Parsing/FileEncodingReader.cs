@@ -24,17 +24,22 @@ internal static class FileEncodingReader
 
     private static IEnumerable<Encoding> GetCandidates()
     {
-        yield return new UTF8Encoding(encoderShouldEmitUTF8Identifier: true);
-        yield return new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+        var encodings = new List<Encoding>
+        {
+            new UTF8Encoding(encoderShouldEmitUTF8Identifier: true),
+            new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)
+        };
 
         try
         {
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-            yield return Encoding.GetEncoding("GB18030");
+            encodings.Add(Encoding.GetEncoding("GB18030"));
         }
         catch
         {
             // Ignore when code page is unavailable.
         }
+
+        return encodings;
     }
 }

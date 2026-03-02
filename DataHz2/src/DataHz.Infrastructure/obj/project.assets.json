@@ -1,7 +1,7 @@
 {
   "version": 3,
   "targets": {
-    "net10.0": {
+    "net10.0-windows7.0": {
       "ClosedXML/0.104.2": {
         "type": "package",
         "dependencies": {
@@ -78,6 +78,22 @@
           "lib/netstandard2.0/ExcelNumberFormat.dll": {
             "related": ".xml"
           }
+        }
+      },
+      "Microsoft.Extensions.DependencyInjection.Abstractions/9.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net9.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net9.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": {
+            "related": ".xml"
+          }
+        },
+        "build": {
+          "buildTransitive/net8.0/_._": {}
         }
       },
       "RBush/4.0.0": {
@@ -348,6 +364,36 @@
         "lib/netstandard2.0/ExcelNumberFormat.xml"
       ]
     },
+    "Microsoft.Extensions.DependencyInjection.Abstractions/9.0.0": {
+      "sha512": "+6f2qv2a3dLwd5w6JanPIPs47CxRbnk+ZocMJUhv9NxP88VlOcJYZs9jY+MYSjxvady08bUZn6qgiNh7DadGgg==",
+      "type": "package",
+      "path": "microsoft.extensions.dependencyinjection.abstractions/9.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "LICENSE.TXT",
+        "PACKAGE.md",
+        "THIRD-PARTY-NOTICES.TXT",
+        "buildTransitive/net461/Microsoft.Extensions.DependencyInjection.Abstractions.targets",
+        "buildTransitive/net462/_._",
+        "buildTransitive/net8.0/_._",
+        "buildTransitive/netcoreapp2.0/Microsoft.Extensions.DependencyInjection.Abstractions.targets",
+        "lib/net462/Microsoft.Extensions.DependencyInjection.Abstractions.dll",
+        "lib/net462/Microsoft.Extensions.DependencyInjection.Abstractions.xml",
+        "lib/net8.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll",
+        "lib/net8.0/Microsoft.Extensions.DependencyInjection.Abstractions.xml",
+        "lib/net9.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll",
+        "lib/net9.0/Microsoft.Extensions.DependencyInjection.Abstractions.xml",
+        "lib/netstandard2.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll",
+        "lib/netstandard2.0/Microsoft.Extensions.DependencyInjection.Abstractions.xml",
+        "lib/netstandard2.1/Microsoft.Extensions.DependencyInjection.Abstractions.dll",
+        "lib/netstandard2.1/Microsoft.Extensions.DependencyInjection.Abstractions.xml",
+        "microsoft.extensions.dependencyinjection.abstractions.9.0.0.nupkg.sha512",
+        "microsoft.extensions.dependencyinjection.abstractions.nuspec",
+        "useSharedDesignerContext.txt"
+      ]
+    },
     "RBush/4.0.0": {
       "sha512": "j3GeRxxLUQdc+UrZnvythdQxi3bd8ayn87VDjfGXrvfodF550n9wR6SgQvpo+YiAv3GJezsu6lK0l47rRqnbdg==",
       "type": "package",
@@ -580,9 +626,10 @@
     }
   },
   "projectFileDependencyGroups": {
-    "net10.0": [
+    "net10.0-windows7.0": [
       "ClosedXML >= 0.104.2",
       "DataHz.Core >= 1.0.0",
+      "Microsoft.Extensions.DependencyInjection.Abstractions >= 9.0.0",
       "System.Data.OleDb >= 9.0.4"
     ]
   },
@@ -592,27 +639,27 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Infrastructure\\DataHz.Infrastructure.csproj",
+      "projectUniqueName": "d:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Infrastructure\\DataHz.Infrastructure.csproj",
       "projectName": "DataHz.Infrastructure",
-      "projectPath": "D:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Infrastructure\\DataHz.Infrastructure.csproj",
+      "projectPath": "d:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Infrastructure\\DataHz.Infrastructure.csproj",
       "packagesPath": "C:\\Users\\fzhlian\\.nuget\\packages\\",
-      "outputPath": "D:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Infrastructure\\obj\\",
+      "outputPath": "d:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Infrastructure\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\fzhlian\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
-        "net10.0"
+        "net10.0-windows"
       ],
       "sources": {
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
-        "net10.0": {
-          "targetAlias": "net10.0",
+        "net10.0-windows7.0": {
+          "targetAlias": "net10.0-windows",
           "projectReferences": {
-            "D:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Core\\DataHz.Core.csproj": {
-              "projectPath": "D:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Core\\DataHz.Core.csproj"
+            "d:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Core\\DataHz.Core.csproj": {
+              "projectPath": "d:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Core\\DataHz.Core.csproj"
             }
           }
         }
@@ -630,12 +677,16 @@
       "SdkAnalysisLevel": "10.0.100"
     },
     "frameworks": {
-      "net10.0": {
-        "targetAlias": "net10.0",
+      "net10.0-windows7.0": {
+        "targetAlias": "net10.0-windows",
         "dependencies": {
           "ClosedXML": {
             "target": "Package",
             "version": "[0.104.2, )"
+          },
+          "Microsoft.Extensions.DependencyInjection.Abstractions": {
+            "target": "Package",
+            "version": "[9.0.0, )"
           },
           "System.Data.OleDb": {
             "target": "Package",

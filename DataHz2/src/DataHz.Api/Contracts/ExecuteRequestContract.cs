@@ -4,4 +4,5 @@ public sealed class ExecuteRequestContract
 {
     public required PlanTasksRequest Plan { get; init; }
     public bool DryRun { get; init; } = true;
+    public bool Incremental { get; init; } = true;
 }

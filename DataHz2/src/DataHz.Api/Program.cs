@@ -24,6 +24,18 @@ app.MapGet("/health", () => Results.Ok(new
     utc = DateTimeOffset.UtcNow
 }));
 
+app.MapGet("/api/runtime/dotnet", () =>
+{
+    var dotnetPath = Environment.GetEnvironmentVariable("DOTNET_ROOT") ?? "not-set";
+    return Results.Ok(new
+    {
+        dotnetRoot = dotnetPath,
+        framework = Environment.Version.ToString(),
+        os = Environment.OSVersion.ToString(),
+        is64Bit = Environment.Is64BitProcess
+    });
+});
+
 app.MapPost("/api/templates/parse", (ParseTemplateRequest request, ITemplateParser parser) =>
 {
     try
@@ -32,12 +44,15 @@ app.MapPost("/api/templates/parse", (ParseTemplateRequest request, ITemplatePars
         return Results.Ok(new
         {
             template.TemplateName,
+            template.TemplatePath,
             NameType = template.NameType.ToString(),
             template.DatabaseName,
             template.TableName,
             template.ColumnCount,
             template.ViewCount,
             template.CheckCount,
+            IsFlowTemplate = template.IsFlowTemplate,
+            FlowSheets = template.FlowConfig?.Sheets.Count ?? 0,
             Columns = template.Columns.Select(c => new { c.Index, c.Caption, c.Sql }).ToArray(),
             Views = template.Views.Select(v => new { v.Index, v.ViewName, v.TemplateFile, v.TargetFile, v.Range }).ToArray()
         });
@@ -65,10 +80,14 @@ app.MapPost("/api/tasks/plan", (PlanTasksRequest request, ITaskPlanner planner) 
             Template = new
             {
                 plan.Template.TemplateName,
+                plan.Template.TemplatePath,
                 NameType = plan.Template.NameType.ToString(),
                 plan.Template.DatabaseName,
-                plan.Template.TableName
+                plan.Template.TableName,
+                plan.Template.IsFlowTemplate
             },
+            plan.SourceDirectory,
+            plan.TargetDirectory,
             plan.Counties,
             plan.Issues
         });
@@ -91,7 +110,7 @@ app.MapPost("/api/tasks/execute", (ExecuteRequestContract request, ITaskPlanner 
             request.Plan.StartIndex,
             request.Plan.EndIndex));
 
-        var result = engine.Execute(new ExecuteRequest(plan, request.DryRun));
+        var result = engine.Execute(new ExecuteRequest(plan, request.DryRun, request.Incremental));
         return Results.Ok(new { plan.Issues, result });
     }
     catch (Exception ex)

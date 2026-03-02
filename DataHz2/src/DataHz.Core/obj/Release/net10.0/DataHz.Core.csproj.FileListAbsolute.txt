@@ -9,3 +9,4 @@ D:\fzhlian\Code\DataHz\DataHz2\src\DataHz.Core\obj\Release\net10.0\DataHz.Core.d
 D:\fzhlian\Code\DataHz\DataHz2\src\DataHz.Core\obj\Release\net10.0\refint\DataHz.Core.dll
 D:\fzhlian\Code\DataHz\DataHz2\src\DataHz.Core\obj\Release\net10.0\DataHz.Core.pdb
 D:\fzhlian\Code\DataHz\DataHz2\src\DataHz.Core\obj\Release\net10.0\ref\DataHz.Core.dll
+d:\fzhlian\Code\DataHz\DataHz2\src\DataHz.Core\obj\Release\net10.0\DataHz.Core.sourcelink.json

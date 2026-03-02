@@ -8,9 +8,9 @@ public sealed class LegacyXlsxTemplateParser : ITemplateParser
 {
     public TemplateDefinition Parse(string templatePath)
     {
-        if (!File.Exists(templatePath))
+        if (string.IsNullOrWhiteSpace(templatePath) || !File.Exists(templatePath))
         {
-            throw new FileNotFoundException("Template file not found.", templatePath);
+            throw new FileNotFoundException($"Template file not found: '{templatePath}'.", templatePath);
         }
 
         var extension = Path.GetExtension(templatePath);
@@ -141,9 +141,9 @@ public sealed class LegacyXlsxTemplateParser : ITemplateParser
 
     private static int ReadInt(IXLCell cell, int defaultValue = 0)
     {
-        if (cell.Value.IsNumber)
+        if (cell.TryGetValue<double>(out var number))
         {
-            return Convert.ToInt32(cell.GetDouble());
+            return Convert.ToInt32(number);
         }
 
         return int.TryParse(cell.GetString().Trim(), out var value) ? value : defaultValue;

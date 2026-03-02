@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DataHz.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+dc3302909e87db3f702d7fe35169274d351c3be9")]
 [assembly: System.Reflection.AssemblyProductAttribute("DataHz.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DataHz.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -18,9 +18,13 @@
 ## Phase Plan
 
 1. Phase-1 (done): architecture baseline + legacy INI compatibility + task planning API.
-2. Phase-2: Access connector + SQL execution engine + xlsx parser + result writer.
-3. Phase-3: DuckDB result store + incremental recomputation + web UI.
-4. Phase-4: production hardening (auth, audit, monitoring, job queue).
+2. Phase-2 (done): Access connector + SQL execution engine + column summary pipeline.
+3. Phase-3 (done in current baseline):
+   - xlsx parser (standard + FX flow template),
+   - template-based Excel export,
+   - county-level incremental cache (source file timestamp + template hash),
+   - flow rollup file generation.
+4. Phase-4 (next): production hardening (auth, audit, monitoring, job queue, web UI).
 
 ## Risk Controls
 

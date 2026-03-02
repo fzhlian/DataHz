@@ -7,9 +7,9 @@ public sealed class LegacyIniTemplateParser : ITemplateParser
 {
     public TemplateDefinition Parse(string templatePath)
     {
-        if (!File.Exists(templatePath))
+        if (string.IsNullOrWhiteSpace(templatePath) || !File.Exists(templatePath))
         {
-            throw new FileNotFoundException("Template file not found.", templatePath);
+            throw new FileNotFoundException($"Template file not found: '{templatePath}'.", templatePath);
         }
 
         var extension = Path.GetExtension(templatePath);

@@ -1,36 +1,36 @@
 {
   "format": 1,
   "restore": {
-    "D:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Api\\DataHz.Api.csproj": {}
+    "d:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Api\\DataHz.Api.csproj": {}
   },
   "projects": {
-    "D:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Api\\DataHz.Api.csproj": {
+    "d:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Api\\DataHz.Api.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Api\\DataHz.Api.csproj",
+        "projectUniqueName": "d:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Api\\DataHz.Api.csproj",
         "projectName": "DataHz.Api",
-        "projectPath": "D:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Api\\DataHz.Api.csproj",
+        "projectPath": "d:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Api\\DataHz.Api.csproj",
         "packagesPath": "C:\\Users\\fzhlian\\.nuget\\packages\\",
-        "outputPath": "D:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Api\\obj\\",
+        "outputPath": "d:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Api\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\fzhlian\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
-          "net10.0"
+          "net10.0-windows"
         ],
         "sources": {
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
-          "net10.0": {
-            "targetAlias": "net10.0",
+          "net10.0-windows7.0": {
+            "targetAlias": "net10.0-windows",
             "projectReferences": {
-              "D:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Core\\DataHz.Core.csproj": {
-                "projectPath": "D:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Core\\DataHz.Core.csproj"
+              "d:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Core\\DataHz.Core.csproj": {
+                "projectPath": "d:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Core\\DataHz.Core.csproj"
               },
-              "D:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Infrastructure\\DataHz.Infrastructure.csproj": {
-                "projectPath": "D:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Infrastructure\\DataHz.Infrastructure.csproj"
+              "d:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Infrastructure\\DataHz.Infrastructure.csproj": {
+                "projectPath": "d:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Infrastructure\\DataHz.Infrastructure.csproj"
               }
             }
           }
@@ -48,8 +48,14 @@
         "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
-        "net10.0": {
-          "targetAlias": "net10.0",
+        "net10.0-windows7.0": {
+          "targetAlias": "net10.0-windows",
+          "dependencies": {
+            "Swashbuckle.AspNetCore": {
+              "target": "Package",
+              "version": "[8.1.2, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",
@@ -487,14 +493,14 @@
         }
       }
     },
-    "D:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Core\\DataHz.Core.csproj": {
+    "d:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Core\\DataHz.Core.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Core\\DataHz.Core.csproj",
+        "projectUniqueName": "d:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Core\\DataHz.Core.csproj",
         "projectName": "DataHz.Core",
-        "projectPath": "D:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Core\\DataHz.Core.csproj",
+        "projectPath": "d:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Core\\DataHz.Core.csproj",
         "packagesPath": "C:\\Users\\fzhlian\\.nuget\\packages\\",
-        "outputPath": "D:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Core\\obj\\",
+        "outputPath": "d:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Core\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\fzhlian\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -820,30 +826,30 @@
         }
       }
     },
-    "D:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Infrastructure\\DataHz.Infrastructure.csproj": {
+    "d:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Infrastructure\\DataHz.Infrastructure.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Infrastructure\\DataHz.Infrastructure.csproj",
+        "projectUniqueName": "d:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Infrastructure\\DataHz.Infrastructure.csproj",
         "projectName": "DataHz.Infrastructure",
-        "projectPath": "D:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Infrastructure\\DataHz.Infrastructure.csproj",
+        "projectPath": "d:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Infrastructure\\DataHz.Infrastructure.csproj",
         "packagesPath": "C:\\Users\\fzhlian\\.nuget\\packages\\",
-        "outputPath": "D:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Infrastructure\\obj\\",
+        "outputPath": "d:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Infrastructure\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\fzhlian\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
-          "net10.0"
+          "net10.0-windows"
         ],
         "sources": {
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
-          "net10.0": {
-            "targetAlias": "net10.0",
+          "net10.0-windows7.0": {
+            "targetAlias": "net10.0-windows",
             "projectReferences": {
-              "D:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Core\\DataHz.Core.csproj": {
-                "projectPath": "D:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Core\\DataHz.Core.csproj"
+              "d:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Core\\DataHz.Core.csproj": {
+                "projectPath": "d:\\fzhlian\\Code\\DataHz\\DataHz2\\src\\DataHz.Core\\DataHz.Core.csproj"
               }
             }
           }
@@ -861,12 +867,16 @@
         "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
-        "net10.0": {
-          "targetAlias": "net10.0",
+        "net10.0-windows7.0": {
+          "targetAlias": "net10.0-windows",
           "dependencies": {
             "ClosedXML": {
               "target": "Package",
               "version": "[0.104.2, )"
+            },
+            "Microsoft.Extensions.DependencyInjection.Abstractions": {
+              "target": "Package",
+              "version": "[9.0.0, )"
             },
             "System.Data.OleDb": {
               "target": "Package",
