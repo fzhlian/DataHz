@@ -1,0 +1,33 @@
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataHz.Core", "src\DataHz.Core\DataHz.Core.csproj", "{BFA98D8E-62A5-43EA-BCA5-2729AE13821D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataHz.Infrastructure", "src\DataHz.Infrastructure\DataHz.Infrastructure.csproj", "{39A45D9C-E7F0-4AFC-88AB-00D6AA08D54F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataHz.Api", "src\DataHz.Api\DataHz.Api.csproj", "{9120A6A9-B5D0-4D0F-9845-77C93A7994D7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BFA98D8E-62A5-43EA-BCA5-2729AE13821D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BFA98D8E-62A5-43EA-BCA5-2729AE13821D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BFA98D8E-62A5-43EA-BCA5-2729AE13821D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BFA98D8E-62A5-43EA-BCA5-2729AE13821D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{39A45D9C-E7F0-4AFC-88AB-00D6AA08D54F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{39A45D9C-E7F0-4AFC-88AB-00D6AA08D54F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{39A45D9C-E7F0-4AFC-88AB-00D6AA08D54F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{39A45D9C-E7F0-4AFC-88AB-00D6AA08D54F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9120A6A9-B5D0-4D0F-9845-77C93A7994D7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9120A6A9-B5D0-4D0F-9845-77C93A7994D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9120A6A9-B5D0-4D0F-9845-77C93A7994D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9120A6A9-B5D0-4D0F-9845-77C93A7994D7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
