@@ -8,6 +8,8 @@ param(
     [int]$CheckRetryCount = 3,
     [int]$CheckRetryDelayMilliseconds = 500,
     [int]$HealthPollDelayMilliseconds = 500,
+    [int]$WarnCheckDurationMilliseconds = 0,
+    [int]$FailCheckDurationMilliseconds = 0,
     [int]$FailureContentSnippetLength = 240,
     [string]$OutputJsonPath = "",
     [switch]$RequireAuthenticatedApi
@@ -27,6 +29,8 @@ if ($base.EndsWith("/")) {
 $effectiveRetryCount = [Math]::Max(1, $CheckRetryCount)
 $effectiveRetryDelayMilliseconds = [Math]::Max(0, $CheckRetryDelayMilliseconds)
 $effectiveHealthPollDelayMilliseconds = [Math]::Max(0, $HealthPollDelayMilliseconds)
+$effectiveWarnCheckDurationMilliseconds = [Math]::Max(0, $WarnCheckDurationMilliseconds)
+$effectiveFailCheckDurationMilliseconds = [Math]::Max(0, $FailCheckDurationMilliseconds)
 $effectiveFailureContentSnippetLength = [Math]::Max(0, $FailureContentSnippetLength)
 $hasApiKey = -not [string]::IsNullOrWhiteSpace($ApiKey)
 $hasBearerToken = -not [string]::IsNullOrWhiteSpace($BearerToken)
@@ -67,6 +71,14 @@ if ($effectiveRetryDelayMilliseconds -ne $CheckRetryDelayMilliseconds) {
 
 if ($effectiveHealthPollDelayMilliseconds -ne $HealthPollDelayMilliseconds) {
     Write-Host "HealthPollDelayMilliseconds was normalized from $HealthPollDelayMilliseconds to $effectiveHealthPollDelayMilliseconds."
+}
+
+if ($effectiveWarnCheckDurationMilliseconds -ne $WarnCheckDurationMilliseconds) {
+    Write-Host "WarnCheckDurationMilliseconds was normalized from $WarnCheckDurationMilliseconds to $effectiveWarnCheckDurationMilliseconds."
+}
+
+if ($effectiveFailCheckDurationMilliseconds -ne $FailCheckDurationMilliseconds) {
+    Write-Host "FailCheckDurationMilliseconds was normalized from $FailCheckDurationMilliseconds to $effectiveFailCheckDurationMilliseconds."
 }
 
 if ($effectiveFailureContentSnippetLength -ne $FailureContentSnippetLength) {
@@ -115,6 +127,8 @@ Write-Host "  HasBearerToken: $hasBearerToken"
 Write-Host "  CheckRetryCount: $effectiveRetryCount"
 Write-Host "  CheckRetryDelayMilliseconds: $effectiveRetryDelayMilliseconds"
 Write-Host "  HealthPollDelayMilliseconds: $effectiveHealthPollDelayMilliseconds"
+Write-Host "  WarnCheckDurationMilliseconds: $effectiveWarnCheckDurationMilliseconds"
+Write-Host "  FailCheckDurationMilliseconds: $effectiveFailCheckDurationMilliseconds"
 Write-Host "  FailureContentSnippetLength: $effectiveFailureContentSnippetLength"
 
 function Add-Result(
@@ -491,6 +505,15 @@ if ($results.Count -gt 0) {
 $maxDurationItem = $results | Sort-Object DurationMs -Descending | Select-Object -First 1
 $maxCheckDurationMs = if ($null -ne $maxDurationItem) { [int]$maxDurationItem.DurationMs } else { 0 }
 $maxCheckName = if ($null -ne $maxDurationItem) { [string]$maxDurationItem.Check } else { "" }
+$slowWarnChecks = @()
+if ($effectiveWarnCheckDurationMilliseconds -gt 0) {
+    $slowWarnChecks = @($results | Where-Object { $_.DurationMs -gt $effectiveWarnCheckDurationMilliseconds })
+}
+
+$slowFailChecks = @()
+if ($effectiveFailCheckDurationMilliseconds -gt 0) {
+    $slowFailChecks = @($results | Where-Object { $_.DurationMs -gt $effectiveFailCheckDurationMilliseconds })
+}
 
 $reportPayload = [pscustomobject]@{
     startedUtc = $runStartedAtUtc.ToString("o")
@@ -504,12 +527,18 @@ $reportPayload = [pscustomobject]@{
     checkRetryCount = $effectiveRetryCount
     checkRetryDelayMilliseconds = $effectiveRetryDelayMilliseconds
     healthPollDelayMilliseconds = $effectiveHealthPollDelayMilliseconds
+    warnCheckDurationMilliseconds = $effectiveWarnCheckDurationMilliseconds
+    failCheckDurationMilliseconds = $effectiveFailCheckDurationMilliseconds
     failureContentSnippetLength = $effectiveFailureContentSnippetLength
     totalChecks = $results.Count
     failedChecks = $failed.Count
     averageCheckDurationMs = $averageCheckDurationMs
     maxCheckDurationMs = $maxCheckDurationMs
     maxCheckName = $maxCheckName
+    warnSlowCheckCount = $slowWarnChecks.Count
+    failSlowCheckCount = $slowFailChecks.Count
+    warnSlowChecks = @($slowWarnChecks | Select-Object Check, DurationMs, Attempts, Endpoint)
+    failSlowChecks = @($slowFailChecks | Select-Object Check, DurationMs, Attempts, Endpoint)
     results = @($results)
 }
 
@@ -529,14 +558,39 @@ if ($slowestChecks.Count -gt 0) {
     }
 }
 
-if ($failed.Count -gt 0) {
+if ($slowWarnChecks.Count -gt 0) {
+    Write-Host "Slow check warning threshold exceeded: thresholdMs=$effectiveWarnCheckDurationMilliseconds, count=$($slowWarnChecks.Count)"
+}
+
+if ($slowFailChecks.Count -gt 0) {
+    Write-Host "Slow check failure threshold exceeded: thresholdMs=$effectiveFailCheckDurationMilliseconds, count=$($slowFailChecks.Count)"
+}
+
+if ($failed.Count -gt 0 -or $slowFailChecks.Count -gt 0) {
     Write-Host ""
-    Write-Host "Failed checks detail:"
-    foreach ($item in $failed) {
-        Write-Host "  - $($item.Check) | attempts=$($item.Attempts) | durationMs=$($item.DurationMs) | endpoint=$($item.Endpoint) | $($item.Detail)"
+    if ($failed.Count -gt 0) {
+        Write-Host "Failed checks detail:"
+        foreach ($item in $failed) {
+            Write-Host "  - $($item.Check) | attempts=$($item.Attempts) | durationMs=$($item.DurationMs) | endpoint=$($item.Endpoint) | $($item.Detail)"
+        }
     }
+
+    if ($slowFailChecks.Count -gt 0) {
+        Write-Host "Slow check threshold violations:"
+        foreach ($item in $slowFailChecks) {
+            Write-Host "  - $($item.Check) | durationMs=$($item.DurationMs) | thresholdMs=$effectiveFailCheckDurationMilliseconds | attempts=$($item.Attempts) | endpoint=$($item.Endpoint)"
+        }
+    }
+
     Write-Host ""
-    Write-Host "Smoke test failed: $($failed.Count) check(s)." -ForegroundColor Red
+    $reasonParts = New-Object System.Collections.Generic.List[string]
+    if ($failed.Count -gt 0) {
+        $reasonParts.Add("failed checks=$($failed.Count)")
+    }
+    if ($slowFailChecks.Count -gt 0) {
+        $reasonParts.Add("slow check violations=$($slowFailChecks.Count)")
+    }
+    Write-Host "Smoke test failed: $($reasonParts -join ', ')." -ForegroundColor Red
     exit 1
 }
 
