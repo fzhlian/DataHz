@@ -91,6 +91,40 @@ function Test-Status([int]$Code, [int[]]$Allowed) {
     return $Allowed -contains $Code
 }
 
+function Wait-ForHealthReady([string]$Url, [int]$MaxWaitSeconds, [string]$ApiKeyValue, [string]$JwtValue) {
+    $deadline = (Get-Date).AddSeconds([Math]::Max(1, $MaxWaitSeconds))
+    $lastError = ""
+
+    while ((Get-Date) -lt $deadline) {
+        try {
+            $resp = Invoke-Get -Url $Url -Timeout 3 -ApiKeyValue $ApiKeyValue -JwtValue $JwtValue
+            if ($resp.StatusCode -eq 200) {
+                try {
+                    $obj = $resp.Content | ConvertFrom-Json
+                    if ($null -ne $obj -and ($obj.status -eq "ok" -or $obj.Status -eq "ok")) {
+                        return $true
+                    }
+
+                    $lastError = "Health endpoint returned HTTP 200 but status is not ok."
+                }
+                catch {
+                    $lastError = "Health endpoint returned HTTP 200 but response is not valid JSON."
+                }
+            }
+            else {
+                $lastError = "Health endpoint returned HTTP $($resp.StatusCode)."
+            }
+        }
+        catch {
+            $lastError = $_.Exception.Message
+        }
+
+        Start-Sleep -Milliseconds 500
+    }
+
+    return $lastError
+}
+
 if (-not [string]::IsNullOrWhiteSpace($ServiceName)) {
     $svc = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
     if (-not $svc) {
@@ -104,8 +138,14 @@ if (-not [string]::IsNullOrWhiteSpace($ServiceName)) {
     }
 }
 
+$healthUrl = "$base/health"
+$healthReady = Wait-ForHealthReady -Url $healthUrl -MaxWaitSeconds $TimeoutSeconds -ApiKeyValue $ApiKey -JwtValue $BearerToken
+if ($healthReady -is [string]) {
+    Add-Result -Check "health" -Passed $false -Detail $healthReady
+}
+else {
 try {
-    $health = Invoke-Get -Url "$base/health" -Timeout $TimeoutSeconds -ApiKeyValue $ApiKey -JwtValue $BearerToken
+    $health = Invoke-Get -Url $healthUrl -Timeout $TimeoutSeconds -ApiKeyValue $ApiKey -JwtValue $BearerToken
     if ($health.StatusCode -ne 200) {
         Add-Result -Check "health" -Passed $false -Detail "HTTP $($health.StatusCode)."
     }
@@ -126,6 +166,7 @@ try {
 }
 catch {
     Add-Result -Check "health" -Passed $false -Detail $_.Exception.Message
+}
 }
 
 foreach ($item in @(
