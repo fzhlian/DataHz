@@ -55,11 +55,19 @@ Write-Host "  FailureContentSnippetLength: $effectiveFailureContentSnippetLength
 
 $results = New-Object System.Collections.Generic.List[object]
 
-function Add-Result([string]$Check, [bool]$Passed, [string]$Detail, [int]$Attempts = 1, [string]$Endpoint = "") {
+function Add-Result(
+    [string]$Check,
+    [bool]$Passed,
+    [string]$Detail,
+    [int]$Attempts = 1,
+    [string]$Endpoint = "",
+    [int]$DurationMs = 0
+) {
     $script:results.Add([pscustomobject]@{
         Check = $Check
         Passed = $Passed
         Attempts = [Math]::Max(1, $Attempts)
+        DurationMs = [Math]::Max(0, [int]$DurationMs)
         Endpoint = $Endpoint
         Detail = $Detail
     })
@@ -156,6 +164,7 @@ function Compose-DetailWithSnippet([string]$Message, [string]$Content, [int]$Max
 }
 
 function Invoke-CheckWithRetry([scriptblock]$CheckOperation, [int]$MaxAttempts, [int]$DelayMilliseconds) {
+    $startedAt = Get-Date
     $attemptLimit = [Math]::Max(1, $MaxAttempts)
     $attempt = 0
     $last = $null
@@ -172,10 +181,12 @@ function Invoke-CheckWithRetry([scriptblock]$CheckOperation, [int]$MaxAttempts, 
         }
 
         if ($last.Passed) {
+            $durationMilliseconds = [int][Math]::Round(((Get-Date) - $startedAt).TotalMilliseconds)
             return [pscustomobject]@{
                 Passed = $true
                 Detail = [string]$last.Detail
                 Attempts = $attempt
+                DurationMilliseconds = [Math]::Max(0, $durationMilliseconds)
             }
         }
 
@@ -184,14 +195,17 @@ function Invoke-CheckWithRetry([scriptblock]$CheckOperation, [int]$MaxAttempts, 
         }
     }
 
+    $durationMilliseconds = [int][Math]::Round(((Get-Date) - $startedAt).TotalMilliseconds)
     return [pscustomobject]@{
         Passed = $false
         Detail = [string]$last.Detail
         Attempts = $attemptLimit
+        DurationMilliseconds = [Math]::Max(0, $durationMilliseconds)
     }
 }
 
 function Wait-ForHealthReady([string]$Url, [int]$MaxWaitSeconds, [string]$ApiKeyValue, [string]$JwtValue) {
+    $startedAt = Get-Date
     $deadline = (Get-Date).AddSeconds([Math]::Max(1, $MaxWaitSeconds))
     $lastError = ""
     $attempts = 0
@@ -204,10 +218,12 @@ function Wait-ForHealthReady([string]$Url, [int]$MaxWaitSeconds, [string]$ApiKey
                 try {
                     $obj = $resp.Content | ConvertFrom-Json
                     if ($null -ne $obj -and ($obj.status -eq "ok" -or $obj.Status -eq "ok")) {
+                        $durationMilliseconds = [int][Math]::Round(((Get-Date) - $startedAt).TotalMilliseconds)
                         return [pscustomobject]@{
                             Ready = $true
                             Detail = "status=ok"
                             Attempts = $attempts
+                            DurationMilliseconds = [Math]::Max(0, $durationMilliseconds)
                         }
                     }
 
@@ -241,10 +257,12 @@ function Wait-ForHealthReady([string]$Url, [int]$MaxWaitSeconds, [string]$ApiKey
         $lastError = "Health endpoint did not become ready before timeout."
     }
 
+    $durationMilliseconds = [int][Math]::Round(((Get-Date) - $startedAt).TotalMilliseconds)
     return [pscustomobject]@{
         Ready = $false
         Detail = $lastError
         Attempts = $attempts
+        DurationMilliseconds = [Math]::Max(0, $durationMilliseconds)
     }
 }
 
@@ -271,23 +289,23 @@ function Write-SmokeReport([string]$PathValue, [object]$Payload) {
 if (-not [string]::IsNullOrWhiteSpace($ServiceName)) {
     $svc = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
     if (-not $svc) {
-        Add-Result -Check "windows-service" -Passed $false -Detail "Service '$ServiceName' not found." -Endpoint "service://$ServiceName"
+        Add-Result -Check "windows-service" -Passed $false -Detail "Service '$ServiceName' not found." -Endpoint "service://$ServiceName" -DurationMs 0
     }
     elseif ($svc.Status -ne "Running") {
-        Add-Result -Check "windows-service" -Passed $false -Detail "Service '$ServiceName' status is $($svc.Status)." -Endpoint "service://$ServiceName"
+        Add-Result -Check "windows-service" -Passed $false -Detail "Service '$ServiceName' status is $($svc.Status)." -Endpoint "service://$ServiceName" -DurationMs 0
     }
     else {
-        Add-Result -Check "windows-service" -Passed $true -Detail "Service '$ServiceName' is running." -Endpoint "service://$ServiceName"
+        Add-Result -Check "windows-service" -Passed $true -Detail "Service '$ServiceName' is running." -Endpoint "service://$ServiceName" -DurationMs 0
     }
 }
 
 $healthUrl = "$base/health"
 $healthReady = Wait-ForHealthReady -Url $healthUrl -MaxWaitSeconds $TimeoutSeconds -ApiKeyValue $ApiKey -JwtValue $BearerToken
 if (-not $healthReady.Ready) {
-    Add-Result -Check "health" -Passed $false -Detail $healthReady.Detail -Attempts $healthReady.Attempts -Endpoint "/health"
+    Add-Result -Check "health" -Passed $false -Detail $healthReady.Detail -Attempts $healthReady.Attempts -Endpoint "/health" -DurationMs $healthReady.DurationMilliseconds
 }
 else {
-    Add-Result -Check "health" -Passed $true -Detail $healthReady.Detail -Attempts $healthReady.Attempts -Endpoint "/health"
+    Add-Result -Check "health" -Passed $true -Detail $healthReady.Detail -Attempts $healthReady.Attempts -Endpoint "/health" -DurationMs $healthReady.DurationMilliseconds
 }
 
 foreach ($item in @(
@@ -341,7 +359,7 @@ foreach ($item in @(
 
         }
 
-    Add-Result -Check $item.Name -Passed $outcome.Passed -Detail $outcome.Detail -Attempts $outcome.Attempts -Endpoint $item.Path
+    Add-Result -Check $item.Name -Passed $outcome.Passed -Detail $outcome.Detail -Attempts $outcome.Attempts -Endpoint $item.Path -DurationMs $outcome.DurationMilliseconds
 }
 
 $apiChecks = @(
@@ -388,7 +406,7 @@ foreach ($item in $apiChecks) {
             }
         }
 
-    Add-Result -Check $item.Name -Passed $outcome.Passed -Detail $outcome.Detail -Attempts $outcome.Attempts -Endpoint $item.Path
+    Add-Result -Check $item.Name -Passed $outcome.Passed -Detail $outcome.Detail -Attempts $outcome.Attempts -Endpoint $item.Path -DurationMs $outcome.DurationMilliseconds
 }
 
 $failed = @($results | Where-Object { -not $_.Passed })
@@ -414,16 +432,24 @@ $reportPayload = [pscustomobject]@{
 
 Write-SmokeReport -PathValue $OutputJsonPath -Payload $reportPayload
 
-$results | Format-Table -AutoSize Check, Passed, Attempts, Endpoint, Detail
+$results | Format-Table -AutoSize Check, Passed, Attempts, DurationMs, Endpoint, Detail
 
 Write-Host ""
 Write-Host "Smoke summary: total=$($results.Count), failed=$($failed.Count), elapsedMs=$elapsedMilliseconds"
+
+$slowestChecks = @($results | Sort-Object DurationMs -Descending | Select-Object -First 3)
+if ($slowestChecks.Count -gt 0) {
+    Write-Host "Slowest checks:"
+    foreach ($item in $slowestChecks) {
+        Write-Host "  - $($item.Check) | durationMs=$($item.DurationMs) | attempts=$($item.Attempts) | endpoint=$($item.Endpoint)"
+    }
+}
 
 if ($failed.Count -gt 0) {
     Write-Host ""
     Write-Host "Failed checks detail:"
     foreach ($item in $failed) {
-        Write-Host "  - $($item.Check) | attempts=$($item.Attempts) | endpoint=$($item.Endpoint) | $($item.Detail)"
+        Write-Host "  - $($item.Check) | attempts=$($item.Attempts) | durationMs=$($item.DurationMs) | endpoint=$($item.Endpoint) | $($item.Detail)"
     }
     Write-Host ""
     Write-Host "Smoke test failed: $($failed.Count) check(s)." -ForegroundColor Red
