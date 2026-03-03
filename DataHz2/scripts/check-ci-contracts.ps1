@@ -507,6 +507,9 @@ $results.Add((Run-Case -Name "ci-smoke-summary-contract" -Action {
     if (-not ($summaryBlock -like "*warnSlowChecks*")) {
         throw "CI workflow 'Publish smoke summary' step must include warn slow checks details."
     }
+    if (-not ($summaryBlock -like "*failSlowChecks*")) {
+        throw "CI workflow 'Publish smoke summary' step must include fail slow checks details."
+    }
     if (-not ($summaryBlock -like "*Sort-Object DurationMs -Descending*")) {
         throw "CI workflow 'Publish smoke summary' step must include slow-check ranking."
     }
@@ -550,6 +553,9 @@ $results.Add((Run-Case -Name "release-smoke-summary-contract" -Action {
     }
     if (-not ($summaryBlock -like "*warnSlowChecks*")) {
         throw "Release workflow 'Publish smoke summary' step must include warn slow checks details."
+    }
+    if (-not ($summaryBlock -like "*failSlowChecks*")) {
+        throw "Release workflow 'Publish smoke summary' step must include fail slow checks details."
     }
     if (-not ($summaryBlock -like "*Sort-Object DurationMs -Descending*")) {
         throw "Release workflow 'Publish smoke summary' step must include slow-check ranking."

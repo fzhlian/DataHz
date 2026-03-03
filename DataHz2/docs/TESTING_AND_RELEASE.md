@@ -45,6 +45,7 @@ dotnet test .\DataHz2.sln -c Release
 - `Publish smoke summary` 现包含平均检查耗时、最大耗时检查以及 Top3 慢检查表，便于快速识别性能瓶颈。
 - `Publish smoke summary` 现额外包含 health 轮询间隔（`healthPollDelayMilliseconds`）。
 - `Publish smoke summary` 现额外包含慢检查阈值与命中计数（`warn/fail`）。
+- 当 `failSlowCheckCount > 0` 时，`Publish smoke summary` 还会输出 `failSlowChecks` 明细表用于定位超阈值检查项。
 
 如何使用/验证：
 - 本地执行示例：

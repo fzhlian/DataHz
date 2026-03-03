@@ -279,6 +279,16 @@ jobs:
             }
           }
 
+          if ([int]$report.failSlowCheckCount -gt 0) {
+            $lines.Add("")
+            $lines.Add("Slow-check failure violations:")
+            $lines.Add("| Check | Duration ms | Attempts | Endpoint |")
+            $lines.Add("| --- | ---: | ---: | --- |")
+            foreach ($item in @($report.failSlowChecks)) {
+              $lines.Add("| $($item.Check) | $($item.DurationMs) | $($item.Attempts) | $($item.Endpoint) |")
+            }
+          }
+
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ($lines -join [Environment]::NewLine)
 
       - name: Upload smoke diagnostics
