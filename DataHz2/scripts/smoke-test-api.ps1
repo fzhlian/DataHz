@@ -7,6 +7,7 @@ param(
     [int]$TimeoutSeconds = 10,
     [int]$CheckRetryCount = 3,
     [int]$CheckRetryDelayMilliseconds = 500,
+    [string]$OutputJsonPath = "",
     [switch]$RequireAuthenticatedApi
 )
 
@@ -21,12 +22,38 @@ if ($base.EndsWith("/")) {
     $base = $base.TrimEnd("/")
 }
 
+$effectiveRetryCount = [Math]::Max(1, $CheckRetryCount)
+$effectiveRetryDelayMilliseconds = [Math]::Max(0, $CheckRetryDelayMilliseconds)
+$hasApiKey = -not [string]::IsNullOrWhiteSpace($ApiKey)
+$hasBearerToken = -not [string]::IsNullOrWhiteSpace($BearerToken)
+$hasCredentials = $hasApiKey -or $hasBearerToken
+$runStartedAtUtc = (Get-Date).ToUniversalTime()
+
+if ($effectiveRetryCount -ne $CheckRetryCount) {
+    Write-Host "CheckRetryCount was normalized from $CheckRetryCount to $effectiveRetryCount."
+}
+
+if ($effectiveRetryDelayMilliseconds -ne $CheckRetryDelayMilliseconds) {
+    Write-Host "CheckRetryDelayMilliseconds was normalized from $CheckRetryDelayMilliseconds to $effectiveRetryDelayMilliseconds."
+}
+
+Write-Host "Smoke context:"
+Write-Host "  BaseUrl: $base"
+Write-Host "  TimeoutSeconds: $TimeoutSeconds"
+Write-Host "  RequireAuthenticatedApi: $([bool]$RequireAuthenticatedApi)"
+Write-Host "  HasApiKey: $hasApiKey"
+Write-Host "  HasBearerToken: $hasBearerToken"
+Write-Host "  CheckRetryCount: $effectiveRetryCount"
+Write-Host "  CheckRetryDelayMilliseconds: $effectiveRetryDelayMilliseconds"
+
 $results = New-Object System.Collections.Generic.List[object]
 
-function Add-Result([string]$Check, [bool]$Passed, [string]$Detail) {
+function Add-Result([string]$Check, [bool]$Passed, [string]$Detail, [int]$Attempts = 1, [string]$Endpoint = "") {
     $script:results.Add([pscustomobject]@{
         Check = $Check
         Passed = $Passed
+        Attempts = [Math]::Max(1, $Attempts)
+        Endpoint = $Endpoint
         Detail = $Detail
     })
 }
@@ -177,36 +204,46 @@ function Wait-ForHealthReady([string]$Url, [int]$MaxWaitSeconds, [string]$ApiKey
     }
 }
 
+function Write-SmokeReport([string]$PathValue, [object]$Payload) {
+    if ([string]::IsNullOrWhiteSpace($PathValue)) {
+        return
+    }
+
+    $targetPath = $PathValue
+    if (-not [System.IO.Path]::IsPathRooted($targetPath)) {
+        $targetPath = Join-Path (Get-Location).Path $targetPath
+    }
+
+    $parent = Split-Path -Parent $targetPath
+    if (-not [string]::IsNullOrWhiteSpace($parent) -and -not (Test-Path $parent)) {
+        [void](New-Item -ItemType Directory -Path $parent -Force)
+    }
+
+    $json = $Payload | ConvertTo-Json -Depth 10
+    Set-Content -Path $targetPath -Value $json -Encoding UTF8
+    Write-Host "Smoke report written to: $targetPath"
+}
+
 if (-not [string]::IsNullOrWhiteSpace($ServiceName)) {
     $svc = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
     if (-not $svc) {
-        Add-Result -Check "windows-service" -Passed $false -Detail "Service '$ServiceName' not found."
+        Add-Result -Check "windows-service" -Passed $false -Detail "Service '$ServiceName' not found." -Endpoint "service://$ServiceName"
     }
     elseif ($svc.Status -ne "Running") {
-        Add-Result -Check "windows-service" -Passed $false -Detail "Service '$ServiceName' status is $($svc.Status)."
+        Add-Result -Check "windows-service" -Passed $false -Detail "Service '$ServiceName' status is $($svc.Status)." -Endpoint "service://$ServiceName"
     }
     else {
-        Add-Result -Check "windows-service" -Passed $true -Detail "Service '$ServiceName' is running."
+        Add-Result -Check "windows-service" -Passed $true -Detail "Service '$ServiceName' is running." -Endpoint "service://$ServiceName"
     }
 }
 
 $healthUrl = "$base/health"
 $healthReady = Wait-ForHealthReady -Url $healthUrl -MaxWaitSeconds $TimeoutSeconds -ApiKeyValue $ApiKey -JwtValue $BearerToken
 if (-not $healthReady.Ready) {
-    $healthDetail = $healthReady.Detail
-    if ($healthReady.Attempts -gt 1) {
-        $healthDetail = "$healthDetail (attempts=$($healthReady.Attempts))"
-    }
-
-    Add-Result -Check "health" -Passed $false -Detail $healthDetail
+    Add-Result -Check "health" -Passed $false -Detail $healthReady.Detail -Attempts $healthReady.Attempts -Endpoint "/health"
 }
 else {
-    $healthDetail = $healthReady.Detail
-    if ($healthReady.Attempts -gt 1) {
-        $healthDetail = "$healthDetail (attempts=$($healthReady.Attempts))"
-    }
-
-    Add-Result -Check "health" -Passed $true -Detail $healthDetail
+    Add-Result -Check "health" -Passed $true -Detail $healthReady.Detail -Attempts $healthReady.Attempts -Endpoint "/health"
 }
 
 foreach ($item in @(
@@ -214,8 +251,8 @@ foreach ($item in @(
     @{ Name = "dashboard"; Path = "/dashboard/"; Contains = "DataHz Monitor Board"; AllowRedirect = $true }
 )) {
     $outcome = Invoke-CheckWithRetry `
-        -MaxAttempts $CheckRetryCount `
-        -DelayMilliseconds $CheckRetryDelayMilliseconds `
+        -MaxAttempts $effectiveRetryCount `
+        -DelayMilliseconds $effectiveRetryDelayMilliseconds `
         -CheckOperation {
             try {
                 $resp = Invoke-Get -Url "$base$($item.Path)" -Timeout $TimeoutSeconds -ApiKeyValue $ApiKey -JwtValue $BearerToken
@@ -254,12 +291,7 @@ foreach ($item in @(
 
         }
 
-    $uiDetail = $outcome.Detail
-    if ($outcome.Attempts -gt 1) {
-        $uiDetail = "$uiDetail (attempts=$($outcome.Attempts))"
-    }
-
-    Add-Result -Check $item.Name -Passed $outcome.Passed -Detail $uiDetail
+    Add-Result -Check $item.Name -Passed $outcome.Passed -Detail $outcome.Detail -Attempts $outcome.Attempts -Endpoint $item.Path
 }
 
 $apiChecks = @(
@@ -268,12 +300,10 @@ $apiChecks = @(
     @{ Name = "monitor-overview"; Path = "/api/monitor/overview?jobs=3&audit=3" }
 )
 
-$hasCredentials = -not [string]::IsNullOrWhiteSpace($ApiKey) -or -not [string]::IsNullOrWhiteSpace($BearerToken)
-
 foreach ($item in $apiChecks) {
     $outcome = Invoke-CheckWithRetry `
-        -MaxAttempts $CheckRetryCount `
-        -DelayMilliseconds $CheckRetryDelayMilliseconds `
+        -MaxAttempts $effectiveRetryCount `
+        -DelayMilliseconds $effectiveRetryDelayMilliseconds `
         -CheckOperation {
             try {
                 $resp = Invoke-Get -Url "$base$($item.Path)" -Timeout $TimeoutSeconds -ApiKeyValue $ApiKey -JwtValue $BearerToken
@@ -305,18 +335,42 @@ foreach ($item in $apiChecks) {
             }
         }
 
-    $apiDetail = $outcome.Detail
-    if ($outcome.Attempts -gt 1) {
-        $apiDetail = "$apiDetail (attempts=$($outcome.Attempts))"
-    }
-
-    Add-Result -Check $item.Name -Passed $outcome.Passed -Detail $apiDetail
+    Add-Result -Check $item.Name -Passed $outcome.Passed -Detail $outcome.Detail -Attempts $outcome.Attempts -Endpoint $item.Path
 }
 
 $failed = @($results | Where-Object { -not $_.Passed })
-$results | Format-Table -AutoSize Check, Passed, Detail
+$runFinishedAtUtc = (Get-Date).ToUniversalTime()
+$elapsedMilliseconds = [int][Math]::Round(($runFinishedAtUtc - $runStartedAtUtc).TotalMilliseconds)
+
+$reportPayload = [pscustomobject]@{
+    startedUtc = $runStartedAtUtc.ToString("o")
+    finishedUtc = $runFinishedAtUtc.ToString("o")
+    elapsedMilliseconds = $elapsedMilliseconds
+    baseUrl = $base
+    timeoutSeconds = $TimeoutSeconds
+    requireAuthenticatedApi = [bool]$RequireAuthenticatedApi
+    hasApiKey = $hasApiKey
+    hasBearerToken = $hasBearerToken
+    checkRetryCount = $effectiveRetryCount
+    checkRetryDelayMilliseconds = $effectiveRetryDelayMilliseconds
+    totalChecks = $results.Count
+    failedChecks = $failed.Count
+    results = @($results)
+}
+
+Write-SmokeReport -PathValue $OutputJsonPath -Payload $reportPayload
+
+$results | Format-Table -AutoSize Check, Passed, Attempts, Endpoint, Detail
+
+Write-Host ""
+Write-Host "Smoke summary: total=$($results.Count), failed=$($failed.Count), elapsedMs=$elapsedMilliseconds"
 
 if ($failed.Count -gt 0) {
+    Write-Host ""
+    Write-Host "Failed checks detail:"
+    foreach ($item in $failed) {
+        Write-Host "  - $($item.Check) | attempts=$($item.Attempts) | endpoint=$($item.Endpoint) | $($item.Detail)"
+    }
     Write-Host ""
     Write-Host "Smoke test failed: $($failed.Count) check(s)." -ForegroundColor Red
     exit 1

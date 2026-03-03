@@ -334,6 +334,9 @@ $results.Add((Run-Case -Name "ci-smoke-step-gate-contract" -Action {
     if (-not ($smokeBlock -like "*-CheckRetryDelayMilliseconds 800*")) {
         throw "CI workflow Smoke test step must use -CheckRetryDelayMilliseconds 800."
     }
+    if (-not ($smokeBlock -like "*-OutputJsonPath `$reportLog*")) {
+        throw "CI workflow Smoke test step must pass -OutputJsonPath `$reportLog."
+    }
     if (-not ($smokeBlock -like "*Start-Sleep -Seconds 6*")) {
         throw "CI workflow Smoke test step must wait at least 6 seconds before probing."
     }
@@ -352,6 +355,9 @@ $results.Add((Run-Case -Name "ci-smoke-step-gate-contract" -Action {
     if (-not ($smokeBlock -like "*Get-Content `$errLog*")) {
         throw "CI workflow Smoke test step must dump stderr on failure."
     }
+    if (-not ($smokeBlock -like "*Get-Content `$reportLog*")) {
+        throw "CI workflow Smoke test step must dump structured report on failure."
+    }
 }))
 
 $results.Add((Run-Case -Name "release-smoke-step-gate-contract" -Action {
@@ -365,6 +371,9 @@ $results.Add((Run-Case -Name "release-smoke-step-gate-contract" -Action {
     }
     if (-not ($smokeBlock -like "*-CheckRetryDelayMilliseconds 800*")) {
         throw "Release workflow Smoke test step must use -CheckRetryDelayMilliseconds 800."
+    }
+    if (-not ($smokeBlock -like "*-OutputJsonPath `$reportLog*")) {
+        throw "Release workflow Smoke test step must pass -OutputJsonPath `$reportLog."
     }
     if (-not ($smokeBlock -like "*Start-Sleep -Seconds 6*")) {
         throw "Release workflow Smoke test step must wait at least 6 seconds before probing."
@@ -383,6 +392,9 @@ $results.Add((Run-Case -Name "release-smoke-step-gate-contract" -Action {
     }
     if (-not ($smokeBlock -like "*Get-Content `$errLog*")) {
         throw "Release workflow Smoke test step must dump stderr on failure."
+    }
+    if (-not ($smokeBlock -like "*Get-Content `$reportLog*")) {
+        throw "Release workflow Smoke test step must dump structured report on failure."
     }
 }))
 

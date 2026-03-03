@@ -29,6 +29,8 @@ dotnet test .\DataHz2.sln -c Release
 - `swagger` / `dashboard` 与 API 端点检查改为带重试执行，降低冷启动瞬时抖动导致的误报失败。
 - CI 与 Release 工作流的 smoke 步骤固定使用 `-CheckRetryCount 5 -CheckRetryDelayMilliseconds 800`，并由 `check-ci-contracts.ps1` 强制校验。
 - `health` 检查改为“就绪轮询结果直接判定”，避免通过后再次请求造成偶发失败。
+- `smoke-test-api.ps1` 新增 `OutputJsonPath` 参数，可输出结构化 JSON 报告（包含上下文、耗时、每个检查项的尝试次数与结果）。
+- CI 与 Release smoke 步骤在失败时会额外打印结构化 smoke 报告，提升排障效率。
 
 如何使用/验证：
 - 本地执行示例：
@@ -38,7 +40,8 @@ dotnet test .\DataHz2.sln -c Release
   -BaseUrl "http://127.0.0.1:5080" `
   -TimeoutSeconds 120 `
   -CheckRetryCount 5 `
-  -CheckRetryDelayMilliseconds 800
+  -CheckRetryDelayMilliseconds 800 `
+  -OutputJsonPath ".\artifacts\smoke\smoke-report.json"
 ```
 
 ## CI 工作流

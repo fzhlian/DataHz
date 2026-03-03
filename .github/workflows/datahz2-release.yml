@@ -175,6 +175,7 @@ jobs:
           $smokeUrl = "http://127.0.0.1:$port"
           $outLog = Join-Path $env:RUNNER_TEMP "datahz2-api-release-smoke.out.log"
           $errLog = Join-Path $env:RUNNER_TEMP "datahz2-api-release-smoke.err.log"
+          $reportLog = Join-Path $env:RUNNER_TEMP "datahz2-api-release-smoke.report.json"
           $proc = $null
 
           try {
@@ -191,7 +192,8 @@ jobs:
               -BaseUrl $smokeUrl `
               -TimeoutSeconds 120 `
               -CheckRetryCount 5 `
-              -CheckRetryDelayMilliseconds 800
+              -CheckRetryDelayMilliseconds 800 `
+              -OutputJsonPath $reportLog
           }
           catch {
             if (Test-Path $outLog) {
@@ -201,6 +203,10 @@ jobs:
             if (Test-Path $errLog) {
               Write-Host "----- DataHz2 API release smoke stderr -----"
               Get-Content $errLog
+            }
+            if (Test-Path $reportLog) {
+              Write-Host "----- DataHz2 API release smoke structured report -----"
+              Get-Content $reportLog
             }
             throw
           }
