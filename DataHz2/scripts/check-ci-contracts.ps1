@@ -398,6 +398,74 @@ $results.Add((Run-Case -Name "release-smoke-step-gate-contract" -Action {
     }
 }))
 
+$results.Add((Run-Case -Name "ci-smoke-diagnostics-artifact-contract" -Action {
+    $diagBlock = Get-StepBlock -Path $ciWorkflow -StepName "Upload smoke diagnostics"
+    Assert-StepWinX64Gate -StepBlock $diagBlock -StepName "Upload smoke diagnostics" -WorkflowLabel "CI workflow"
+    if (-not ($diagBlock -like "*always()*")) {
+        throw "CI workflow 'Upload smoke diagnostics' step must include always()."
+    }
+    if (-not ($diagBlock -like "*uses: actions/upload-artifact@v4*")) {
+        throw "CI workflow 'Upload smoke diagnostics' step must use actions/upload-artifact@v4."
+    }
+    if (-not ($diagBlock -like '*datahz2-${{ matrix.runtime }}-smoke-diagnostics*')) {
+        throw "CI workflow 'Upload smoke diagnostics' step must use expected artifact name."
+    }
+    if (-not ($diagBlock -like "*datahz2-api-smoke.out.log*")) {
+        throw "CI workflow 'Upload smoke diagnostics' step must include stdout log path."
+    }
+    if (-not ($diagBlock -like "*datahz2-api-smoke.err.log*")) {
+        throw "CI workflow 'Upload smoke diagnostics' step must include stderr log path."
+    }
+    if (-not ($diagBlock -like "*datahz2-api-smoke.report.json*")) {
+        throw "CI workflow 'Upload smoke diagnostics' step must include report path."
+    }
+    if (-not ($diagBlock -like "*if-no-files-found: warn*")) {
+        throw "CI workflow 'Upload smoke diagnostics' step must use if-no-files-found: warn."
+    }
+}))
+
+$results.Add((Run-Case -Name "release-smoke-diagnostics-artifact-contract" -Action {
+    $diagBlock = Get-StepBlock -Path $releaseWorkflow -StepName "Upload smoke diagnostics"
+    Assert-StepWinX64Gate -StepBlock $diagBlock -StepName "Upload smoke diagnostics" -WorkflowLabel "Release workflow"
+    if (-not ($diagBlock -like "*always()*")) {
+        throw "Release workflow 'Upload smoke diagnostics' step must include always()."
+    }
+    if (-not ($diagBlock -like "*uses: actions/upload-artifact@v4*")) {
+        throw "Release workflow 'Upload smoke diagnostics' step must use actions/upload-artifact@v4."
+    }
+    if (-not ($diagBlock -like '*datahz2-release-${{ matrix.runtime }}-smoke-diagnostics-${{ github.ref_name }}*')) {
+        throw "Release workflow 'Upload smoke diagnostics' step must use expected artifact name."
+    }
+    if (-not ($diagBlock -like "*datahz2-api-release-smoke.out.log*")) {
+        throw "Release workflow 'Upload smoke diagnostics' step must include stdout log path."
+    }
+    if (-not ($diagBlock -like "*datahz2-api-release-smoke.err.log*")) {
+        throw "Release workflow 'Upload smoke diagnostics' step must include stderr log path."
+    }
+    if (-not ($diagBlock -like "*datahz2-api-release-smoke.report.json*")) {
+        throw "Release workflow 'Upload smoke diagnostics' step must include report path."
+    }
+    if (-not ($diagBlock -like "*if-no-files-found: warn*")) {
+        throw "Release workflow 'Upload smoke diagnostics' step must use if-no-files-found: warn."
+    }
+}))
+
+$results.Add((Run-Case -Name "ci-smoke-diagnostics-order-contract" -Action {
+    Assert-OrderedNeedles -Path $ciWorkflow -WorkflowLabel "CI workflow" -Needles @(
+        "- name: Smoke test",
+        "- name: Upload smoke diagnostics",
+        "- name: Upload publish artifact"
+    )
+}))
+
+$results.Add((Run-Case -Name "release-smoke-diagnostics-order-contract" -Action {
+    Assert-OrderedNeedles -Path $releaseWorkflow -WorkflowLabel "Release workflow" -Needles @(
+        "- name: Smoke test",
+        "- name: Upload smoke diagnostics",
+        "- name: Upload build artifact"
+    )
+}))
+
 $results.Add((Run-Case -Name "deploy-guards-fallback-source-contract" -Action {
     Assert-Contains -Path $deployGuardsScript -Needle '$script:AutoPackagePublishDir = $publishDir' -Label "auto package source assignment"
     Assert-Contains -Path $deployGuardsScript -Needle 'Resolve-PublishDirForAutoPackage -Root $root -PackageName $packageName' -Label "online smoke publish-dir resolver"

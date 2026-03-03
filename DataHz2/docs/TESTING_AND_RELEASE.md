@@ -31,6 +31,7 @@ dotnet test .\DataHz2.sln -c Release
 - `health` 检查改为“就绪轮询结果直接判定”，避免通过后再次请求造成偶发失败。
 - `smoke-test-api.ps1` 新增 `OutputJsonPath` 参数，可输出结构化 JSON 报告（包含上下文、耗时、每个检查项的尝试次数与结果）。
 - CI 与 Release smoke 步骤在失败时会额外打印结构化 smoke 报告，提升排障效率。
+- CI 与 Release 工作流新增 `Upload smoke diagnostics` 步骤（`always()`），会上传 `stdout/stderr/report` 三类日志产物用于离线排查。
 
 如何使用/验证：
 - 本地执行示例：

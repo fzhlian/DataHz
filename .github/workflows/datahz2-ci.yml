@@ -222,6 +222,17 @@ jobs:
             }
           }
 
+      - name: Upload smoke diagnostics
+        if: matrix.runtime == 'win-x64' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: datahz2-${{ matrix.runtime }}-smoke-diagnostics
+          path: |
+            ${{ runner.temp }}/datahz2-api-smoke.out.log
+            ${{ runner.temp }}/datahz2-api-smoke.err.log
+            ${{ runner.temp }}/datahz2-api-smoke.report.json
+          if-no-files-found: warn
+
       - name: Upload publish artifact
         uses: actions/upload-artifact@v4
         with:
