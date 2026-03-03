@@ -7,6 +7,7 @@ param(
     [int]$TimeoutSeconds = 10,
     [int]$CheckRetryCount = 3,
     [int]$CheckRetryDelayMilliseconds = 500,
+    [int]$HealthPollDelayMilliseconds = 500,
     [int]$FailureContentSnippetLength = 240,
     [string]$OutputJsonPath = "",
     [switch]$RequireAuthenticatedApi
@@ -25,6 +26,7 @@ if ($base.EndsWith("/")) {
 
 $effectiveRetryCount = [Math]::Max(1, $CheckRetryCount)
 $effectiveRetryDelayMilliseconds = [Math]::Max(0, $CheckRetryDelayMilliseconds)
+$effectiveHealthPollDelayMilliseconds = [Math]::Max(0, $HealthPollDelayMilliseconds)
 $effectiveFailureContentSnippetLength = [Math]::Max(0, $FailureContentSnippetLength)
 $hasApiKey = -not [string]::IsNullOrWhiteSpace($ApiKey)
 $hasBearerToken = -not [string]::IsNullOrWhiteSpace($BearerToken)
@@ -61,6 +63,10 @@ if ($effectiveRetryCount -ne $CheckRetryCount) {
 
 if ($effectiveRetryDelayMilliseconds -ne $CheckRetryDelayMilliseconds) {
     Write-Host "CheckRetryDelayMilliseconds was normalized from $CheckRetryDelayMilliseconds to $effectiveRetryDelayMilliseconds."
+}
+
+if ($effectiveHealthPollDelayMilliseconds -ne $HealthPollDelayMilliseconds) {
+    Write-Host "HealthPollDelayMilliseconds was normalized from $HealthPollDelayMilliseconds to $effectiveHealthPollDelayMilliseconds."
 }
 
 if ($effectiveFailureContentSnippetLength -ne $FailureContentSnippetLength) {
@@ -108,6 +114,7 @@ Write-Host "  HasApiKey: $hasApiKey"
 Write-Host "  HasBearerToken: $hasBearerToken"
 Write-Host "  CheckRetryCount: $effectiveRetryCount"
 Write-Host "  CheckRetryDelayMilliseconds: $effectiveRetryDelayMilliseconds"
+Write-Host "  HealthPollDelayMilliseconds: $effectiveHealthPollDelayMilliseconds"
 Write-Host "  FailureContentSnippetLength: $effectiveFailureContentSnippetLength"
 
 function Add-Result(
@@ -261,7 +268,7 @@ function Invoke-CheckWithRetry([scriptblock]$CheckOperation, [int]$MaxAttempts, 
     }
 }
 
-function Wait-ForHealthReady([string]$Url, [int]$MaxWaitSeconds, [string]$ApiKeyValue, [string]$JwtValue) {
+function Wait-ForHealthReady([string]$Url, [int]$MaxWaitSeconds, [int]$PollDelayMilliseconds, [string]$ApiKeyValue, [string]$JwtValue) {
     $startedAt = Get-Date
     $deadline = (Get-Date).AddSeconds([Math]::Max(1, $MaxWaitSeconds))
     $lastError = ""
@@ -307,7 +314,9 @@ function Wait-ForHealthReady([string]$Url, [int]$MaxWaitSeconds, [string]$ApiKey
             $lastError = $_.Exception.Message
         }
 
-        Start-Sleep -Milliseconds 500
+        if ($PollDelayMilliseconds -gt 0) {
+            Start-Sleep -Milliseconds $PollDelayMilliseconds
+        }
     }
 
     if ([string]::IsNullOrWhiteSpace($lastError)) {
@@ -357,7 +366,12 @@ if (-not [string]::IsNullOrWhiteSpace($ServiceName)) {
 }
 
 $healthUrl = "$base/health"
-$healthReady = Wait-ForHealthReady -Url $healthUrl -MaxWaitSeconds $TimeoutSeconds -ApiKeyValue $ApiKey -JwtValue $BearerToken
+$healthReady = Wait-ForHealthReady `
+    -Url $healthUrl `
+    -MaxWaitSeconds $TimeoutSeconds `
+    -PollDelayMilliseconds $effectiveHealthPollDelayMilliseconds `
+    -ApiKeyValue $ApiKey `
+    -JwtValue $BearerToken
 if (-not $healthReady.Ready) {
     Add-Result -Check "health" -Passed $false -Detail $healthReady.Detail -Attempts $healthReady.Attempts -Endpoint "/health" -DurationMs $healthReady.DurationMilliseconds
 }
@@ -489,6 +503,7 @@ $reportPayload = [pscustomobject]@{
     hasBearerToken = $hasBearerToken
     checkRetryCount = $effectiveRetryCount
     checkRetryDelayMilliseconds = $effectiveRetryDelayMilliseconds
+    healthPollDelayMilliseconds = $effectiveHealthPollDelayMilliseconds
     failureContentSnippetLength = $effectiveFailureContentSnippetLength
     totalChecks = $results.Count
     failedChecks = $failed.Count

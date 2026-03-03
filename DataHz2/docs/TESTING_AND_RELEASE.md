@@ -26,6 +26,7 @@ dotnet test .\DataHz2.sln -c Release
 
 做了什么变更：
 - `smoke-test-api.ps1` 新增 `CheckRetryCount`（默认 `3`）与 `CheckRetryDelayMilliseconds`（默认 `500`）参数。
+- `smoke-test-api.ps1` 新增 `HealthPollDelayMilliseconds`（默认 `500`）参数，用于控制健康检查轮询间隔。
 - `smoke-test-api.ps1` 新增 `FailureContentSnippetLength`（默认 `240`）参数，用于控制失败时响应体摘要长度。
 - `swagger` / `dashboard` 与 API 端点检查改为带重试执行，降低冷启动瞬时抖动导致的误报失败。
 - CI 与 Release 工作流的 smoke 步骤固定使用 `-CheckRetryCount 5 -CheckRetryDelayMilliseconds 800`，并由 `check-ci-contracts.ps1` 强制校验。
@@ -49,6 +50,7 @@ dotnet test .\DataHz2.sln -c Release
   -TimeoutSeconds 120 `
   -CheckRetryCount 5 `
   -CheckRetryDelayMilliseconds 800 `
+  -HealthPollDelayMilliseconds 500 `
   -FailureContentSnippetLength 300 `
   -OutputJsonPath ".\artifacts\smoke\smoke-report.json"
 ```
