@@ -4,38 +4,53 @@
 
 ## 目标
 
-- 确保代码、接口、配置、运维流程与文档一致。
-- 将“文档更新”纳入研发流水线，不依赖人工记忆。
+- 保持代码、配置、接口、部署流程与文档同步。
+- 阻止“代码已变更但文档滞后”的改动进入主分支。
 
-## 覆盖矩阵
+## 强制联动规则（与 `AGENTS.md` 一致）
 
-| 变更区域 | 必须更新的文档 |
-| --- | --- |
-| `src/DataHz.Api/**` | `docs/API.md`、`docs/ARCHITECTURE.md` |
-| `src/DataHz.Infrastructure/**` | `docs/ARCHITECTURE.md`、`docs/CONFIGURATION.md` |
-| `src/DataHz.Core/**` | `docs/ARCHITECTURE.md` |
-| `src/**` 鉴权/密钥逻辑 | `SECURITY.md`、`docs/SSO_HARDENING_RUNBOOK.md`、`docs/CONFIGURATION.md` |
-| `scripts/**` | `docs/TESTING_AND_RELEASE.md`、`docs/OPERATIONS.md` |
-| `.github/workflows/**` | `docs/TESTING_AND_RELEASE.md` |
-| `tests/**` | `docs/DEVELOPMENT.md`（测试说明） |
+1. 变更 `DataHz2/src/**` 时，必须更新以下至少一个文件：
+   - `DataHz2/README.md`
+   - `DataHz2/docs/ARCHITECTURE.md`
+   - `DataHz2/docs/API.md`
+   - `DataHz2/docs/CONFIGURATION.md`
+   - `DataHz2/docs/OPERATIONS.md`
+2. 变更 `DataHz2/scripts/**` 或 `.github/workflows/**` 时，必须更新以下至少一个文件：
+   - `DataHz2/docs/TESTING_AND_RELEASE.md`
+   - `DataHz2/docs/DEVELOPMENT.md`
+   - `DataHz2/docs/DOCUMENTATION_POLICY.md`
+3. 变更安全鉴权逻辑时，必须同时更新：
+   - `SECURITY.md`
+   - `DataHz2/docs/SSO_HARDENING_RUNBOOK.md`
+4. 每次合并前必须执行：
+   - `.\DataHz2\scripts\check-docs-sync.ps1`
 
-## 自动检查机制
+## 自动化校验
 
-- 脚本：`DataHz2/scripts/check-docs-sync.ps1`
-- CI：`datahz2-ci.yml` 与 `datahz2-release.yml` 构建阶段强制执行
-- 规则：当代码/脚本/工作流有变更时，若无文档变更，CI 失败
-- 忽略项：`bin/`、`obj/` 构建产物变更不触发文档同步失败
+- 本地/CI 统一使用：`DataHz2/scripts/check-docs-sync.ps1`
+- CI 工作流 `datahz2-ci.yml`、`datahz2-release.yml` 强制执行该脚本。
+- 若触发规则但未满足对应文档条件，CI 直接失败并阻止合并。
 
-## 质量要求
+## 本次策略增强（2026-03-03）
 
-1. 每个文档保留“最后更新”日期。
-2. 配置项需说明默认值与覆盖关系。
-3. API 文档需体现权限与状态码。
-4. 运维文档需包含回滚与排障步骤。
+### 做了什么变更
 
-## 推荐更新流程
+- 将 `check-docs-sync.ps1` 从“代码改动 + 任意文档改动”升级为“按改动类型匹配指定文档集”。
+- 新增三条硬性规则校验：`src/**`、`scripts/workflows/**`、`安全鉴权逻辑`。
+- 安全鉴权规则改为强制同时更新 `SECURITY.md` 与 `SSO_HARDENING_RUNBOOK.md`。
+- 失败输出中新增规则触发计数与命中文件列表，便于快速定位。
 
-1. 先改代码。
-2. 再改对应文档。
-3. 本地运行 `.\scripts\check-docs-sync.ps1`。
-4. 提交 PR 并通过 CI。
+### 如何使用/验证
+
+1. 执行：
+   - `powershell -NoProfile -ExecutionPolicy Bypass -File .\DataHz2\scripts\check-docs-sync.ps1`
+2. 仅修改 `DataHz2/src/**` 且不改上述指定文档，预期失败。
+3. 修改 `DataHz2/scripts/**` 且同步更新 `DataHz2/docs/DOCUMENTATION_POLICY.md`，预期通过。
+4. 修改 `DataHz2/src/**` 下安全鉴权相关逻辑，若缺少 `SECURITY.md` 或 `SSO_HARDENING_RUNBOOK.md` 任一更新，预期失败。
+
+## 文档更新最小标准
+
+- 必须包含“做了什么变更”和“如何使用/验证”。
+- 配置项变更必须写明默认值、环境变量覆盖方式、风险提示。
+- 对外 API 变更必须更新 `DataHz2/docs/API.md`。
+- 发布/部署变更必须更新 `DataHz2/docs/TESTING_AND_RELEASE.md` 或 `DataHz2/docs/OPERATIONS.md`。

@@ -41,6 +41,17 @@ function MatchesAnyPattern([string]$PathValue, [string[]]$Patterns) {
     return $false
 }
 
+function Get-MatchedRequiredDocs([string[]]$ChangedPaths, [string[]]$RequiredPaths) {
+    $matched = New-Object System.Collections.Generic.List[string]
+    foreach ($required in $RequiredPaths) {
+        if ($ChangedPaths -contains $required) {
+            $matched.Add($required)
+        }
+    }
+
+    return @($matched)
+}
+
 $projectRoot = Split-Path -Parent $PSScriptRoot
 if ([string]::IsNullOrWhiteSpace($RepoRoot)) {
     $RepoRoot = Split-Path -Parent $projectRoot
@@ -190,23 +201,122 @@ $docPatterns = @(
     "^\.github/PULL_REQUEST_TEMPLATE\.md$"
 )
 
+$srcChangePatterns = @(
+    "^DataHz2/src/"
+)
+
+$scriptsOrWorkflowChangePatterns = @(
+    "^DataHz2/scripts/",
+    "^\.github/workflows/"
+)
+
+$securityAuthChangePatterns = @(
+    "^DataHz2/src/.+/Security/",
+    "^DataHz2/src/.+/(Authentication|Authorization)/",
+    "^DataHz2/src/.+/(Auth|Security|Jwt|ApiKey|Token|Sso|SSO)[^/]*\.(cs|json)$"
+)
+
+$requiredDocsForSrcChanges = @(
+    "DataHz2/README.md",
+    "DataHz2/docs/ARCHITECTURE.md",
+    "DataHz2/docs/API.md",
+    "DataHz2/docs/CONFIGURATION.md",
+    "DataHz2/docs/OPERATIONS.md"
+)
+
+$requiredDocsForScriptsOrWorkflowChanges = @(
+    "DataHz2/docs/TESTING_AND_RELEASE.md",
+    "DataHz2/docs/DEVELOPMENT.md",
+    "DataHz2/docs/DOCUMENTATION_POLICY.md"
+)
+
+$requiredDocsForSecurityAuthChanges = @(
+    "SECURITY.md",
+    "DataHz2/docs/SSO_HARDENING_RUNBOOK.md"
+)
+
 $changedCode = @($allChanged | Where-Object { MatchesAnyPattern -PathValue $_ -Patterns $codePatterns })
 $changedDocs = @($allChanged | Where-Object { MatchesAnyPattern -PathValue $_ -Patterns $docPatterns })
+$changedSrc = @($allChanged | Where-Object { MatchesAnyPattern -PathValue $_ -Patterns $srcChangePatterns })
+$changedScriptsOrWorkflow = @($allChanged | Where-Object { MatchesAnyPattern -PathValue $_ -Patterns $scriptsOrWorkflowChangePatterns })
+$changedSecurityAuth = @($allChanged | Where-Object { MatchesAnyPattern -PathValue $_ -Patterns $securityAuthChangePatterns })
+
+$failures = New-Object System.Collections.Generic.List[string]
+
+if ($changedCode.Count -gt 0 -and $changedDocs.Count -eq 0) {
+    $failures.Add("Code/workflow changes were detected, but no markdown documentation was updated.")
+}
+
+if ($changedSrc.Count -gt 0) {
+    $matchedForSrc = Get-MatchedRequiredDocs -ChangedPaths $changedDocs -RequiredPaths $requiredDocsForSrcChanges
+    if ($matchedForSrc.Count -eq 0) {
+        $failures.Add(
+            "Changes under DataHz2/src/** require at least one of: $($requiredDocsForSrcChanges -join ', ')"
+        )
+    }
+}
+
+if ($changedScriptsOrWorkflow.Count -gt 0) {
+    $matchedForScriptsOrWorkflow = Get-MatchedRequiredDocs -ChangedPaths $changedDocs -RequiredPaths $requiredDocsForScriptsOrWorkflowChanges
+    if ($matchedForScriptsOrWorkflow.Count -eq 0) {
+        $failures.Add(
+            "Changes under DataHz2/scripts/** or .github/workflows/** require at least one of: $($requiredDocsForScriptsOrWorkflowChanges -join ', ')"
+        )
+    }
+}
+
+if ($changedSecurityAuth.Count -gt 0) {
+    $missingSecurityDocs = @($requiredDocsForSecurityAuthChanges | Where-Object { -not ($changedDocs -contains $_) })
+    if ($missingSecurityDocs.Count -gt 0) {
+        $failures.Add(
+            "Security/authentication logic changes require both docs to be updated: $($requiredDocsForSecurityAuthChanges -join ', ')"
+        )
+    }
+}
 
 Write-Host "Changed files detected: $($allChanged.Count)"
 Write-Host "Code/script/workflow changes: $($changedCode.Count)"
 Write-Host "Documentation changes: $($changedDocs.Count)"
+Write-Host "Rule trigger count (src/**): $($changedSrc.Count)"
+Write-Host "Rule trigger count (scripts/workflows): $($changedScriptsOrWorkflow.Count)"
+Write-Host "Rule trigger count (security/auth): $($changedSecurityAuth.Count)"
 
-if ($changedCode.Count -gt 0 -and $changedDocs.Count -eq 0) {
+if ($failures.Count -gt 0) {
     Write-Host ""
     Write-Host "Documentation sync check failed." -ForegroundColor Red
-    Write-Host "Code or workflow changes were detected without any markdown updates."
-    Write-Host "Please update related docs (README/docs/SECURITY/CONTRIBUTING, etc.)."
-    Write-Host ""
-    Write-Host "Changed code/workflow files:"
-    foreach ($path in $changedCode | Select-Object -First 30) {
-        Write-Host "  - $path"
+    foreach ($message in $failures) {
+        Write-Host "  - $message"
     }
+    Write-Host ""
+
+    if ($changedSrc.Count -gt 0) {
+        Write-Host "Changed DataHz2/src files:"
+        foreach ($path in $changedSrc | Select-Object -First 20) {
+            Write-Host "  - $path"
+        }
+    }
+
+    if ($changedScriptsOrWorkflow.Count -gt 0) {
+        Write-Host "Changed script/workflow files:"
+        foreach ($path in $changedScriptsOrWorkflow | Select-Object -First 20) {
+            Write-Host "  - $path"
+        }
+    }
+
+    if ($changedSecurityAuth.Count -gt 0) {
+        Write-Host "Changed security/auth files:"
+        foreach ($path in $changedSecurityAuth | Select-Object -First 20) {
+            Write-Host "  - $path"
+        }
+    }
+
+    if ($changedDocs.Count -gt 0) {
+        Write-Host "Changed documentation files:"
+        foreach ($path in $changedDocs | Select-Object -First 20) {
+            Write-Host "  - $path"
+        }
+    }
+
     exit 1
 }
 
