@@ -337,6 +337,12 @@ $results.Add((Run-Case -Name "ci-smoke-step-gate-contract" -Action {
     if (-not ($smokeBlock -like "*-HealthPollDelayMilliseconds 500*")) {
         throw "CI workflow Smoke test step must use -HealthPollDelayMilliseconds 500."
     }
+    if (-not ($smokeBlock -like "*-WarnCheckDurationMilliseconds 3000*")) {
+        throw "CI workflow Smoke test step must use -WarnCheckDurationMilliseconds 3000."
+    }
+    if (-not ($smokeBlock -like "*-FailCheckDurationMilliseconds 0*")) {
+        throw "CI workflow Smoke test step must use -FailCheckDurationMilliseconds 0."
+    }
     if (-not ($smokeBlock -like "*-OutputJsonPath `$reportLog*")) {
         throw "CI workflow Smoke test step must pass -OutputJsonPath `$reportLog."
     }
@@ -377,6 +383,12 @@ $results.Add((Run-Case -Name "release-smoke-step-gate-contract" -Action {
     }
     if (-not ($smokeBlock -like "*-HealthPollDelayMilliseconds 500*")) {
         throw "Release workflow Smoke test step must use -HealthPollDelayMilliseconds 500."
+    }
+    if (-not ($smokeBlock -like "*-WarnCheckDurationMilliseconds 3000*")) {
+        throw "Release workflow Smoke test step must use -WarnCheckDurationMilliseconds 3000."
+    }
+    if (-not ($smokeBlock -like "*-FailCheckDurationMilliseconds 0*")) {
+        throw "Release workflow Smoke test step must use -FailCheckDurationMilliseconds 0."
     }
     if (-not ($smokeBlock -like "*-OutputJsonPath `$reportLog*")) {
         throw "Release workflow Smoke test step must pass -OutputJsonPath `$reportLog."
@@ -480,6 +492,21 @@ $results.Add((Run-Case -Name "ci-smoke-summary-contract" -Action {
     if (-not ($summaryBlock -like "*healthPollDelayMilliseconds*")) {
         throw "CI workflow 'Publish smoke summary' step must include health poll delay."
     }
+    if (-not ($summaryBlock -like "*warnCheckDurationMilliseconds*")) {
+        throw "CI workflow 'Publish smoke summary' step must include warn slow threshold."
+    }
+    if (-not ($summaryBlock -like "*warnSlowCheckCount*")) {
+        throw "CI workflow 'Publish smoke summary' step must include warn slow count."
+    }
+    if (-not ($summaryBlock -like "*failCheckDurationMilliseconds*")) {
+        throw "CI workflow 'Publish smoke summary' step must include fail slow threshold."
+    }
+    if (-not ($summaryBlock -like "*failSlowCheckCount*")) {
+        throw "CI workflow 'Publish smoke summary' step must include fail slow count."
+    }
+    if (-not ($summaryBlock -like "*warnSlowChecks*")) {
+        throw "CI workflow 'Publish smoke summary' step must include warn slow checks details."
+    }
     if (-not ($summaryBlock -like "*Sort-Object DurationMs -Descending*")) {
         throw "CI workflow 'Publish smoke summary' step must include slow-check ranking."
     }
@@ -508,6 +535,21 @@ $results.Add((Run-Case -Name "release-smoke-summary-contract" -Action {
     }
     if (-not ($summaryBlock -like "*healthPollDelayMilliseconds*")) {
         throw "Release workflow 'Publish smoke summary' step must include health poll delay."
+    }
+    if (-not ($summaryBlock -like "*warnCheckDurationMilliseconds*")) {
+        throw "Release workflow 'Publish smoke summary' step must include warn slow threshold."
+    }
+    if (-not ($summaryBlock -like "*warnSlowCheckCount*")) {
+        throw "Release workflow 'Publish smoke summary' step must include warn slow count."
+    }
+    if (-not ($summaryBlock -like "*failCheckDurationMilliseconds*")) {
+        throw "Release workflow 'Publish smoke summary' step must include fail slow threshold."
+    }
+    if (-not ($summaryBlock -like "*failSlowCheckCount*")) {
+        throw "Release workflow 'Publish smoke summary' step must include fail slow count."
+    }
+    if (-not ($summaryBlock -like "*warnSlowChecks*")) {
+        throw "Release workflow 'Publish smoke summary' step must include warn slow checks details."
     }
     if (-not ($summaryBlock -like "*Sort-Object DurationMs -Descending*")) {
         throw "Release workflow 'Publish smoke summary' step must include slow-check ranking."

@@ -200,6 +200,8 @@ jobs:
               -CheckRetryCount 5 `
               -CheckRetryDelayMilliseconds 800 `
               -HealthPollDelayMilliseconds 500 `
+              -WarnCheckDurationMilliseconds 3000 `
+              -FailCheckDurationMilliseconds 0 `
               -OutputJsonPath $reportLog
           }
           catch {
@@ -245,6 +247,8 @@ jobs:
           $lines.Add("- Avg check ms: $($report.averageCheckDurationMs)")
           $lines.Add("- Max check: $($report.maxCheckName) ($($report.maxCheckDurationMs) ms)")
           $lines.Add("- Health poll delay ms: $($report.healthPollDelayMilliseconds)")
+          $lines.Add("- Warn slow threshold ms: $($report.warnCheckDurationMilliseconds) (count=$($report.warnSlowCheckCount))")
+          $lines.Add("- Fail slow threshold ms: $($report.failCheckDurationMilliseconds) (count=$($report.failSlowCheckCount))")
           $lines.Add("")
 
           $lines.Add("Top 3 slow checks:")
@@ -269,6 +273,16 @@ jobs:
           }
           else {
             $lines.Add("All smoke checks passed.")
+          }
+
+          if ([int]$report.warnSlowCheckCount -gt 0) {
+            $lines.Add("")
+            $lines.Add("Slow-check warnings:")
+            $lines.Add("| Check | Duration ms | Attempts | Endpoint |")
+            $lines.Add("| --- | ---: | ---: | --- |")
+            foreach ($item in @($report.warnSlowChecks)) {
+              $lines.Add("| $($item.Check) | $($item.DurationMs) | $($item.Attempts) | $($item.Endpoint) |")
+            }
           }
 
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ($lines -join [Environment]::NewLine)

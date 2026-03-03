@@ -32,6 +32,7 @@ dotnet test .\DataHz2.sln -c Release
 - `swagger` / `dashboard` 与 API 端点检查改为带重试执行，降低冷启动瞬时抖动导致的误报失败。
 - CI 与 Release 工作流的 smoke 步骤固定使用 `-CheckRetryCount 5 -CheckRetryDelayMilliseconds 800`，并由 `check-ci-contracts.ps1` 强制校验。
 - CI 与 Release 工作流的 smoke 步骤固定使用 `-HealthPollDelayMilliseconds 500`，并由 `check-ci-contracts.ps1` 强制校验。
+- CI 与 Release 工作流的 smoke 步骤固定使用 `-WarnCheckDurationMilliseconds 3000 -FailCheckDurationMilliseconds 0`，并由 `check-ci-contracts.ps1` 强制校验。
 - `health` 检查改为“就绪轮询结果直接判定”，避免通过后再次请求造成偶发失败。
 - `smoke-test-api.ps1` 新增 `OutputJsonPath` 参数，可输出结构化 JSON 报告（包含上下文、耗时、每个检查项的尝试次数与结果）。
 - 失败项明细新增 `bodySnippet` 输出，可快速看到错误响应的关键片段。
@@ -43,6 +44,7 @@ dotnet test .\DataHz2.sln -c Release
 - CI 与 Release 工作流新增 `Publish smoke summary` 步骤（`always()`），会将结构化报告摘要写入 `GITHUB_STEP_SUMMARY`。
 - `Publish smoke summary` 现包含平均检查耗时、最大耗时检查以及 Top3 慢检查表，便于快速识别性能瓶颈。
 - `Publish smoke summary` 现额外包含 health 轮询间隔（`healthPollDelayMilliseconds`）。
+- `Publish smoke summary` 现额外包含慢检查阈值与命中计数（`warn/fail`）。
 
 如何使用/验证：
 - 本地执行示例：
