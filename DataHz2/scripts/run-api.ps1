@@ -1,4 +1,9 @@
-﻿$ErrorActionPreference = 'Stop'
+﻿[CmdletBinding()]
+param(
+    [switch]$NoBuild
+)
+
+$ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $PSScriptRoot
 $checkScript = Join-Path $PSScriptRoot 'check-dotnet.ps1'
@@ -9,7 +14,7 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-$dotnetCmd = (Get-Command dotnet -ErrorAction SilentlyContinue)
+$dotnetCmd = Get-Command dotnet -ErrorAction SilentlyContinue
 if ($dotnetCmd) {
     $dotnet = $dotnetCmd.Source
 } else {
@@ -21,10 +26,12 @@ try {
     & $dotnet restore .\DataHz2.sln
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-    & $dotnet build .\DataHz2.sln -c Release
-    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    if (-not $NoBuild) {
+        & $dotnet build .\DataHz2.sln -c Release
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    }
 
-    & $dotnet run --project .\src\DataHz.Api\DataHz.Api.csproj
+    & $dotnet run --project .\src\DataHz.Api\DataHz.Api.csproj --configuration Release --no-build
 }
 finally {
     Pop-Location

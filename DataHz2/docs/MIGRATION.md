@@ -24,7 +24,8 @@
    - template-based Excel export,
    - county-level incremental cache (source file timestamp + template hash),
    - flow rollup file generation.
-4. Phase-4 (next): production hardening (auth, audit, monitoring, job queue, web UI).
+4. Phase-4 (in progress): production hardening
+   - done: async job queue + file-backed persistence + queue stats + cancel API + configurable worker concurrency + API key auth switch + role-based key permissions + JWT bearer integration (OIDC/symmetric mode) + env/command secret overrides + external secret provider abstraction (file/vault/azure key vault/aws secrets manager/gcp secret manager/aliyun kms) + online key rotation support (API key/JWT symmetric key without restart) + rotation grace window + secret cache/stale fallback + admin secret runtime/refresh/events API + external provider runtime telemetry (attempt/success/latency/error) + security hardening report API + monitor external-secrets API + monitor external-secrets export/reset API + audit trail + monitor overview API + monitor job drill-down API + audit export API + built-in dashboard UI + API integration tests + SSO hardening runbook.
 
 ## Risk Controls
 

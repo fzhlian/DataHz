@@ -1,0 +1,1189 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DataHz Monitor</title>
+  <style>
+    :root {
+      --bg-0: #071524;
+      --bg-1: #11283d;
+      --ink: #f2f6fb;
+      --ink-dim: #96a8bf;
+      --ok: #38d18c;
+      --warn: #f7b34d;
+      --err: #ef4f4f;
+      --accent: #5cd0ff;
+      --panel: rgba(7, 21, 36, 0.72);
+      --line: rgba(146, 176, 209, 0.26);
+      --shadow: 0 20px 45px rgba(0, 0, 0, 0.32);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Bahnschrift", "Trebuchet MS", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 15% 10%, rgba(92, 208, 255, 0.25), transparent 35%),
+        radial-gradient(circle at 85% 0%, rgba(247, 179, 77, 0.2), transparent 40%),
+        linear-gradient(160deg, var(--bg-0), var(--bg-1));
+      min-height: 100vh;
+      animation: fade-in 450ms ease-out;
+    }
+
+    .shell {
+      width: min(1240px, 94vw);
+      margin: 20px auto 30px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .top {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(6px);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(22px, 4vw, 34px);
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .sub {
+      margin-top: 4px;
+      color: var(--ink-dim);
+      font-size: 13px;
+    }
+
+    .controls {
+      margin-top: 14px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .controls input,
+    .controls button {
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: rgba(17, 40, 61, 0.8);
+      color: var(--ink);
+      padding: 10px 12px;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-size: 13px;
+    }
+
+    .controls button {
+      cursor: pointer;
+      background: linear-gradient(135deg, #1f5f87, #184f9e);
+      transition: transform 120ms ease, filter 120ms ease;
+    }
+
+    .controls button:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.1);
+    }
+
+    .badges {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(120px, 1fr));
+      gap: 10px;
+    }
+
+    .badge {
+      padding: 12px 10px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      transform: translateY(4px);
+      opacity: 0;
+      animation: rise 280ms ease forwards;
+    }
+
+    .badge .k {
+      font-size: 12px;
+      color: var(--ink-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .badge .v {
+      margin-top: 4px;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-size: 25px;
+      font-weight: 700;
+    }
+
+    .rows {
+      display: grid;
+      grid-template-columns: 1.45fr 1fr;
+      gap: 16px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 16px;
+      grid-template-rows: minmax(240px, auto) minmax(220px, auto) minmax(160px, auto) minmax(180px, auto) 1fr;
+    }
+
+    .panel {
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel h2 {
+      margin: 0;
+      padding: 12px 14px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      border-bottom: 1px solid var(--line);
+      color: #dce8f9;
+    }
+
+    .body {
+      padding: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-size: 12px;
+    }
+
+    th, td {
+      text-align: left;
+      border-bottom: 1px solid rgba(146, 176, 209, 0.16);
+      padding: 7px 6px;
+    }
+
+    th {
+      color: var(--ink-dim);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 11px;
+    }
+
+    td {
+      color: #f5f9ff;
+    }
+
+    .job-row {
+      cursor: pointer;
+      transition: background-color 120ms ease;
+    }
+
+    .job-row:hover {
+      background: rgba(92, 208, 255, 0.08);
+    }
+
+    .job-row.selected {
+      background: rgba(92, 208, 255, 0.16);
+    }
+
+    .status {
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .ok {
+      color: var(--ok);
+    }
+
+    .warn {
+      color: var(--warn);
+    }
+
+    .err {
+      color: var(--err);
+    }
+
+    .feed {
+      max-height: 400px;
+      overflow: auto;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-size: 12px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .item {
+      border: 1px solid rgba(146, 176, 209, 0.2);
+      border-radius: 10px;
+      padding: 8px 10px;
+      background: rgba(17, 40, 61, 0.5);
+    }
+
+    .meta {
+      color: var(--ink-dim);
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    .notice {
+      margin-top: 10px;
+      color: var(--warn);
+      font-size: 12px;
+    }
+
+    .detail-box {
+      border: 1px solid rgba(146, 176, 209, 0.2);
+      border-radius: 10px;
+      background: rgba(17, 40, 61, 0.45);
+      padding: 10px;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      max-height: 220px;
+      overflow: auto;
+    }
+
+    .detail-controls {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .detail-controls input,
+    .detail-controls select,
+    .detail-controls button {
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: rgba(17, 40, 61, 0.8);
+      color: var(--ink);
+      padding: 8px 10px;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-size: 12px;
+    }
+
+    .detail-controls button {
+      cursor: pointer;
+      background: linear-gradient(135deg, #5b2222, #8e3434);
+    }
+
+    .hint {
+      color: var(--ink-dim);
+      font-size: 11px;
+      margin-top: 6px;
+    }
+
+    @media (max-width: 980px) {
+      .badges {
+        grid-template-columns: repeat(3, minmax(120px, 1fr));
+      }
+
+      .rows {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="top">
+      <h1>DataHz Monitor Board</h1>
+      <div class="sub" id="summary">Waiting for first snapshot...</div>
+      <div class="sub" id="identity">Principal: - | Role: -</div>
+      <div class="controls">
+        <input id="apiKey" type="password" placeholder="X-Api-Key (optional)">
+        <button id="saveBtn" type="button">Save Key</button>
+        <button id="refreshBtn" type="button">Refresh Now</button>
+        <button id="hardeningBtn" type="button">Security Check</button>
+        <button id="secretsRuntimeBtn" type="button">Secrets Runtime</button>
+        <button id="secretsRefreshBtn" type="button">Force Refresh Secrets</button>
+        <button id="secretOpsBtn" type="button">Secret Ops</button>
+        <button id="providerHealthBtn" type="button">Provider Telemetry</button>
+        <button id="providerResetBtn" type="button">Reset Filtered Provider Telemetry</button>
+        <button id="providerCsvBtn" type="button">Provider CSV</button>
+        <button id="providerJsonlBtn" type="button">Provider JSONL</button>
+        <button id="exportCsvBtn" type="button">Export Audit CSV</button>
+        <button id="exportJsonlBtn" type="button">Export Audit JSONL</button>
+      </div>
+      <div class="notice" id="notice"></div>
+    </section>
+
+    <section class="badges">
+      <article class="badge" style="animation-delay: 20ms"><div class="k">Total</div><div class="v" id="bTotal">0</div></article>
+      <article class="badge" style="animation-delay: 40ms"><div class="k">Queued</div><div class="v" id="bQueued">0</div></article>
+      <article class="badge" style="animation-delay: 60ms"><div class="k">Running</div><div class="v" id="bRunning">0</div></article>
+      <article class="badge" style="animation-delay: 80ms"><div class="k">Succeeded</div><div class="v" id="bSucceeded">0</div></article>
+      <article class="badge" style="animation-delay: 100ms"><div class="k">Failed</div><div class="v" id="bFailed">0</div></article>
+      <article class="badge" style="animation-delay: 120ms"><div class="k">Canceled</div><div class="v" id="bCanceled">0</div></article>
+      <article class="badge" style="animation-delay: 140ms"><div class="k">Cancel Req</div><div class="v" id="bCancelReq">0</div></article>
+    </section>
+
+    <section class="rows">
+      <article class="panel">
+        <h2>Recent Jobs</h2>
+        <div class="body">
+          <table>
+            <thead>
+              <tr>
+                <th>Job</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Processed</th>
+                <th>Cached</th>
+                <th>Error</th>
+              </tr>
+            </thead>
+            <tbody id="jobsBody">
+              <tr><td colspan="6">No data.</td></tr>
+            </tbody>
+          </table>
+          <div class="hint">Click a job row for detail and event drill-down.</div>
+        </div>
+      </article>
+
+      <div class="stack">
+        <article class="panel">
+          <h2>Selected Job</h2>
+          <div class="body">
+            <div class="detail-controls">
+              <input id="cancelReason" type="text" placeholder="Cancel reason (optional)">
+              <button id="cancelBtn" type="button" disabled>Cancel Selected Job</button>
+            </div>
+            <div class="detail-box" id="jobDetail">Select a job row to load details.</div>
+            <div class="feed" id="jobEvents"></div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <h2>Secret Runtime</h2>
+          <div class="body">
+            <div class="detail-box" id="secretsRuntimeBox">Admin role required to view secret runtime state.</div>
+            <div class="hint">This view never returns actual secret values, only source/candidate/cache metadata.</div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <h2>Provider Health</h2>
+          <div class="body">
+            <div class="detail-controls">
+              <input id="providerFilter" type="text" placeholder="provider (optional)">
+              <input id="providerPurposeFilter" type="text" placeholder="purpose (optional)">
+              <select id="providerStatusFilter">
+                <option value="">status: all</option>
+                <option value="success">success</option>
+                <option value="empty">empty</option>
+                <option value="error">error</option>
+              </select>
+              <input id="providerWindowMinutes" type="number" min="1" max="10080" value="120" placeholder="window minutes">
+              <button id="providerApplyBtn" type="button">Apply Provider Filter</button>
+            </div>
+            <div class="detail-box" id="providerHealthBox">No external provider telemetry yet.</div>
+            <div class="hint">Overview-safe snapshot for external provider attempts and latency (no secret values).</div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <h2>Secret Ops Audit</h2>
+          <div class="body">
+            <div class="feed" id="secretOpsFeed"></div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <h2>Recent Audit</h2>
+          <div class="body">
+            <div class="feed" id="auditFeed"></div>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const OVERVIEW_ENDPOINT = "/api/monitor/overview?jobs=30&audit=80";
+    const WHOAMI_ENDPOINT = "/api/security/whoami";
+    const SECRETS_RUNTIME_ENDPOINT = "/api/security/secrets/runtime";
+    const SECRETS_REFRESH_ENDPOINT = "/api/security/secrets/refresh";
+    const SECRETS_EVENTS_ENDPOINT = "/api/security/secrets/events?take=40";
+    const EXTERNAL_SECRETS_ENDPOINT = "/api/monitor/external-secrets";
+    const EXTERNAL_SECRETS_EXPORT_ENDPOINT = "/api/monitor/external-secrets/export";
+    const EXTERNAL_SECRETS_RESET_ENDPOINT = "/api/monitor/external-secrets/reset";
+    const KEY_NAME = "datahz.monitor.apikey";
+    const $ = (id) => document.getElementById(id);
+
+    const state = {
+      timer: null,
+      selectedJobId: null,
+      jobs: new Map(),
+      currentRole: ""
+    };
+
+    function getHeaders() {
+      const key = localStorage.getItem(KEY_NAME);
+      return key ? { "X-Api-Key": key } : {};
+    }
+
+    function setNotice(text) {
+      $("notice").textContent = text || "";
+    }
+
+    function statusClass(status) {
+      const normalized = String(status || "").toLowerCase();
+      if (normalized === "succeeded") return "ok";
+      if (normalized === "queued" || normalized === "running" || normalized === "cancellationrequested") return "warn";
+      if (normalized === "failed" || normalized === "canceled") return "err";
+      return "";
+    }
+
+    function dateText(value) {
+      if (!value) return "-";
+      const d = new Date(value);
+      return d.toLocaleString();
+    }
+
+    async function refresh() {
+      setNotice("");
+      await refreshWhoAmI();
+      await refreshOverview();
+
+      if (state.currentRole.toLowerCase() !== "admin") {
+        setSecretsRuntimePlaceholder("Admin role required to view secret runtime state.");
+        setSecretOpsPlaceholder("Admin role required to view secret operation events.");
+      }
+    }
+
+    async function refreshOverview() {
+      try {
+        const response = await fetch(OVERVIEW_ENDPOINT, { headers: getHeaders() });
+        if (response.status === 401) {
+          setNotice("API key required or invalid. Please set the key above.");
+          setProviderHealthPlaceholder("Credentials required for provider health snapshot.");
+          return;
+        }
+
+        if (response.status === 403) {
+          setNotice("Current API key lacks Viewer role permission.");
+          setProviderHealthPlaceholder("Viewer role required for provider health snapshot.");
+          return;
+        }
+
+        if (!response.ok) {
+          setNotice("Failed to fetch monitor overview: HTTP " + response.status);
+          return;
+        }
+
+        const data = await response.json();
+        const q = data.queue || {};
+
+        $("bTotal").textContent = q.total ?? 0;
+        $("bQueued").textContent = q.queued ?? 0;
+        $("bRunning").textContent = q.running ?? 0;
+        $("bSucceeded").textContent = q.succeeded ?? 0;
+        $("bFailed").textContent = q.failed ?? 0;
+        $("bCanceled").textContent = q.canceled ?? 0;
+        $("bCancelReq").textContent = q.cancellationRequested ?? 0;
+
+        const summary = [
+          "Uptime " + (data.uptimeSeconds ?? 0) + "s",
+          "OS " + (data.runtime?.os ?? "-"),
+          "CPU " + (data.runtime?.processorCount ?? "-"),
+          "WorkingSet " + (data.runtime?.workingSetMb ?? "-") + " MB",
+          "Updated " + dateText(data.utc)
+        ].join(" | ");
+        $("summary").textContent = summary;
+
+        renderJobs(data.recentJobs || []);
+        renderAudit(data.recentAudit || []);
+        await loadExternalSecrets(false, data.externalSecrets || {});
+
+        if (state.selectedJobId && state.jobs.has(state.selectedJobId)) {
+          await loadJobDetail(state.selectedJobId, false);
+        }
+      } catch (error) {
+        setNotice("Refresh failed: " + error);
+        setProviderHealthPlaceholder("Provider health refresh failed: " + error);
+      }
+    }
+
+    async function refreshWhoAmI() {
+      try {
+        const response = await fetch(WHOAMI_ENDPOINT, { headers: getHeaders() });
+        if (!response.ok) {
+          $("identity").textContent = "Principal: - | Role: -";
+          state.currentRole = "";
+          setSecretsRuntimePlaceholder("Sign in with Admin role to view secret runtime state.");
+          setSecretOpsPlaceholder("Sign in with Admin role to view secret operation events.");
+          setProviderHealthPlaceholder("Sign in with Viewer+ role to view provider health snapshot.");
+          return;
+        }
+
+        const data = await response.json();
+        $("identity").textContent = "Principal: " + (data.principal || "-") + " | Role: " + (data.role || "-");
+        state.currentRole = data.role || "";
+      } catch {
+        $("identity").textContent = "Principal: - | Role: -";
+        state.currentRole = "";
+        setSecretsRuntimePlaceholder("Sign in with Admin role to view secret runtime state.");
+        setSecretOpsPlaceholder("Sign in with Admin role to view secret operation events.");
+        setProviderHealthPlaceholder("Sign in with Viewer+ role to view provider health snapshot.");
+      }
+    }
+
+    function setSecretsRuntimePlaceholder(text) {
+      $("secretsRuntimeBox").textContent = text || "No secret runtime data.";
+    }
+
+    function setSecretOpsPlaceholder(text) {
+      $("secretOpsFeed").innerHTML = "<div class=\"item\">" + (text || "No secret operation events.") + "</div>";
+    }
+
+    function setProviderHealthPlaceholder(text) {
+      $("providerHealthBox").textContent = text || "No external provider telemetry.";
+    }
+
+    function getExternalSecretsFilter() {
+      const provider = $("providerFilter").value.trim();
+      const purpose = $("providerPurposeFilter").value.trim();
+      const status = $("providerStatusFilter").value.trim();
+      const rawWindow = parseInt($("providerWindowMinutes").value, 10);
+      const windowMinutes = Number.isFinite(rawWindow) && rawWindow > 0
+        ? Math.min(rawWindow, 10080)
+        : null;
+
+      return { provider, purpose, status, windowMinutes };
+    }
+
+    function appendExternalSecretsFilterParams(params, filter, includeWindowMinutes) {
+      if (filter.provider) params.set("provider", filter.provider);
+      if (filter.purpose) params.set("purpose", filter.purpose);
+      if (filter.status) params.set("status", filter.status);
+      if (includeWindowMinutes && filter.windowMinutes) params.set("windowMinutes", String(filter.windowMinutes));
+    }
+
+    function buildExternalSecretsQuery(basePath, take, format) {
+      const filter = getExternalSecretsFilter();
+      const params = new URLSearchParams();
+      params.set("take", String(take));
+      if (format) params.set("format", format);
+      appendExternalSecretsFilterParams(params, filter, true);
+      return basePath + "?" + params.toString();
+    }
+
+    function buildExternalSecretsResetQuery(basePath) {
+      const filter = getExternalSecretsFilter();
+      const params = new URLSearchParams();
+      appendExternalSecretsFilterParams(params, filter, true);
+      const query = params.toString();
+      return query ? basePath + "?" + query : basePath;
+    }
+
+    function renderProviderHealth(payload) {
+      const summary = payload?.summary || payload || {};
+      const filter = payload?.filter || {};
+      const rows = Array.isArray(payload?.rows)
+        ? payload.rows
+        : Array.isArray(payload?.snapshot)
+          ? payload.snapshot
+          : [];
+      const lines = [
+        "Enabled: " + (payload?.enabled ? "true" : "false"),
+        "ConfiguredProvider: " + (payload?.configuredProvider ?? "-"),
+        "FilterProvider: " + (filter?.provider ?? "-"),
+        "FilterPurpose: " + (filter?.purpose ?? "-"),
+        "FilterStatus: " + (filter?.status ?? "-"),
+        "FilterWindowMinutes: " + (filter?.windowMinutes ?? "-"),
+        "Matched: " + (summary?.matched ?? summary?.totalAttempts ?? 0),
+        "Returned: " + (summary?.returned ?? rows.length),
+        "Success: " + (summary?.success ?? 0),
+        "Empty: " + (summary?.empty ?? 0),
+        "Error: " + (summary?.error ?? 0),
+        "LastAttempt: " + dateText(summary?.lastAttemptUtc ?? payload?.lastAttemptUtc),
+        "AverageDurationMs: " + (payload?.averageDurationMs ?? "-"),
+        "",
+        "Rows"
+      ];
+
+      if (!rows.length) {
+        lines.push("  (empty)");
+      } else {
+        rows.forEach((entry) => {
+          lines.push(
+            "  - " + (entry.provider || "unknown") +
+            " | purpose=" + (entry.purpose || "unknown") +
+            " | status=" + (entry.lastStatus || "unknown") +
+            " | hadValue=" + (entry.lastAttemptHadValue ? "yes" : "no") +
+            " | durationMs=" + (entry.lastDurationMs ?? "-") +
+            " | attempt=" + dateText(entry.lastAttemptUtc)
+          );
+        });
+      }
+
+      $("providerHealthBox").textContent = lines.join("\n");
+    }
+
+    async function loadExternalSecrets(showNotice, fallbackPayload) {
+      try {
+        const url = buildExternalSecretsQuery(EXTERNAL_SECRETS_ENDPOINT, 16);
+        const response = await fetch(url, { headers: getHeaders() });
+        if (response.status === 401) {
+          setProviderHealthPlaceholder("Credentials required for provider telemetry.");
+          if (showNotice) setNotice("Credentials required for provider telemetry.");
+          return;
+        }
+        if (response.status === 403) {
+          setProviderHealthPlaceholder("Viewer role required for provider telemetry.");
+          if (showNotice) setNotice("Current identity lacks Viewer role for provider telemetry.");
+          return;
+        }
+        if (!response.ok) {
+          if (fallbackPayload) {
+            renderProviderHealth(fallbackPayload);
+          } else {
+            setProviderHealthPlaceholder("Failed to load provider telemetry: HTTP " + response.status);
+          }
+          if (showNotice) setNotice("Failed to load provider telemetry: HTTP " + response.status);
+          return;
+        }
+
+        const payload = await response.json();
+        renderProviderHealth(payload);
+        if (showNotice) setNotice("Provider telemetry loaded.");
+      } catch (error) {
+        if (fallbackPayload) {
+          renderProviderHealth(fallbackPayload);
+        } else {
+          setProviderHealthPlaceholder("Provider telemetry load failed: " + error);
+        }
+        if (showNotice) setNotice("Provider telemetry load failed: " + error);
+      }
+    }
+
+    function renderSecretsRuntime(payload) {
+      const settings = payload?.settings || {};
+      const api = payload?.apiKey || {};
+      const jwt = payload?.jwt || {};
+      const cache = Array.isArray(payload?.cache) ? payload.cache : [];
+      const providers = Array.isArray(payload?.providers) ? payload.providers : [];
+
+      const lines = [
+        "Updated: " + dateText(payload?.utc || payload?.refreshedAtUtc),
+        "",
+        "Settings",
+        "  CacheTtlSeconds: " + (settings.cacheTtlSeconds ?? "-"),
+        "  CacheMaxStaleSeconds: " + (settings.cacheMaxStaleSeconds ?? "-"),
+        "  RotationGraceSeconds: " + (settings.rotationGraceSeconds ?? "-"),
+        "  ExternalProvider: " + (settings.externalProvider ?? "-"),
+        "  CommandExecution: " + (settings.allowCommandExecution ? "enabled" : "disabled"),
+        "",
+        "API Key",
+        "  Enabled: " + (api.enabled ? "true" : "false"),
+        "  Source: " + (api.source ?? "-"),
+        "  CandidateCount: " + (api.candidateCount ?? "-"),
+        "  StaticKeyCount: " + (api.staticKeyCount ?? "-"),
+        "",
+        "JWT",
+        "  Enabled: " + (jwt.enabled ? "true" : "false"),
+        "  Source: " + (jwt.source ?? "-"),
+        "  CandidateCount: " + (jwt.candidateCount ?? "-"),
+        "  Authority: " + (jwt.authority ?? "-"),
+        "",
+        "Cache Entries"
+      ];
+
+      if (!cache.length) {
+        lines.push("  (empty)");
+      } else {
+        cache.forEach((entry) => {
+          lines.push(
+            "  - " + (entry.purpose || "unknown") +
+            " | current=" + (entry.hasCurrentValue ? "yes" : "no") +
+            " | previous=" + (entry.hasPreviousValue ? "yes" : "no") +
+            " | expires=" + dateText(entry.cacheExpiresUtc) +
+            " | lastSuccess=" + dateText(entry.lastSuccessUtc)
+          );
+        });
+      }
+
+      lines.push("");
+      lines.push("External Provider Runtime");
+      if (!providers.length) {
+        lines.push("  (no attempts)");
+      } else {
+        providers.forEach((entry) => {
+          const status = entry.lastStatus || "unknown";
+          const error = entry.lastError ? " | error=" + entry.lastError : "";
+          lines.push(
+            "  - " + (entry.provider || "unknown") +
+            " | purpose=" + (entry.purpose || "unknown") +
+            " | status=" + status +
+            " | hadValue=" + (entry.lastAttemptHadValue ? "yes" : "no") +
+            " | durationMs=" + (entry.lastDurationMs ?? "-") +
+            " | attempt=" + dateText(entry.lastAttemptUtc) +
+            " | success=" + dateText(entry.lastSuccessUtc) +
+            error
+          );
+        });
+      }
+
+      $("secretsRuntimeBox").textContent = lines.join("\n");
+    }
+
+    async function loadSecretsRuntime(showNotice) {
+      try {
+        const response = await fetch(SECRETS_RUNTIME_ENDPOINT, { headers: getHeaders() });
+        if (response.status === 401) {
+          setSecretsRuntimePlaceholder("Credentials required for secret runtime view.");
+          if (showNotice) setNotice("Credentials required for secret runtime view.");
+          return;
+        }
+        if (response.status === 403) {
+          setSecretsRuntimePlaceholder("Admin role required to view secret runtime state.");
+          if (showNotice) setNotice("Current identity lacks Admin role for secret runtime view.");
+          return;
+        }
+        if (!response.ok) {
+          setSecretsRuntimePlaceholder("Failed to load secret runtime: HTTP " + response.status);
+          if (showNotice) setNotice("Failed to load secret runtime: HTTP " + response.status);
+          return;
+        }
+
+        const payload = await response.json();
+        renderSecretsRuntime(payload);
+        if (showNotice) {
+          setNotice("Secret runtime state loaded.");
+        }
+      } catch (error) {
+        setSecretsRuntimePlaceholder("Secret runtime load failed: " + error);
+        if (showNotice) setNotice("Secret runtime load failed: " + error);
+      }
+    }
+
+    function renderSecretOps(rows) {
+      const feed = $("secretOpsFeed");
+      if (!rows.length) {
+        feed.innerHTML = "<div class=\"item\">No secret operation events.</div>";
+        return;
+      }
+
+      feed.innerHTML = rows.map((x) => {
+        const msg = x.message ? " | " + x.message : "";
+        return "<div class=\"item\">" +
+          "<div>" + (x.action || "-") + msg + "</div>" +
+          "<div class=\"meta\">" + dateText(x.utc) + " | " + (x.method || "-") + " " + (x.path || "-") + " | " + (x.statusCode ?? "-") + "</div>" +
+        "</div>";
+      }).join("");
+    }
+
+    async function loadSecretOps(showNotice) {
+      try {
+        const response = await fetch(SECRETS_EVENTS_ENDPOINT, { headers: getHeaders() });
+        if (response.status === 401) {
+          setSecretOpsPlaceholder("Credentials required for secret operation events.");
+          if (showNotice) setNotice("Credentials required for secret operation events.");
+          return;
+        }
+        if (response.status === 403) {
+          setSecretOpsPlaceholder("Admin role required to view secret operation events.");
+          if (showNotice) setNotice("Current identity lacks Admin role for secret operation events.");
+          return;
+        }
+        if (!response.ok) {
+          setSecretOpsPlaceholder("Failed to load secret operation events: HTTP " + response.status);
+          if (showNotice) setNotice("Failed to load secret operation events: HTTP " + response.status);
+          return;
+        }
+
+        const rows = await response.json();
+        renderSecretOps(rows || []);
+        if (showNotice) setNotice("Secret operation events loaded.");
+      } catch (error) {
+        setSecretOpsPlaceholder("Secret operation events load failed: " + error);
+        if (showNotice) setNotice("Secret operation events load failed: " + error);
+      }
+    }
+
+    async function forceRefreshSecrets() {
+      try {
+        const response = await fetch(SECRETS_REFRESH_ENDPOINT, {
+          method: "POST",
+          headers: getHeaders()
+        });
+
+        if (response.status === 401) {
+          setNotice("Credentials required for secret refresh.");
+          return;
+        }
+        if (response.status === 403) {
+          setNotice("Current identity lacks Admin role for secret refresh.");
+          return;
+        }
+        if (!response.ok) {
+          setNotice("Secret refresh failed: HTTP " + response.status);
+          return;
+        }
+
+        const payload = await response.json();
+        renderSecretsRuntime(payload);
+        await loadSecretOps(false);
+        const apiCount = payload?.apiKey?.candidateCount ?? "-";
+        const jwtCount = payload?.jwt?.candidateCount ?? "-";
+        setNotice("Secret refresh completed. apiKeyCandidates=" + apiCount + ", jwtCandidates=" + jwtCount);
+      } catch (error) {
+        setNotice("Secret refresh failed: " + error);
+      }
+    }
+
+    function renderJobs(rows) {
+      const body = $("jobsBody");
+      state.jobs.clear();
+
+      if (!rows.length) {
+        body.innerHTML = "<tr><td colspan=\"6\">No jobs yet.</td></tr>";
+        $("cancelBtn").disabled = true;
+        return;
+      }
+
+      rows.forEach((x) => state.jobs.set(x.id, x));
+      body.innerHTML = rows.map((x) => {
+        const err = x.error ? String(x.error).slice(0, 90) : "-";
+        const processed = x.summary?.processedCounties ?? "-";
+        const cached = x.summary?.cachedCounties ?? "-";
+        const selected = state.selectedJobId === x.id ? " selected" : "";
+        return "<tr class=\"job-row" + selected + "\" data-id=\"" + x.id + "\">" +
+          "<td>" + String(x.id).slice(0, 8) + "</td>" +
+          "<td class=\"status " + statusClass(x.status) + "\">" + x.status + "</td>" +
+          "<td>" + dateText(x.createdAt) + "</td>" +
+          "<td>" + processed + "</td>" +
+          "<td>" + cached + "</td>" +
+          "<td>" + err + "</td>" +
+        "</tr>";
+      }).join("");
+    }
+
+    function renderAudit(rows) {
+      const feed = $("auditFeed");
+      if (!rows.length) {
+        feed.innerHTML = "<div class=\"item\">No audit entries.</div>";
+        return;
+      }
+
+      feed.innerHTML = rows.map((x) => {
+        const job = x.jobId ? " | job=" + String(x.jobId).slice(0, 8) : "";
+        const msg = x.message ? " | " + x.message : "";
+        return "<div class=\"item\">" +
+          "<div>" + (x.action || "-") + job + msg + "</div>" +
+          "<div class=\"meta\">" + dateText(x.utc) + " | " + (x.method || "-") + " " + (x.path || "-") + " | " + (x.statusCode ?? "-") + "</div>" +
+        "</div>";
+      }).join("");
+    }
+
+    async function loadJobDetail(jobId, focusRow) {
+      state.selectedJobId = jobId;
+      $("cancelBtn").disabled = false;
+
+      if (focusRow) {
+        const rows = $("jobsBody").querySelectorAll("tr.job-row");
+        rows.forEach((row) => row.classList.toggle("selected", row.dataset.id === jobId));
+      }
+
+      try {
+        const response = await fetch("/api/monitor/jobs/" + jobId + "?audit=40", { headers: getHeaders() });
+        if (response.status === 401) {
+          setNotice("API key required or invalid.");
+          return;
+        }
+        if (response.status === 403) {
+          setNotice("Current API key lacks Viewer role for job detail.");
+          return;
+        }
+        if (response.status === 404) {
+          $("jobDetail").textContent = "Job not found.";
+          $("jobEvents").innerHTML = "";
+          return;
+        }
+        if (!response.ok) {
+          setNotice("Failed to load job detail: HTTP " + response.status);
+          return;
+        }
+
+        const data = await response.json();
+        const job = data.job || {};
+        const idempotencyKey = job?.request?.idempotencyKey || job?.idempotencyKey || "-";
+        const lines = [
+          "ID: " + (job.id || "-"),
+          "Status: " + (job.status || "-"),
+          "IdempotencyKey: " + idempotencyKey,
+          "Created: " + dateText(job.createdAt),
+          "Started: " + dateText(job.startedAt),
+          "Completed: " + dateText(job.completedAt),
+          "CancelRequested: " + (job.cancellationRequested ? "true" : "false"),
+          "CancelReason: " + (job.cancellationReason || "-"),
+          "Error: " + (job.error || "-")
+        ];
+        $("jobDetail").textContent = lines.join("\n");
+        renderJobEvents(data.events || []);
+      } catch (error) {
+        setNotice("Job detail load failed: " + error);
+      }
+    }
+
+    function renderJobEvents(rows) {
+      const box = $("jobEvents");
+      if (!rows.length) {
+        box.innerHTML = "<div class=\"item\">No job events.</div>";
+        return;
+      }
+
+      box.innerHTML = rows.map((x) => {
+        const msg = x.message ? " | " + x.message : "";
+        return "<div class=\"item\">" +
+          "<div>" + (x.action || "-") + msg + "</div>" +
+          "<div class=\"meta\">" + dateText(x.utc) + " | " + (x.method || "-") + " " + (x.path || "-") + " | " + (x.statusCode ?? "-") + "</div>" +
+        "</div>";
+      }).join("");
+    }
+
+    async function cancelSelectedJob() {
+      if (!state.selectedJobId) {
+        setNotice("Select a job first.");
+        return;
+      }
+
+      const reason = $("cancelReason").value.trim();
+      try {
+        const response = await fetch("/api/jobs/" + state.selectedJobId + "/cancel", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...getHeaders()
+          },
+          body: JSON.stringify({ reason: reason || null })
+        });
+
+        if (response.status === 401) {
+          setNotice("API key required or invalid.");
+          return;
+        }
+        if (response.status === 403) {
+          setNotice("Current API key lacks Operator role for cancel action.");
+          return;
+        }
+
+        if (!response.ok && response.status !== 409) {
+          setNotice("Cancel failed: HTTP " + response.status);
+          return;
+        }
+
+        setNotice("Cancel request sent for job " + state.selectedJobId.slice(0, 8) + ".");
+        await refresh();
+        await loadJobDetail(state.selectedJobId, true);
+      } catch (error) {
+        setNotice("Cancel failed: " + error);
+      }
+    }
+
+    async function downloadAudit(format) {
+      try {
+        const response = await fetch("/api/audit/export?format=" + encodeURIComponent(format) + "&take=500", {
+          headers: getHeaders()
+        });
+
+        if (response.status === 401) {
+          setNotice("API key required or invalid.");
+          return;
+        }
+        if (response.status === 403) {
+          setNotice("Current API key lacks Admin role for audit export.");
+          return;
+        }
+        if (!response.ok) {
+          setNotice("Audit export failed: HTTP " + response.status);
+          return;
+        }
+
+        const blob = await response.blob();
+        const disposition = response.headers.get("content-disposition") || "";
+        const fallback = format === "jsonl" ? "audit.jsonl" : "audit.csv";
+        const match = disposition.match(/filename="?([^"]+)"?/i);
+        const name = match && match[1] ? match[1] : fallback;
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        setNotice("Audit export downloaded: " + name);
+      } catch (error) {
+        setNotice("Audit export failed: " + error);
+      }
+    }
+
+    async function downloadExternalSecrets(format) {
+      try {
+        const url = buildExternalSecretsQuery(EXTERNAL_SECRETS_EXPORT_ENDPOINT, 500, format);
+        const response = await fetch(url, {
+          headers: getHeaders()
+        });
+
+        if (response.status === 401) {
+          setNotice("API key required or invalid.");
+          return;
+        }
+        if (response.status === 403) {
+          setNotice("Current identity lacks Viewer role for provider telemetry export.");
+          return;
+        }
+        if (!response.ok) {
+          setNotice("Provider telemetry export failed: HTTP " + response.status);
+          return;
+        }
+
+        const blob = await response.blob();
+        const disposition = response.headers.get("content-disposition") || "";
+        const fallback = format === "jsonl" ? "external-secrets.jsonl" : "external-secrets.csv";
+        const match = disposition.match(/filename="?([^"]+)"?/i);
+        const name = match && match[1] ? match[1] : fallback;
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        setNotice("Provider telemetry export downloaded: " + name);
+      } catch (error) {
+        setNotice("Provider telemetry export failed: " + error);
+      }
+    }
+
+    async function resetExternalSecretsTelemetry() {
+      try {
+        const url = buildExternalSecretsResetQuery(EXTERNAL_SECRETS_RESET_ENDPOINT);
+        const response = await fetch(url, {
+          method: "POST",
+          headers: getHeaders()
+        });
+
+        if (response.status === 401) {
+          setNotice("API key required or invalid.");
+          return;
+        }
+        if (response.status === 403) {
+          setNotice("Current identity lacks Admin role for provider telemetry reset.");
+          return;
+        }
+        if (!response.ok) {
+          setNotice("Provider telemetry reset failed: HTTP " + response.status);
+          return;
+        }
+
+        const payload = await response.json();
+        const cleared = payload?.clearedCount ?? 0;
+        setNotice("Filtered provider telemetry reset completed. clearedCount=" + cleared);
+        await loadExternalSecrets(false);
+      } catch (error) {
+        setNotice("Provider telemetry reset failed: " + error);
+      }
+    }
+
+    async function loadHardening() {
+      try {
+        const response = await fetch("/api/security/hardening", { headers: getHeaders() });
+        if (response.status === 401) {
+          setNotice("API key/JWT required for hardening report.");
+          return;
+        }
+        if (response.status === 403) {
+          setNotice("Current identity lacks Admin role for hardening report.");
+          return;
+        }
+        if (!response.ok) {
+          setNotice("Hardening report failed: HTTP " + response.status);
+          return;
+        }
+
+        const data = await response.json();
+        setNotice(
+          "Hardening: mode=" + (data.mode || "-") +
+          ", pass=" + (data.passCount ?? 0) +
+          ", warn=" + (data.warnCount ?? 0) +
+          ", fail=" + (data.failCount ?? 0)
+        );
+      } catch (error) {
+        setNotice("Hardening report failed: " + error);
+      }
+    }
+
+    $("jobsBody").addEventListener("click", async (event) => {
+      const row = event.target.closest("tr.job-row");
+      if (!row || !row.dataset.id) {
+        return;
+      }
+      await loadJobDetail(row.dataset.id, true);
+    });
+
+    $("saveBtn").addEventListener("click", () => {
+      const key = $("apiKey").value.trim();
+      if (key) {
+        localStorage.setItem(KEY_NAME, key);
+        setNotice("API key saved in browser localStorage.");
+      } else {
+        localStorage.removeItem(KEY_NAME);
+        setNotice("API key cleared.");
+      }
+      refresh();
+    });
+
+    $("refreshBtn").addEventListener("click", refresh);
+    $("cancelBtn").addEventListener("click", cancelSelectedJob);
+    $("hardeningBtn").addEventListener("click", loadHardening);
+    $("secretsRuntimeBtn").addEventListener("click", () => loadSecretsRuntime(true));
+    $("secretsRefreshBtn").addEventListener("click", forceRefreshSecrets);
+    $("secretOpsBtn").addEventListener("click", () => loadSecretOps(true));
+    $("providerHealthBtn").addEventListener("click", () => loadExternalSecrets(true));
+    $("providerApplyBtn").addEventListener("click", () => loadExternalSecrets(true));
+    $("providerResetBtn").addEventListener("click", resetExternalSecretsTelemetry);
+    $("providerCsvBtn").addEventListener("click", () => downloadExternalSecrets("csv"));
+    $("providerJsonlBtn").addEventListener("click", () => downloadExternalSecrets("jsonl"));
+    $("exportCsvBtn").addEventListener("click", () => downloadAudit("csv"));
+    $("exportJsonlBtn").addEventListener("click", () => downloadAudit("jsonl"));
+
+    const rememberedKey = localStorage.getItem(KEY_NAME);
+    if (rememberedKey) {
+      $("apiKey").value = rememberedKey;
+    }
+
+    setProviderHealthPlaceholder("Sign in with Viewer+ role to view provider health snapshot.");
+    setSecretOpsPlaceholder("Admin role required to view secret operation events.");
+    refresh();
+    state.timer = setInterval(refresh, 5000);
+  </script>
+</body>
+</html>

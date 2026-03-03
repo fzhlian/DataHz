@@ -1,0 +1,15 @@
+# Build output
+**/bin/
+**/obj/
+
+# Local IDE files
+.vs/
+*.user
+*.suo
+
+# Publish and deployment artifacts
+artifacts/
+
+# Logs and runtime data
+*.log
+.datahz-jobs/

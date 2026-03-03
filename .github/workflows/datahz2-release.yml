@@ -1,0 +1,262 @@
+name: DataHz2 Release
+
+on:
+  push:
+    tags:
+      - "datahz2-v*"
+
+concurrency:
+  group: datahz2-release-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+
+jobs:
+  build-test:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('DataHz2/**/*.csproj', 'DataHz2/**/*.props', 'DataHz2/**/*.targets', 'DataHz2/global.json', 'DataHz2/nuget.config') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Validate PowerShell scripts
+        run: .\DataHz2\scripts\validate-scripts.ps1
+
+      - name: Check history/deployment-status audits
+        run: .\DataHz2\scripts\check-history-audits.ps1
+
+      - name: Check CI workflow contracts
+        run: .\DataHz2\scripts\check-ci-contracts.ps1
+
+      - name: Restore
+        run: dotnet restore .\DataHz2\DataHz2.sln
+
+      - name: Build
+        run: dotnet build .\DataHz2\DataHz2.sln -c Release --no-restore
+
+      - name: Test
+        run: dotnet test .\DataHz2\DataHz2.sln -c Release --no-build
+
+  package-verify:
+    needs: build-test
+    runs-on: windows-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime: ["win-x64", "win-arm64"]
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('DataHz2/**/*.csproj', 'DataHz2/**/*.props', 'DataHz2/**/*.targets', 'DataHz2/global.json', 'DataHz2/nuget.config') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore (runtime-specific)
+        run: |
+          $runtime = "${{ matrix.runtime }}"
+          dotnet restore .\DataHz2\DataHz2.sln -r $runtime
+
+      - name: Publish package
+        run: |
+          $runtime = "${{ matrix.runtime }}"
+          $publishDir = ".\DataHz2\artifacts\publish\release-$runtime"
+          .\DataHz2\scripts\publish-api.ps1 `
+            -Configuration Release `
+            -Runtime $runtime `
+            -OutputDir $publishDir `
+            -FrameworkDependent `
+            -MultiFile `
+            -NoRestore
+
+      - name: Create release package
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $runtime = "${{ matrix.runtime }}"
+          $name = "datahz2-api-$runtime-$tag"
+          .\DataHz2\scripts\package-release.ps1 `
+            -InputDir ".\DataHz2\artifacts\publish\release-$runtime" `
+            -OutputDir .\DataHz2\artifacts\packages `
+            -Name $name `
+            -Overwrite
+
+      - name: Verify release package
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $runtime = "${{ matrix.runtime }}"
+          .\DataHz2\scripts\verify-release.ps1 `
+            -PackageZip ".\DataHz2\artifacts\packages\datahz2-api-$runtime-$tag.zip"
+
+      - name: Check deploy guards
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $runtime = "${{ matrix.runtime }}"
+          $packageZip = ".\DataHz2\artifacts\packages\datahz2-api-$runtime-$tag.zip"
+          .\DataHz2\scripts\check-deploy-guards.ps1 `
+            -PackageZip $packageZip
+
+      - name: Check deploy guards auto-package fallback
+        if: matrix.runtime == 'win-x64'
+        run: |
+          .\DataHz2\scripts\check-deploy-guards.ps1 `
+            -PackageZip ".\DataHz2\artifacts\packages\datahz2-api-win-x64-release-fallback.zip" `
+            -IncludeOnlineSmokeCase `
+            -OnlineSmokeStartupSeconds 6
+
+      - name: Assert fallback package cleanup
+        if: matrix.runtime == 'win-x64'
+        run: |
+          $base = ".\DataHz2\artifacts\packages\datahz2-api-win-x64-release-fallback"
+          $candidates = @(
+            "$base.zip",
+            "$base.sha256",
+            "$base.manifest.json"
+          )
+          $leftovers = @($candidates | Where-Object { Test-Path $_ })
+          if ($leftovers.Count -gt 0) {
+            $joined = $leftovers -join ", "
+            throw "Fallback package cleanup failed. Leftover files: $joined"
+          }
+          Write-Host "Fallback package cleanup verified."
+
+      - name: Start API for smoke test
+        if: matrix.runtime == 'win-x64'
+        run: |
+          $publishDir = (Resolve-Path .\DataHz2\artifacts\publish\release-win-x64).Path
+          $apiExe = Join-Path $publishDir "DataHz.Api.exe"
+          if (-not (Test-Path $apiExe)) {
+            throw "API executable not found: $apiExe"
+          }
+
+          $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, 0)
+          $listener.Start()
+          $port = ($listener.LocalEndpoint).Port
+          $listener.Stop()
+          $smokeUrl = "http://127.0.0.1:$port"
+
+          $logFile = Join-Path $env:RUNNER_TEMP "datahz2-api-release-smoke.log"
+          $proc = Start-Process `
+            -FilePath $apiExe `
+            -ArgumentList @("--contentRoot", $publishDir, "--environment", "Production", "--urls", $smokeUrl) `
+            -PassThru `
+            -WindowStyle Hidden `
+            -RedirectStandardOutput $logFile `
+            -RedirectStandardError $logFile
+
+          "DATAHZ2_SMOKE_PID=$($proc.Id)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "DATAHZ2_SMOKE_LOG=$logFile" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "DATAHZ2_SMOKE_URL=$smokeUrl" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Start-Sleep -Seconds 3
+
+      - name: Smoke test
+        if: matrix.runtime == 'win-x64'
+        run: |
+          .\DataHz2\scripts\smoke-test-api.ps1 `
+            -BaseUrl $env:DATAHZ2_SMOKE_URL `
+            -TimeoutSeconds 15
+
+      - name: Dump API log on failure
+        if: failure() && matrix.runtime == 'win-x64'
+        run: |
+          if (-not [string]::IsNullOrWhiteSpace($env:DATAHZ2_SMOKE_LOG) -and (Test-Path $env:DATAHZ2_SMOKE_LOG)) {
+            Write-Host "----- DataHz2 API release smoke log -----"
+            Get-Content $env:DATAHZ2_SMOKE_LOG
+          }
+
+      - name: Stop API after smoke test
+        if: always() && matrix.runtime == 'win-x64'
+        run: |
+          if (-not [string]::IsNullOrWhiteSpace($env:DATAHZ2_SMOKE_PID)) {
+            Stop-Process -Id ([int]$env:DATAHZ2_SMOKE_PID) -Force -ErrorAction SilentlyContinue
+          }
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: datahz2-release-package-${{ matrix.runtime }}-${{ github.ref_name }}
+          path: |
+            DataHz2/artifacts/packages/datahz2-api-${{ matrix.runtime }}-${{ github.ref_name }}.zip
+            DataHz2/artifacts/packages/datahz2-api-${{ matrix.runtime }}-${{ github.ref_name }}.sha256
+            DataHz2/artifacts/packages/datahz2-api-${{ matrix.runtime }}-${{ github.ref_name }}.manifest.json
+          if-no-files-found: error
+
+  publish-release:
+    needs: package-verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    environment:
+      name: datahz2-production
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: datahz2-release-package-*-${{ github.ref_name }}
+          path: release-assets
+          merge-multiple: true
+
+      - name: Verify downloaded release assets
+        run: |
+          .\DataHz2\scripts\verify-release-assets.ps1 `
+            -AssetsDir .\release-assets `
+            -Tag "${{ github.ref_name }}" `
+            -OutputIndexFile ".\release-assets\datahz2-release-${{ github.ref_name }}.index.json" `
+            -OutputSha256ListFile ".\release-assets\datahz2-release-${{ github.ref_name }}.sha256" `
+            -Runtimes @("win-x64", "win-arm64")
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') }}
+          files: |
+            release-assets/*.zip
+            release-assets/*.sha256
+            release-assets/*.manifest.json
+            release-assets/*.index.json
