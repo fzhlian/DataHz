@@ -67,16 +67,6 @@ if ($effectiveFailureContentSnippetLength -ne $FailureContentSnippetLength) {
     Write-Host "FailureContentSnippetLength was normalized from $FailureContentSnippetLength to $effectiveFailureContentSnippetLength."
 }
 
-Write-Host "Smoke context:"
-Write-Host "  BaseUrl: $displayBase"
-Write-Host "  TimeoutSeconds: $TimeoutSeconds"
-Write-Host "  RequireAuthenticatedApi: $([bool]$RequireAuthenticatedApi)"
-Write-Host "  HasApiKey: $hasApiKey"
-Write-Host "  HasBearerToken: $hasBearerToken"
-Write-Host "  CheckRetryCount: $effectiveRetryCount"
-Write-Host "  CheckRetryDelayMilliseconds: $effectiveRetryDelayMilliseconds"
-Write-Host "  FailureContentSnippetLength: $effectiveFailureContentSnippetLength"
-
 $results = New-Object System.Collections.Generic.List[object]
 
 function Redact-SensitiveText([string]$Text) {
@@ -108,6 +98,17 @@ function Redact-SensitiveText([string]$Text) {
 
     return $sanitized
 }
+
+$safeDisplayBase = Redact-SensitiveText -Text $displayBase
+Write-Host "Smoke context:"
+Write-Host "  BaseUrl: $safeDisplayBase"
+Write-Host "  TimeoutSeconds: $TimeoutSeconds"
+Write-Host "  RequireAuthenticatedApi: $([bool]$RequireAuthenticatedApi)"
+Write-Host "  HasApiKey: $hasApiKey"
+Write-Host "  HasBearerToken: $hasBearerToken"
+Write-Host "  CheckRetryCount: $effectiveRetryCount"
+Write-Host "  CheckRetryDelayMilliseconds: $effectiveRetryDelayMilliseconds"
+Write-Host "  FailureContentSnippetLength: $effectiveFailureContentSnippetLength"
 
 function Add-Result(
     [string]$Check,
@@ -481,7 +482,7 @@ $reportPayload = [pscustomobject]@{
     startedUtc = $runStartedAtUtc.ToString("o")
     finishedUtc = $runFinishedAtUtc.ToString("o")
     elapsedMilliseconds = $elapsedMilliseconds
-    baseUrl = $displayBase
+    baseUrl = $safeDisplayBase
     timeoutSeconds = $TimeoutSeconds
     requireAuthenticatedApi = [bool]$RequireAuthenticatedApi
     hasApiKey = $hasApiKey

@@ -34,6 +34,7 @@ dotnet test .\DataHz2.sln -c Release
 - 失败项明细新增 `bodySnippet` 输出，可快速看到错误响应的关键片段。
 - 每个检查项新增 `DurationMs` 指标（终端表格与 JSON 报告均包含），可快速定位慢检查。
 - `bodySnippet` 与失败明细会对 `ApiKey/BearerToken` 等敏感值做脱敏处理，降低日志泄露风险。
+- 运行上下文中的 `BaseUrl` 与结构化报告中的 `baseUrl` 也会做脱敏处理。
 - CI 与 Release smoke 步骤在失败时会额外打印结构化 smoke 报告，提升排障效率。
 - CI 与 Release 工作流新增 `Upload smoke diagnostics` 步骤（`always()`），会上传 `stdout/stderr/report` 三类日志产物用于离线排查。
 - CI 与 Release 工作流新增 `Publish smoke summary` 步骤（`always()`），会将结构化报告摘要写入 `GITHUB_STEP_SUMMARY`。
