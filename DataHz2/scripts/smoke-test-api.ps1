@@ -31,6 +31,30 @@ $hasBearerToken = -not [string]::IsNullOrWhiteSpace($BearerToken)
 $hasCredentials = $hasApiKey -or $hasBearerToken
 $runStartedAtUtc = (Get-Date).ToUniversalTime()
 
+$displayBase = $base
+try {
+    $uri = [System.Uri]$base
+    if (-not [string]::IsNullOrWhiteSpace($uri.UserInfo)) {
+        $builder = [System.UriBuilder]::new($uri)
+        $builder.UserName = ""
+        $builder.Password = ""
+        $displayBase = $builder.Uri.AbsoluteUri.TrimEnd("/")
+    }
+}
+catch {
+    $displayBase = $base
+}
+
+$sensitiveValues = New-Object System.Collections.Generic.List[string]
+if ($hasApiKey) {
+    $sensitiveValues.Add($ApiKey)
+}
+if ($hasBearerToken) {
+    $sensitiveValues.Add($BearerToken)
+    $sensitiveValues.Add("Bearer $BearerToken")
+}
+$script:SensitiveValues = @($sensitiveValues | Sort-Object Length -Descending -Unique)
+
 if ($effectiveRetryCount -ne $CheckRetryCount) {
     Write-Host "CheckRetryCount was normalized from $CheckRetryCount to $effectiveRetryCount."
 }
@@ -44,7 +68,7 @@ if ($effectiveFailureContentSnippetLength -ne $FailureContentSnippetLength) {
 }
 
 Write-Host "Smoke context:"
-Write-Host "  BaseUrl: $base"
+Write-Host "  BaseUrl: $displayBase"
 Write-Host "  TimeoutSeconds: $TimeoutSeconds"
 Write-Host "  RequireAuthenticatedApi: $([bool]$RequireAuthenticatedApi)"
 Write-Host "  HasApiKey: $hasApiKey"
@@ -55,6 +79,36 @@ Write-Host "  FailureContentSnippetLength: $effectiveFailureContentSnippetLength
 
 $results = New-Object System.Collections.Generic.List[object]
 
+function Redact-SensitiveText([string]$Text) {
+    if ([string]::IsNullOrEmpty($Text)) {
+        return $Text
+    }
+
+    $sanitized = $Text
+    foreach ($secret in $script:SensitiveValues) {
+        if ([string]::IsNullOrWhiteSpace($secret)) {
+            continue
+        }
+
+        $sanitized = $sanitized.Replace($secret, "[REDACTED]")
+    }
+
+    # Extra guard for common token-bearing fields in responses/errors.
+    $sanitized = [System.Text.RegularExpressions.Regex]::Replace(
+        $sanitized,
+        '(?i)(Authorization\s*:\s*Bearer\s+)[^\s"'';]+',
+        '$1[REDACTED]'
+    )
+
+    $sanitized = [System.Text.RegularExpressions.Regex]::Replace(
+        $sanitized,
+        '(?i)("?(?:api[-_ ]?key|token|access_token|jwt)"?\s*[:=]\s*"?)[^",\s]+',
+        '$1[REDACTED]'
+    )
+
+    return $sanitized
+}
+
 function Add-Result(
     [string]$Check,
     [bool]$Passed,
@@ -63,13 +117,15 @@ function Add-Result(
     [string]$Endpoint = "",
     [int]$DurationMs = 0
 ) {
+    $safeDetail = Redact-SensitiveText -Text $Detail
+    $safeEndpoint = Redact-SensitiveText -Text $Endpoint
     $script:results.Add([pscustomobject]@{
         Check = $Check
         Passed = $Passed
         Attempts = [Math]::Max(1, $Attempts)
         DurationMs = [Math]::Max(0, [int]$DurationMs)
-        Endpoint = $Endpoint
-        Detail = $Detail
+        Endpoint = $safeEndpoint
+        Detail = $safeDetail
     })
 }
 
@@ -140,7 +196,7 @@ function Get-ContentSnippet([string]$Content, [int]$MaxLength) {
         return ""
     }
 
-    $normalized = $Content.Replace("`r", " ").Replace("`n", " ").Trim()
+    $normalized = (Redact-SensitiveText -Text $Content).Replace("`r", " ").Replace("`n", " ").Trim()
     if ([string]::IsNullOrWhiteSpace($normalized)) {
         return ""
     }
@@ -425,7 +481,7 @@ $reportPayload = [pscustomobject]@{
     startedUtc = $runStartedAtUtc.ToString("o")
     finishedUtc = $runFinishedAtUtc.ToString("o")
     elapsedMilliseconds = $elapsedMilliseconds
-    baseUrl = $base
+    baseUrl = $displayBase
     timeoutSeconds = $TimeoutSeconds
     requireAuthenticatedApi = [bool]$RequireAuthenticatedApi
     hasApiKey = $hasApiKey
