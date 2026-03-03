@@ -46,6 +46,64 @@ function Convert-ToFileUri([string]$Path) {
     return ([System.Uri]::new($resolved)).AbsoluteUri
 }
 
+function Start-StaticFileServer([string]$RootPath, [int]$Port) {
+    $resolvedRoot = [System.IO.Path]::GetFullPath($RootPath)
+    $prefix = "http://127.0.0.1:$Port/"
+
+    $job = Start-Job -ArgumentList $resolvedRoot, $prefix -ScriptBlock {
+        param($serverRoot, $serverPrefix)
+
+        $rootResolved = [System.IO.Path]::GetFullPath($serverRoot)
+        if (-not $rootResolved.EndsWith("\")) {
+            $rootResolved += "\"
+        }
+
+        $listener = [System.Net.HttpListener]::new()
+        $listener.Prefixes.Add($serverPrefix)
+        $listener.Start()
+        try {
+            while ($true) {
+                $ctx = $listener.GetContext()
+                $resp = $ctx.Response
+                try {
+                    $relative = [System.Uri]::UnescapeDataString($ctx.Request.Url.AbsolutePath.TrimStart('/'))
+                    $relative = $relative.Replace("/", "\")
+                    $fullPath = [System.IO.Path]::GetFullPath((Join-Path $rootResolved $relative))
+
+                    $insideRoot = $fullPath.StartsWith($rootResolved, [System.StringComparison]::OrdinalIgnoreCase)
+                    if ((-not $insideRoot) -or (-not (Test-Path $fullPath -PathType Leaf))) {
+                        $resp.StatusCode = 404
+                    }
+                    else {
+                        $bytes = [System.IO.File]::ReadAllBytes($fullPath)
+                        $resp.StatusCode = 200
+                        $resp.ContentLength64 = $bytes.LongLength
+                        $resp.OutputStream.Write($bytes, 0, $bytes.Length)
+                    }
+                }
+                catch {
+                    $resp.StatusCode = 500
+                }
+                finally {
+                    $resp.OutputStream.Close()
+                }
+            }
+        }
+        finally {
+            if ($listener.IsListening) {
+                $listener.Stop()
+            }
+            $listener.Close()
+        }
+    }
+
+    Start-Sleep -Milliseconds 300
+    return [pscustomobject]@{
+        Job = $job
+        BaseUrl = $prefix
+    }
+}
+
 function Test-IsValidPublishDir([string]$Path) {
     if ([string]::IsNullOrWhiteSpace($Path)) {
         return $false
@@ -290,15 +348,41 @@ Set-Content -Path $invalidIndexShaPath -Encoding UTF8 -Value @(
     "$invalidIndexHash  $validIndexName"
 )
 
-$zipFileUri = Convert-ToFileUri -Path $resolvedZip
-$manifestFileUri = Convert-ToFileUri -Path $resolvedManifest
-$invalidIndexFileUri = Convert-ToFileUri -Path $invalidIndexPath
-$validIndexFileUri = Convert-ToFileUri -Path $validIndexPath
-$validIndexShaFileUri = Convert-ToFileUri -Path $validIndexShaPath
-$invalidIndexShaFileUri = Convert-ToFileUri -Path $invalidIndexShaPath
+$urlAssetRoot = Join-Path $tempRoot "url-assets"
+New-Item -ItemType Directory -Force -Path $urlAssetRoot | Out-Null
+
+$zipUrlName = [System.IO.Path]::GetFileName($resolvedZip)
+$manifestUrlName = [System.IO.Path]::GetFileName($resolvedManifest)
+$invalidIndexUrlName = [System.IO.Path]::GetFileName($invalidIndexPath)
+$validIndexUrlName = [System.IO.Path]::GetFileName($validIndexPath)
+$validIndexShaUrlName = [System.IO.Path]::GetFileName($validIndexShaPath)
+$invalidIndexShaUrlName = [System.IO.Path]::GetFileName($invalidIndexShaPath)
+
+Copy-Item -Path $resolvedZip -Destination (Join-Path $urlAssetRoot $zipUrlName) -Force
+Copy-Item -Path $resolvedManifest -Destination (Join-Path $urlAssetRoot $manifestUrlName) -Force
+Copy-Item -Path $invalidIndexPath -Destination (Join-Path $urlAssetRoot $invalidIndexUrlName) -Force
+Copy-Item -Path $validIndexPath -Destination (Join-Path $urlAssetRoot $validIndexUrlName) -Force
+Copy-Item -Path $validIndexShaPath -Destination (Join-Path $urlAssetRoot $validIndexShaUrlName) -Force
+Copy-Item -Path $invalidIndexShaPath -Destination (Join-Path $urlAssetRoot $invalidIndexShaUrlName) -Force
+
+$serverPort = Get-FreeTcpPort
+$urlServer = Start-StaticFileServer -RootPath $urlAssetRoot -Port $serverPort
+$urlBase = $urlServer.BaseUrl
+if (-not $urlBase.EndsWith("/")) {
+    $urlBase += "/"
+}
+
+$zipFileUri = $urlBase + $zipUrlName
+$manifestFileUri = $urlBase + $manifestUrlName
+$invalidIndexFileUri = $urlBase + $invalidIndexUrlName
+$validIndexFileUri = $urlBase + $validIndexUrlName
+$validIndexShaFileUri = $urlBase + $validIndexShaUrlName
+$invalidIndexShaFileUri = $urlBase + $invalidIndexShaUrlName
 $shaFileUri = ""
 if (-not [string]::IsNullOrWhiteSpace($resolvedSha)) {
-    $shaFileUri = Convert-ToFileUri -Path $resolvedSha
+    $shaUrlName = [System.IO.Path]::GetFileName($resolvedSha)
+    Copy-Item -Path $resolvedSha -Destination (Join-Path $urlAssetRoot $shaUrlName) -Force
+    $shaFileUri = $urlBase + $shaUrlName
 }
 
 $results = New-Object System.Collections.Generic.List[object]
@@ -695,6 +779,11 @@ try {
     }
 }
 finally {
+    if ($urlServer -and $urlServer.Job) {
+        Stop-Job -Job $urlServer.Job -ErrorAction SilentlyContinue
+        Remove-Job -Job $urlServer.Job -Force -ErrorAction SilentlyContinue
+    }
+
     if (-not $KeepArtifacts) {
         Remove-Item -Path $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
     }
