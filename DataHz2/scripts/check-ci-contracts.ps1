@@ -328,6 +328,12 @@ $results.Add((Run-Case -Name "ci-smoke-step-gate-contract" -Action {
     if (-not ($smokeBlock -like "*-TimeoutSeconds 120*")) {
         throw "CI workflow Smoke test step must use -TimeoutSeconds 120."
     }
+    if (-not ($smokeBlock -like "*-CheckRetryCount 5*")) {
+        throw "CI workflow Smoke test step must use -CheckRetryCount 5."
+    }
+    if (-not ($smokeBlock -like "*-CheckRetryDelayMilliseconds 800*")) {
+        throw "CI workflow Smoke test step must use -CheckRetryDelayMilliseconds 800."
+    }
     if (-not ($smokeBlock -like "*Start-Sleep -Seconds 6*")) {
         throw "CI workflow Smoke test step must wait at least 6 seconds before probing."
     }
@@ -353,6 +359,12 @@ $results.Add((Run-Case -Name "release-smoke-step-gate-contract" -Action {
     Assert-StepWinX64Gate -StepBlock $smokeBlock -StepName "Smoke test" -WorkflowLabel "Release workflow"
     if (-not ($smokeBlock -like "*-TimeoutSeconds 120*")) {
         throw "Release workflow Smoke test step must use -TimeoutSeconds 120."
+    }
+    if (-not ($smokeBlock -like "*-CheckRetryCount 5*")) {
+        throw "Release workflow Smoke test step must use -CheckRetryCount 5."
+    }
+    if (-not ($smokeBlock -like "*-CheckRetryDelayMilliseconds 800*")) {
+        throw "Release workflow Smoke test step must use -CheckRetryDelayMilliseconds 800."
     }
     if (-not ($smokeBlock -like "*Start-Sleep -Seconds 6*")) {
         throw "Release workflow Smoke test step must wait at least 6 seconds before probing."

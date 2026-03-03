@@ -195,7 +195,9 @@ jobs:
             Start-Sleep -Seconds 6
             .\DataHz2\scripts\smoke-test-api.ps1 `
               -BaseUrl $smokeUrl `
-              -TimeoutSeconds 120
+              -TimeoutSeconds 120 `
+              -CheckRetryCount 5 `
+              -CheckRetryDelayMilliseconds 800
           }
           catch {
             if (Test-Path $outLog) {
