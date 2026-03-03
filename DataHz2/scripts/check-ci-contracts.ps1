@@ -319,11 +319,35 @@ $results.Add((Run-Case -Name "release-fallback-step-args-contract" -Action {
 $results.Add((Run-Case -Name "ci-smoke-step-gate-contract" -Action {
     $smokeBlock = Get-StepBlock -Path $ciWorkflow -StepName "Smoke test"
     Assert-StepWinX64Gate -StepBlock $smokeBlock -StepName "Smoke test" -WorkflowLabel "CI workflow"
+
+    $startBlock = Get-StepBlock -Path $ciWorkflow -StepName "Start API for smoke test"
+    Assert-StepWinX64Gate -StepBlock $startBlock -StepName "Start API for smoke test" -WorkflowLabel "CI workflow"
+    if (-not ($startBlock -like "*-RedirectStandardOutput `$outLog*")) {
+        throw "CI workflow Start API step must redirect stdout to `$outLog."
+    }
+    if (-not ($startBlock -like "*-RedirectStandardError `$errLog*")) {
+        throw "CI workflow Start API step must redirect stderr to `$errLog."
+    }
+    if (-not ($startBlock -like "*DATAHZ2_SMOKE_ERR_LOG=*")) {
+        throw "CI workflow Start API step must export DATAHZ2_SMOKE_ERR_LOG."
+    }
 }))
 
 $results.Add((Run-Case -Name "release-smoke-step-gate-contract" -Action {
     $smokeBlock = Get-StepBlock -Path $releaseWorkflow -StepName "Smoke test"
     Assert-StepWinX64Gate -StepBlock $smokeBlock -StepName "Smoke test" -WorkflowLabel "Release workflow"
+
+    $startBlock = Get-StepBlock -Path $releaseWorkflow -StepName "Start API for smoke test"
+    Assert-StepWinX64Gate -StepBlock $startBlock -StepName "Start API for smoke test" -WorkflowLabel "Release workflow"
+    if (-not ($startBlock -like "*-RedirectStandardOutput `$outLog*")) {
+        throw "Release workflow Start API step must redirect stdout to `$outLog."
+    }
+    if (-not ($startBlock -like "*-RedirectStandardError `$errLog*")) {
+        throw "Release workflow Start API step must redirect stderr to `$errLog."
+    }
+    if (-not ($startBlock -like "*DATAHZ2_SMOKE_ERR_LOG=*")) {
+        throw "Release workflow Start API step must export DATAHZ2_SMOKE_ERR_LOG."
+    }
 }))
 
 $results.Add((Run-Case -Name "deploy-guards-fallback-source-contract" -Action {

@@ -177,17 +177,19 @@ jobs:
           $listener.Stop()
           $smokeUrl = "http://127.0.0.1:$port"
 
-          $logFile = Join-Path $env:RUNNER_TEMP "datahz2-api-smoke.log"
+          $outLog = Join-Path $env:RUNNER_TEMP "datahz2-api-smoke.out.log"
+          $errLog = Join-Path $env:RUNNER_TEMP "datahz2-api-smoke.err.log"
           $proc = Start-Process `
             -FilePath $apiExe `
             -ArgumentList @("--contentRoot", $publishDir, "--environment", "Production", "--urls", $smokeUrl) `
             -PassThru `
             -WindowStyle Hidden `
-            -RedirectStandardOutput $logFile `
-            -RedirectStandardError $logFile
+            -RedirectStandardOutput $outLog `
+            -RedirectStandardError $errLog
 
           "DATAHZ2_SMOKE_PID=$($proc.Id)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          "DATAHZ2_SMOKE_LOG=$logFile" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "DATAHZ2_SMOKE_LOG=$outLog" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "DATAHZ2_SMOKE_ERR_LOG=$errLog" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "DATAHZ2_SMOKE_URL=$smokeUrl" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           Start-Sleep -Seconds 3
 
@@ -202,8 +204,12 @@ jobs:
         if: failure() && matrix.runtime == 'win-x64'
         run: |
           if (-not [string]::IsNullOrWhiteSpace($env:DATAHZ2_SMOKE_LOG) -and (Test-Path $env:DATAHZ2_SMOKE_LOG)) {
-            Write-Host "----- DataHz2 API smoke log -----"
+            Write-Host "----- DataHz2 API smoke stdout -----"
             Get-Content $env:DATAHZ2_SMOKE_LOG
+          }
+          if (-not [string]::IsNullOrWhiteSpace($env:DATAHZ2_SMOKE_ERR_LOG) -and (Test-Path $env:DATAHZ2_SMOKE_ERR_LOG)) {
+            Write-Host "----- DataHz2 API smoke stderr -----"
+            Get-Content $env:DATAHZ2_SMOKE_ERR_LOG
           }
 
       - name: Stop API after smoke test
