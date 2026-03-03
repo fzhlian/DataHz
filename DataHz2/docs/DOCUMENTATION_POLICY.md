@@ -24,6 +24,7 @@
 - 脚本：`DataHz2/scripts/check-docs-sync.ps1`
 - CI：`datahz2-ci.yml` 与 `datahz2-release.yml` 构建阶段强制执行
 - 规则：当代码/脚本/工作流有变更时，若无文档变更，CI 失败
+- 忽略项：`bin/`、`obj/` 构建产物变更不触发文档同步失败
 
 ## 质量要求
 

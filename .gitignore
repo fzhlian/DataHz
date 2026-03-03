@@ -1,1 +1,6 @@
-/多数据库表格汇总程序/
+# Legacy archive (do not publish with build artifacts)
+多数据库表格汇总程序/
+
+# .NET build outputs
+**/bin/
+**/obj/

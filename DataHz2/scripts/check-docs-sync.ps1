@@ -156,6 +156,20 @@ if ($allChanged.Count -eq 0) {
     exit 0
 }
 
+$ignorePatterns = @(
+    "(^|/)bin(/|$)",
+    "(^|/)obj(/|$)"
+)
+
+$allChanged = @($allChanged | Where-Object {
+    -not (MatchesAnyPattern -PathValue $_ -Patterns $ignorePatterns)
+})
+
+if ($allChanged.Count -eq 0) {
+    Write-Host "Only ignored build outputs changed (bin/obj). Documentation sync check skipped."
+    exit 0
+}
+
 $codePatterns = @(
     "^DataHz2/src/",
     "^DataHz2/tests/",
