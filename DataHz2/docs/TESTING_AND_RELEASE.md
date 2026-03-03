@@ -1,6 +1,6 @@
 # 测试与发布
 
-最后更新：2026-03-03
+最后更新：2026-03-04
 
 ## 测试命令
 
@@ -20,6 +20,23 @@ dotnet test .\DataHz2.sln -c Release
 `smoke-test-api.ps1` 的静态页面探测规则说明：
 - `swagger` 使用 `/swagger/index.html`，必须返回 `200` 且包含 `Swagger UI`。
 - `dashboard` 使用 `/dashboard/`，允许 `200` 或标准重定向（`301/302/307/308`）。
+
+### 2026-03-04 冒烟稳定性增强
+
+做了什么变更：
+- `smoke-test-api.ps1` 新增 `CheckRetryCount`（默认 `3`）与 `CheckRetryDelayMilliseconds`（默认 `500`）参数。
+- `swagger` / `dashboard` 与 API 端点检查改为带重试执行，降低冷启动瞬时抖动导致的误报失败。
+
+如何使用/验证：
+- 本地执行示例：
+
+```powershell
+.\scripts\smoke-test-api.ps1 `
+  -BaseUrl "http://127.0.0.1:5080" `
+  -TimeoutSeconds 120 `
+  -CheckRetryCount 5 `
+  -CheckRetryDelayMilliseconds 800
+```
 
 ## CI 工作流
 

@@ -5,6 +5,8 @@ param(
     [string]$ApiKey = "",
     [string]$BearerToken = "",
     [int]$TimeoutSeconds = 10,
+    [int]$CheckRetryCount = 3,
+    [int]$CheckRetryDelayMilliseconds = 500,
     [switch]$RequireAuthenticatedApi
 )
 
@@ -91,6 +93,42 @@ function Test-Status([int]$Code, [int[]]$Allowed) {
     return $Allowed -contains $Code
 }
 
+function Invoke-CheckWithRetry([scriptblock]$CheckOperation, [int]$MaxAttempts, [int]$DelayMilliseconds) {
+    $attemptLimit = [Math]::Max(1, $MaxAttempts)
+    $attempt = 0
+    $last = $null
+
+    while ($attempt -lt $attemptLimit) {
+        $attempt++
+        $last = & $CheckOperation
+
+        if ($null -eq $last) {
+            $last = [pscustomobject]@{
+                Passed = $false
+                Detail = "Check operation returned no result."
+            }
+        }
+
+        if ($last.Passed) {
+            return [pscustomobject]@{
+                Passed = $true
+                Detail = [string]$last.Detail
+                Attempts = $attempt
+            }
+        }
+
+        if ($attempt -lt $attemptLimit -and $DelayMilliseconds -gt 0) {
+            Start-Sleep -Milliseconds $DelayMilliseconds
+        }
+    }
+
+    return [pscustomobject]@{
+        Passed = $false
+        Detail = [string]$last.Detail
+        Attempts = $attemptLimit
+    }
+}
+
 function Wait-ForHealthReady([string]$Url, [int]$MaxWaitSeconds, [string]$ApiKeyValue, [string]$JwtValue) {
     $deadline = (Get-Date).AddSeconds([Math]::Max(1, $MaxWaitSeconds))
     $lastError = ""
@@ -173,26 +211,53 @@ foreach ($item in @(
     @{ Name = "swagger"; Path = "/swagger/index.html"; Contains = "Swagger UI"; AllowRedirect = $false },
     @{ Name = "dashboard"; Path = "/dashboard/"; Contains = "DataHz Monitor Board"; AllowRedirect = $true }
 )) {
-    try {
-        $resp = Invoke-Get -Url "$base$($item.Path)" -Timeout $TimeoutSeconds -ApiKeyValue $ApiKey -JwtValue $BearerToken
-        if ($resp.StatusCode -eq 200) {
-            if ($resp.Content -like "*$($item.Contains)*") {
-                Add-Result -Check $item.Name -Passed $true -Detail "HTTP 200."
+    $outcome = Invoke-CheckWithRetry `
+        -MaxAttempts $CheckRetryCount `
+        -DelayMilliseconds $CheckRetryDelayMilliseconds `
+        -CheckOperation {
+            try {
+                $resp = Invoke-Get -Url "$base$($item.Path)" -Timeout $TimeoutSeconds -ApiKeyValue $ApiKey -JwtValue $BearerToken
+                if ($resp.StatusCode -eq 200) {
+                    if ($resp.Content -like "*$($item.Contains)*") {
+                        return [pscustomobject]@{
+                            Passed = $true
+                            Detail = "HTTP 200."
+                        }
+                    }
+
+                    return [pscustomobject]@{
+                        Passed = $false
+                        Detail = "HTTP 200 but expected marker '$($item.Contains)' not found."
+                    }
+                }
+
+                if ($item.AllowRedirect -and (Test-Status -Code $resp.StatusCode -Allowed @(301, 302, 307, 308))) {
+                    return [pscustomobject]@{
+                        Passed = $true
+                        Detail = "HTTP $($resp.StatusCode) redirect."
+                    }
+                }
+
+                return [pscustomobject]@{
+                    Passed = $false
+                    Detail = "HTTP $($resp.StatusCode)."
+                }
             }
-            else {
-                Add-Result -Check $item.Name -Passed $false -Detail "HTTP 200 but expected marker '$($item.Contains)' not found."
+            catch {
+                return [pscustomobject]@{
+                    Passed = $false
+                    Detail = $_.Exception.Message
+                }
             }
+
         }
-        elseif ($item.AllowRedirect -and (Test-Status -Code $resp.StatusCode -Allowed @(301, 302, 307, 308))) {
-            Add-Result -Check $item.Name -Passed $true -Detail "HTTP $($resp.StatusCode) redirect."
-        }
-        else {
-            Add-Result -Check $item.Name -Passed $false -Detail "HTTP $($resp.StatusCode)."
-        }
+
+    $uiDetail = $outcome.Detail
+    if ($outcome.Attempts -gt 1) {
+        $uiDetail = "$uiDetail (attempts=$($outcome.Attempts))"
     }
-    catch {
-        Add-Result -Check $item.Name -Passed $false -Detail $_.Exception.Message
-    }
+
+    Add-Result -Check $item.Name -Passed $outcome.Passed -Detail $uiDetail
 }
 
 $apiChecks = @(
@@ -204,26 +269,46 @@ $apiChecks = @(
 $hasCredentials = -not [string]::IsNullOrWhiteSpace($ApiKey) -or -not [string]::IsNullOrWhiteSpace($BearerToken)
 
 foreach ($item in $apiChecks) {
-    try {
-        $resp = Invoke-Get -Url "$base$($item.Path)" -Timeout $TimeoutSeconds -ApiKeyValue $ApiKey -JwtValue $BearerToken
+    $outcome = Invoke-CheckWithRetry `
+        -MaxAttempts $CheckRetryCount `
+        -DelayMilliseconds $CheckRetryDelayMilliseconds `
+        -CheckOperation {
+            try {
+                $resp = Invoke-Get -Url "$base$($item.Path)" -Timeout $TimeoutSeconds -ApiKeyValue $ApiKey -JwtValue $BearerToken
 
-        $allowed = if ($RequireAuthenticatedApi -or $hasCredentials) {
-            @(200)
-        }
-        else {
-            @(200, 401)
+                $allowed = if ($RequireAuthenticatedApi -or $hasCredentials) {
+                    @(200)
+                }
+                else {
+                    @(200, 401)
+                }
+
+                if (Test-Status -Code $resp.StatusCode -Allowed $allowed) {
+                    return [pscustomobject]@{
+                        Passed = $true
+                        Detail = "HTTP $($resp.StatusCode)."
+                    }
+                }
+
+                return [pscustomobject]@{
+                    Passed = $false
+                    Detail = "HTTP $($resp.StatusCode), allowed: $($allowed -join ',')."
+                }
+            }
+            catch {
+                return [pscustomobject]@{
+                    Passed = $false
+                    Detail = $_.Exception.Message
+                }
+            }
         }
 
-        if (Test-Status -Code $resp.StatusCode -Allowed $allowed) {
-            Add-Result -Check $item.Name -Passed $true -Detail "HTTP $($resp.StatusCode)."
-        }
-        else {
-            Add-Result -Check $item.Name -Passed $false -Detail "HTTP $($resp.StatusCode), allowed: $($allowed -join ',')."
-        }
+    $apiDetail = $outcome.Detail
+    if ($outcome.Attempts -gt 1) {
+        $apiDetail = "$apiDetail (attempts=$($outcome.Attempts))"
     }
-    catch {
-        Add-Result -Check $item.Name -Passed $false -Detail $_.Exception.Message
-    }
+
+    Add-Result -Check $item.Name -Passed $outcome.Passed -Detail $apiDetail
 }
 
 $failed = @($results | Where-Object { -not $_.Passed })
