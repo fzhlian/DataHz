@@ -7,6 +7,7 @@ param(
     [int]$TimeoutSeconds = 10,
     [int]$CheckRetryCount = 3,
     [int]$CheckRetryDelayMilliseconds = 500,
+    [int]$FailureContentSnippetLength = 240,
     [string]$OutputJsonPath = "",
     [switch]$RequireAuthenticatedApi
 )
@@ -24,6 +25,7 @@ if ($base.EndsWith("/")) {
 
 $effectiveRetryCount = [Math]::Max(1, $CheckRetryCount)
 $effectiveRetryDelayMilliseconds = [Math]::Max(0, $CheckRetryDelayMilliseconds)
+$effectiveFailureContentSnippetLength = [Math]::Max(0, $FailureContentSnippetLength)
 $hasApiKey = -not [string]::IsNullOrWhiteSpace($ApiKey)
 $hasBearerToken = -not [string]::IsNullOrWhiteSpace($BearerToken)
 $hasCredentials = $hasApiKey -or $hasBearerToken
@@ -37,6 +39,10 @@ if ($effectiveRetryDelayMilliseconds -ne $CheckRetryDelayMilliseconds) {
     Write-Host "CheckRetryDelayMilliseconds was normalized from $CheckRetryDelayMilliseconds to $effectiveRetryDelayMilliseconds."
 }
 
+if ($effectiveFailureContentSnippetLength -ne $FailureContentSnippetLength) {
+    Write-Host "FailureContentSnippetLength was normalized from $FailureContentSnippetLength to $effectiveFailureContentSnippetLength."
+}
+
 Write-Host "Smoke context:"
 Write-Host "  BaseUrl: $base"
 Write-Host "  TimeoutSeconds: $TimeoutSeconds"
@@ -45,6 +51,7 @@ Write-Host "  HasApiKey: $hasApiKey"
 Write-Host "  HasBearerToken: $hasBearerToken"
 Write-Host "  CheckRetryCount: $effectiveRetryCount"
 Write-Host "  CheckRetryDelayMilliseconds: $effectiveRetryDelayMilliseconds"
+Write-Host "  FailureContentSnippetLength: $effectiveFailureContentSnippetLength"
 
 $results = New-Object System.Collections.Generic.List[object]
 
@@ -120,6 +127,34 @@ function Test-Status([int]$Code, [int[]]$Allowed) {
     return $Allowed -contains $Code
 }
 
+function Get-ContentSnippet([string]$Content, [int]$MaxLength) {
+    if ([string]::IsNullOrWhiteSpace($Content) -or $MaxLength -le 0) {
+        return ""
+    }
+
+    $normalized = $Content.Replace("`r", " ").Replace("`n", " ").Trim()
+    if ([string]::IsNullOrWhiteSpace($normalized)) {
+        return ""
+    }
+
+    $normalized = [System.Text.RegularExpressions.Regex]::Replace($normalized, "\s+", " ")
+    if ($normalized.Length -le $MaxLength) {
+        return $normalized
+    }
+
+    return $normalized.Substring(0, $MaxLength) + "..."
+}
+
+function Compose-DetailWithSnippet([string]$Message, [string]$Content, [int]$MaxLength) {
+    $detail = $Message
+    $snippet = Get-ContentSnippet -Content $Content -MaxLength $MaxLength
+    if (-not [string]::IsNullOrWhiteSpace($snippet)) {
+        $detail = "$detail bodySnippet=$snippet"
+    }
+
+    return $detail
+}
+
 function Invoke-CheckWithRetry([scriptblock]$CheckOperation, [int]$MaxAttempts, [int]$DelayMilliseconds) {
     $attemptLimit = [Math]::Max(1, $MaxAttempts)
     $attempt = 0
@@ -176,14 +211,23 @@ function Wait-ForHealthReady([string]$Url, [int]$MaxWaitSeconds, [string]$ApiKey
                         }
                     }
 
-                    $lastError = "Health endpoint returned HTTP 200 but status is not ok."
+                    $lastError = Compose-DetailWithSnippet `
+                        -Message "Health endpoint returned HTTP 200 but status is not ok." `
+                        -Content $resp.Content `
+                        -MaxLength $effectiveFailureContentSnippetLength
                 }
                 catch {
-                    $lastError = "Health endpoint returned HTTP 200 but response is not valid JSON."
+                    $lastError = Compose-DetailWithSnippet `
+                        -Message "Health endpoint returned HTTP 200 but response is not valid JSON." `
+                        -Content $resp.Content `
+                        -MaxLength $effectiveFailureContentSnippetLength
                 }
             }
             else {
-                $lastError = "Health endpoint returned HTTP $($resp.StatusCode)."
+                $lastError = Compose-DetailWithSnippet `
+                    -Message "Health endpoint returned HTTP $($resp.StatusCode)." `
+                    -Content $resp.Content `
+                    -MaxLength $effectiveFailureContentSnippetLength
             }
         }
         catch {
@@ -266,7 +310,10 @@ foreach ($item in @(
 
                     return [pscustomobject]@{
                         Passed = $false
-                        Detail = "HTTP 200 but expected marker '$($item.Contains)' not found."
+                        Detail = Compose-DetailWithSnippet `
+                            -Message "HTTP 200 but expected marker '$($item.Contains)' not found." `
+                            -Content $resp.Content `
+                            -MaxLength $effectiveFailureContentSnippetLength
                     }
                 }
 
@@ -279,7 +326,10 @@ foreach ($item in @(
 
                 return [pscustomobject]@{
                     Passed = $false
-                    Detail = "HTTP $($resp.StatusCode)."
+                    Detail = Compose-DetailWithSnippet `
+                        -Message "HTTP $($resp.StatusCode)." `
+                        -Content $resp.Content `
+                        -MaxLength $effectiveFailureContentSnippetLength
                 }
             }
             catch {
@@ -324,7 +374,10 @@ foreach ($item in $apiChecks) {
 
                 return [pscustomobject]@{
                     Passed = $false
-                    Detail = "HTTP $($resp.StatusCode), allowed: $($allowed -join ',')."
+                    Detail = Compose-DetailWithSnippet `
+                        -Message "HTTP $($resp.StatusCode), allowed: $($allowed -join ',')." `
+                        -Content $resp.Content `
+                        -MaxLength $effectiveFailureContentSnippetLength
                 }
             }
             catch {
@@ -353,6 +406,7 @@ $reportPayload = [pscustomobject]@{
     hasBearerToken = $hasBearerToken
     checkRetryCount = $effectiveRetryCount
     checkRetryDelayMilliseconds = $effectiveRetryDelayMilliseconds
+    failureContentSnippetLength = $effectiveFailureContentSnippetLength
     totalChecks = $results.Count
     failedChecks = $failed.Count
     results = @($results)
