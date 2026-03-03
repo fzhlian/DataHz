@@ -26,6 +26,13 @@ param(
     [string]$SmokeApiKey = "",
     [string]$SmokeBearerToken = "",
     [switch]$SmokeRequireAuthenticatedApi,
+    [int]$SmokeCheckRetryCount = 3,
+    [int]$SmokeCheckRetryDelayMilliseconds = 500,
+    [int]$SmokeHealthPollDelayMilliseconds = 500,
+    [int]$SmokeWarnCheckDurationMilliseconds = 0,
+    [int]$SmokeFailCheckDurationMilliseconds = 0,
+    [int]$SmokeFailureContentSnippetLength = 240,
+    [string]$SmokeOutputJsonPath = "",
     [switch]$FrameworkDependent,
     [switch]$MultiFile,
     [switch]$ReadyToRun,
@@ -1022,6 +1029,12 @@ try {
         $smokeParams = @{
             BaseUrl = $smokeBaseUrl
             TimeoutSeconds = [Math]::Max(5, $HealthCheckIntervalSeconds * 5)
+            CheckRetryCount = $SmokeCheckRetryCount
+            CheckRetryDelayMilliseconds = $SmokeCheckRetryDelayMilliseconds
+            HealthPollDelayMilliseconds = $SmokeHealthPollDelayMilliseconds
+            WarnCheckDurationMilliseconds = $SmokeWarnCheckDurationMilliseconds
+            FailCheckDurationMilliseconds = $SmokeFailCheckDurationMilliseconds
+            FailureContentSnippetLength = $SmokeFailureContentSnippetLength
         }
         if (-not $SkipServiceInstall) {
             $smokeParams.ServiceName = $ServiceName
@@ -1034,6 +1047,9 @@ try {
         }
         if ($SmokeRequireAuthenticatedApi) {
             $smokeParams.RequireAuthenticatedApi = $true
+        }
+        if (-not [string]::IsNullOrWhiteSpace($SmokeOutputJsonPath)) {
+            $smokeParams.OutputJsonPath = $SmokeOutputJsonPath
         }
 
         Invoke-SmokeScript -ScriptPath $smokeScript -SmokeParams $smokeParams
@@ -1078,6 +1094,12 @@ catch {
                     $smokeParams = @{
                         BaseUrl = $smokeBaseUrl
                         TimeoutSeconds = [Math]::Max(5, $HealthCheckIntervalSeconds * 5)
+                        CheckRetryCount = $SmokeCheckRetryCount
+                        CheckRetryDelayMilliseconds = $SmokeCheckRetryDelayMilliseconds
+                        HealthPollDelayMilliseconds = $SmokeHealthPollDelayMilliseconds
+                        WarnCheckDurationMilliseconds = $SmokeWarnCheckDurationMilliseconds
+                        FailCheckDurationMilliseconds = $SmokeFailCheckDurationMilliseconds
+                        FailureContentSnippetLength = $SmokeFailureContentSnippetLength
                     }
                     if (-not $SkipServiceInstall) {
                         $smokeParams.ServiceName = $ServiceName
@@ -1090,6 +1112,9 @@ catch {
                     }
                     if ($SmokeRequireAuthenticatedApi) {
                         $smokeParams.RequireAuthenticatedApi = $true
+                    }
+                    if (-not [string]::IsNullOrWhiteSpace($SmokeOutputJsonPath)) {
+                        $smokeParams.OutputJsonPath = $SmokeOutputJsonPath
                     }
 
                     Invoke-SmokeScript -ScriptPath $smokeScript -SmokeParams $smokeParams

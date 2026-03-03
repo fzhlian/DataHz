@@ -22,6 +22,13 @@ param(
     [string]$SmokeApiKey = "",
     [string]$SmokeBearerToken = "",
     [switch]$SmokeRequireAuthenticatedApi,
+    [int]$SmokeCheckRetryCount = 3,
+    [int]$SmokeCheckRetryDelayMilliseconds = 500,
+    [int]$SmokeHealthPollDelayMilliseconds = 500,
+    [int]$SmokeWarnCheckDurationMilliseconds = 0,
+    [int]$SmokeFailCheckDurationMilliseconds = 0,
+    [int]$SmokeFailureContentSnippetLength = 240,
+    [string]$SmokeOutputJsonPath = "",
     [switch]$AllowUnsafeBypass,
     [switch]$SkipServiceInstall,
     [switch]$SkipHealthCheck
@@ -123,6 +130,15 @@ if (-not [string]::IsNullOrWhiteSpace($SmokeBearerToken)) {
 if ($SmokeRequireAuthenticatedApi) {
     $deployParams.SmokeRequireAuthenticatedApi = $true
 }
+$deployParams.SmokeCheckRetryCount = $SmokeCheckRetryCount
+$deployParams.SmokeCheckRetryDelayMilliseconds = $SmokeCheckRetryDelayMilliseconds
+$deployParams.SmokeHealthPollDelayMilliseconds = $SmokeHealthPollDelayMilliseconds
+$deployParams.SmokeWarnCheckDurationMilliseconds = $SmokeWarnCheckDurationMilliseconds
+$deployParams.SmokeFailCheckDurationMilliseconds = $SmokeFailCheckDurationMilliseconds
+$deployParams.SmokeFailureContentSnippetLength = $SmokeFailureContentSnippetLength
+if (-not [string]::IsNullOrWhiteSpace($SmokeOutputJsonPath)) {
+    $deployParams.SmokeOutputJsonPath = $SmokeOutputJsonPath
+}
 if ($SkipServiceInstall) {
     $deployParams.SkipServiceInstall = $true
 }
@@ -134,6 +150,13 @@ Write-Host "Production deployment profile enabled."
 Write-Host "  RequireManifest: true"
 Write-Host "  RunSmokeTest: true"
 Write-Host "  Source: $(if (-not [string]::IsNullOrWhiteSpace($PackageUrl)) { "package-url" } else { "package-zip" })"
+Write-Host "  SmokeCheckRetryCount: $SmokeCheckRetryCount"
+Write-Host "  SmokeCheckRetryDelayMilliseconds: $SmokeCheckRetryDelayMilliseconds"
+Write-Host "  SmokeHealthPollDelayMilliseconds: $SmokeHealthPollDelayMilliseconds"
+Write-Host "  SmokeWarnCheckDurationMilliseconds: $SmokeWarnCheckDurationMilliseconds"
+Write-Host "  SmokeFailCheckDurationMilliseconds: $SmokeFailCheckDurationMilliseconds"
+Write-Host "  SmokeFailureContentSnippetLength: $SmokeFailureContentSnippetLength"
+Write-Host "  SmokeOutputJsonPath: $(if (-not [string]::IsNullOrWhiteSpace($SmokeOutputJsonPath)) { $SmokeOutputJsonPath } else { '<none>' })"
 if ($AllowUnsafeBypass) {
     Write-Host "  UnsafeBypass: true (test-only)"
 }

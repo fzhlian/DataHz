@@ -12,6 +12,13 @@ param(
     [string]$SmokeApiKey = "",
     [string]$SmokeBearerToken = "",
     [switch]$SmokeRequireAuthenticatedApi,
+    [int]$SmokeCheckRetryCount = 3,
+    [int]$SmokeCheckRetryDelayMilliseconds = 500,
+    [int]$SmokeHealthPollDelayMilliseconds = 500,
+    [int]$SmokeWarnCheckDurationMilliseconds = 0,
+    [int]$SmokeFailCheckDurationMilliseconds = 0,
+    [int]$SmokeFailureContentSnippetLength = 240,
+    [string]$SmokeOutputJsonPath = "",
     [switch]$SkipHealthCheck
 )
 
@@ -188,6 +195,12 @@ if ($RunSmokeTest) {
         BaseUrl = $smokeBaseUrl
         ServiceName = $ServiceName
         TimeoutSeconds = [Math]::Max(5, $HealthCheckIntervalSeconds * 5)
+        CheckRetryCount = $SmokeCheckRetryCount
+        CheckRetryDelayMilliseconds = $SmokeCheckRetryDelayMilliseconds
+        HealthPollDelayMilliseconds = $SmokeHealthPollDelayMilliseconds
+        WarnCheckDurationMilliseconds = $SmokeWarnCheckDurationMilliseconds
+        FailCheckDurationMilliseconds = $SmokeFailCheckDurationMilliseconds
+        FailureContentSnippetLength = $SmokeFailureContentSnippetLength
     }
     if (-not [string]::IsNullOrWhiteSpace($SmokeApiKey)) {
         $smokeParams.ApiKey = $SmokeApiKey
@@ -197,6 +210,9 @@ if ($RunSmokeTest) {
     }
     if ($SmokeRequireAuthenticatedApi) {
         $smokeParams.RequireAuthenticatedApi = $true
+    }
+    if (-not [string]::IsNullOrWhiteSpace($SmokeOutputJsonPath)) {
+        $smokeParams.OutputJsonPath = $SmokeOutputJsonPath
     }
 
     & $smokeScript @smokeParams

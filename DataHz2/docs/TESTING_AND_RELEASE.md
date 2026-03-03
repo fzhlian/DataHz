@@ -46,6 +46,9 @@ dotnet test .\DataHz2.sln -c Release
 - `Publish smoke summary` 现额外包含 health 轮询间隔（`healthPollDelayMilliseconds`）。
 - `Publish smoke summary` 现额外包含慢检查阈值与命中计数（`warn/fail`）。
 - 当 `failSlowCheckCount > 0` 时，`Publish smoke summary` 还会输出 `failSlowChecks` 明细表用于定位超阈值检查项。
+- `deploy-api.ps1` 新增 `SmokeCheckRetryCount`、`SmokeCheckRetryDelayMilliseconds`、`SmokeHealthPollDelayMilliseconds`、`SmokeWarnCheckDurationMilliseconds`、`SmokeFailCheckDurationMilliseconds`、`SmokeFailureContentSnippetLength`、`SmokeOutputJsonPath` 参数，并透传给 `smoke-test-api.ps1`。
+- `deploy-api.ps1` 的主部署 smoke 与失败后自动回滚 smoke 现在使用同一组透传参数，减少两条路径的行为偏差。
+- `deploy-prod.ps1` 与 `rollback-api.ps1` 新增同名 `Smoke*` 参数，并继续向 `deploy-api.ps1` / `smoke-test-api.ps1` 透传，支持在生产发布与手工回滚时统一调参。
 
 如何使用/验证：
 - 本地执行示例：
@@ -61,6 +64,36 @@ dotnet test .\DataHz2.sln -c Release
   -FailCheckDurationMilliseconds 5000 `
   -FailureContentSnippetLength 300 `
   -OutputJsonPath ".\artifacts\smoke\smoke-report.json"
+```
+
+- 生产发布（通过 `deploy-prod.ps1` 透传 smoke 参数）：
+
+```powershell
+.\scripts\deploy-prod.ps1 `
+  -ServiceName DataHz.Api `
+  -PackageZip .\artifacts\packages\datahz2-api-win-x64.zip `
+  -PackageSha256File .\artifacts\packages\datahz2-api-win-x64.sha256 `
+  -PackageManifestFile .\artifacts\packages\datahz2-api-win-x64.manifest.json `
+  -SmokeCheckRetryCount 5 `
+  -SmokeCheckRetryDelayMilliseconds 800 `
+  -SmokeHealthPollDelayMilliseconds 500 `
+  -SmokeWarnCheckDurationMilliseconds 3000 `
+  -SmokeFailCheckDurationMilliseconds 0 `
+  -SmokeOutputJsonPath .\artifacts\smoke\deploy-prod-smoke.json
+```
+
+- 手工回滚（通过 `rollback-api.ps1` 透传 smoke 参数）：
+
+```powershell
+.\scripts\rollback-api.ps1 `
+  -ServiceName DataHz.Api `
+  -RunSmokeTest `
+  -SmokeCheckRetryCount 5 `
+  -SmokeCheckRetryDelayMilliseconds 800 `
+  -SmokeHealthPollDelayMilliseconds 500 `
+  -SmokeWarnCheckDurationMilliseconds 3000 `
+  -SmokeFailCheckDurationMilliseconds 0 `
+  -SmokeOutputJsonPath .\artifacts\smoke\rollback-smoke.json
 ```
 
 ## CI 工作流
