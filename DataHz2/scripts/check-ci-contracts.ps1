@@ -450,9 +450,44 @@ $results.Add((Run-Case -Name "release-smoke-diagnostics-artifact-contract" -Acti
     }
 }))
 
+$results.Add((Run-Case -Name "ci-smoke-summary-contract" -Action {
+    $summaryBlock = Get-StepBlock -Path $ciWorkflow -StepName "Publish smoke summary"
+    Assert-StepWinX64Gate -StepBlock $summaryBlock -StepName "Publish smoke summary" -WorkflowLabel "CI workflow"
+    if (-not ($summaryBlock -like "*always()*")) {
+        throw "CI workflow 'Publish smoke summary' step must include always()."
+    }
+    if (-not ($summaryBlock -like "*datahz2-api-smoke.report.json*")) {
+        throw "CI workflow 'Publish smoke summary' step must use smoke report json path."
+    }
+    if (-not ($summaryBlock -like "*ConvertFrom-Json*")) {
+        throw "CI workflow 'Publish smoke summary' step must parse JSON report."
+    }
+    if (-not ($summaryBlock -like "*$env:GITHUB_STEP_SUMMARY*")) {
+        throw "CI workflow 'Publish smoke summary' step must write into GITHUB_STEP_SUMMARY."
+    }
+}))
+
+$results.Add((Run-Case -Name "release-smoke-summary-contract" -Action {
+    $summaryBlock = Get-StepBlock -Path $releaseWorkflow -StepName "Publish smoke summary"
+    Assert-StepWinX64Gate -StepBlock $summaryBlock -StepName "Publish smoke summary" -WorkflowLabel "Release workflow"
+    if (-not ($summaryBlock -like "*always()*")) {
+        throw "Release workflow 'Publish smoke summary' step must include always()."
+    }
+    if (-not ($summaryBlock -like "*datahz2-api-release-smoke.report.json*")) {
+        throw "Release workflow 'Publish smoke summary' step must use smoke report json path."
+    }
+    if (-not ($summaryBlock -like "*ConvertFrom-Json*")) {
+        throw "Release workflow 'Publish smoke summary' step must parse JSON report."
+    }
+    if (-not ($summaryBlock -like "*$env:GITHUB_STEP_SUMMARY*")) {
+        throw "Release workflow 'Publish smoke summary' step must write into GITHUB_STEP_SUMMARY."
+    }
+}))
+
 $results.Add((Run-Case -Name "ci-smoke-diagnostics-order-contract" -Action {
     Assert-OrderedNeedles -Path $ciWorkflow -WorkflowLabel "CI workflow" -Needles @(
         "- name: Smoke test",
+        "- name: Publish smoke summary",
         "- name: Upload smoke diagnostics",
         "- name: Upload publish artifact"
     )
@@ -461,6 +496,7 @@ $results.Add((Run-Case -Name "ci-smoke-diagnostics-order-contract" -Action {
 $results.Add((Run-Case -Name "release-smoke-diagnostics-order-contract" -Action {
     Assert-OrderedNeedles -Path $releaseWorkflow -WorkflowLabel "Release workflow" -Needles @(
         "- name: Smoke test",
+        "- name: Publish smoke summary",
         "- name: Upload smoke diagnostics",
         "- name: Upload build artifact"
     )

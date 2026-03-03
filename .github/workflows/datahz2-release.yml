@@ -216,6 +216,43 @@ jobs:
             }
           }
 
+      - name: Publish smoke summary
+        if: matrix.runtime == 'win-x64' && always()
+        run: |
+          $reportLog = Join-Path $env:RUNNER_TEMP "datahz2-api-release-smoke.report.json"
+          $lines = New-Object System.Collections.Generic.List[string]
+          $lines.Add("### DataHz2 release smoke summary (win-x64)")
+          $lines.Add("")
+
+          if (-not (Test-Path $reportLog)) {
+            $lines.Add("Smoke report file not found: `$reportLog`.")
+            Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ($lines -join [Environment]::NewLine)
+            return
+          }
+
+          $report = Get-Content -Path $reportLog -Raw | ConvertFrom-Json
+          $lines.Add("- BaseUrl: $($report.baseUrl)")
+          $lines.Add("- Total checks: $($report.totalChecks)")
+          $lines.Add("- Failed checks: $($report.failedChecks)")
+          $lines.Add("- Elapsed ms: $($report.elapsedMilliseconds)")
+          $lines.Add("")
+
+          if ([int]$report.failedChecks -gt 0) {
+            $lines.Add("| Check | Attempts | Endpoint | Detail |")
+            $lines.Add("| --- | ---: | --- | --- |")
+            $failed = @($report.results | Where-Object { -not $_.Passed })
+            foreach ($item in $failed) {
+              $detail = [string]$item.Detail
+              $detail = $detail.Replace("|", "\|")
+              $lines.Add("| $($item.Check) | $($item.Attempts) | $($item.Endpoint) | $detail |")
+            }
+          }
+          else {
+            $lines.Add("All smoke checks passed.")
+          }
+
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ($lines -join [Environment]::NewLine)
+
       - name: Upload smoke diagnostics
         if: matrix.runtime == 'win-x64' && always()
         uses: actions/upload-artifact@v4
