@@ -272,7 +272,7 @@ $results.Add((Run-Case -Name "ci-fallback-pipeline-order-contract" -Action {
     Assert-OrderedNeedles -Path $ciWorkflow -WorkflowLabel "CI workflow" -Needles @(
         "- name: Check deploy guards auto-package fallback",
         "- name: Assert fallback package cleanup",
-        "- name: Start API for smoke test"
+        "- name: Smoke test"
     )
 }))
 
@@ -280,7 +280,7 @@ $results.Add((Run-Case -Name "release-fallback-pipeline-order-contract" -Action 
     Assert-OrderedNeedles -Path $releaseWorkflow -WorkflowLabel "Release workflow" -Needles @(
         "- name: Check deploy guards auto-package fallback",
         "- name: Assert fallback package cleanup",
-        "- name: Start API for smoke test"
+        "- name: Smoke test"
     )
 }))
 
@@ -322,20 +322,23 @@ $results.Add((Run-Case -Name "ci-smoke-step-gate-contract" -Action {
     if (-not ($smokeBlock -like "*-TimeoutSeconds 120*")) {
         throw "CI workflow Smoke test step must use -TimeoutSeconds 120."
     }
-
-    $startBlock = Get-StepBlock -Path $ciWorkflow -StepName "Start API for smoke test"
-    Assert-StepWinX64Gate -StepBlock $startBlock -StepName "Start API for smoke test" -WorkflowLabel "CI workflow"
-    if (-not ($startBlock -like "*Start-Sleep -Seconds 6*")) {
-        throw "CI workflow Start API step must wait at least 6 seconds before smoke test."
+    if (-not ($smokeBlock -like "*Start-Sleep -Seconds 6*")) {
+        throw "CI workflow Smoke test step must wait at least 6 seconds before probing."
     }
-    if (-not ($startBlock -like "*-RedirectStandardOutput `$outLog*")) {
-        throw "CI workflow Start API step must redirect stdout to `$outLog."
+    if (-not ($smokeBlock -like "*Start-Process*")) {
+        throw "CI workflow Smoke test step must start API process inline."
     }
-    if (-not ($startBlock -like "*-RedirectStandardError `$errLog*")) {
-        throw "CI workflow Start API step must redirect stderr to `$errLog."
+    if (-not ($smokeBlock -like "*-RedirectStandardOutput `$outLog*")) {
+        throw "CI workflow Smoke test step must redirect stdout to `$outLog."
     }
-    if (-not ($startBlock -like "*DATAHZ2_SMOKE_ERR_LOG=*")) {
-        throw "CI workflow Start API step must export DATAHZ2_SMOKE_ERR_LOG."
+    if (-not ($smokeBlock -like "*-RedirectStandardError `$errLog*")) {
+        throw "CI workflow Smoke test step must redirect stderr to `$errLog."
+    }
+    if (-not ($smokeBlock -like "*Get-Content `$outLog*")) {
+        throw "CI workflow Smoke test step must dump stdout on failure."
+    }
+    if (-not ($smokeBlock -like "*Get-Content `$errLog*")) {
+        throw "CI workflow Smoke test step must dump stderr on failure."
     }
 }))
 
@@ -345,20 +348,23 @@ $results.Add((Run-Case -Name "release-smoke-step-gate-contract" -Action {
     if (-not ($smokeBlock -like "*-TimeoutSeconds 120*")) {
         throw "Release workflow Smoke test step must use -TimeoutSeconds 120."
     }
-
-    $startBlock = Get-StepBlock -Path $releaseWorkflow -StepName "Start API for smoke test"
-    Assert-StepWinX64Gate -StepBlock $startBlock -StepName "Start API for smoke test" -WorkflowLabel "Release workflow"
-    if (-not ($startBlock -like "*Start-Sleep -Seconds 6*")) {
-        throw "Release workflow Start API step must wait at least 6 seconds before smoke test."
+    if (-not ($smokeBlock -like "*Start-Sleep -Seconds 6*")) {
+        throw "Release workflow Smoke test step must wait at least 6 seconds before probing."
     }
-    if (-not ($startBlock -like "*-RedirectStandardOutput `$outLog*")) {
-        throw "Release workflow Start API step must redirect stdout to `$outLog."
+    if (-not ($smokeBlock -like "*Start-Process*")) {
+        throw "Release workflow Smoke test step must start API process inline."
     }
-    if (-not ($startBlock -like "*-RedirectStandardError `$errLog*")) {
-        throw "Release workflow Start API step must redirect stderr to `$errLog."
+    if (-not ($smokeBlock -like "*-RedirectStandardOutput `$outLog*")) {
+        throw "Release workflow Smoke test step must redirect stdout to `$outLog."
     }
-    if (-not ($startBlock -like "*DATAHZ2_SMOKE_ERR_LOG=*")) {
-        throw "Release workflow Start API step must export DATAHZ2_SMOKE_ERR_LOG."
+    if (-not ($smokeBlock -like "*-RedirectStandardError `$errLog*")) {
+        throw "Release workflow Smoke test step must redirect stderr to `$errLog."
+    }
+    if (-not ($smokeBlock -like "*Get-Content `$outLog*")) {
+        throw "Release workflow Smoke test step must dump stdout on failure."
+    }
+    if (-not ($smokeBlock -like "*Get-Content `$errLog*")) {
+        throw "Release workflow Smoke test step must dump stderr on failure."
     }
 }))
 

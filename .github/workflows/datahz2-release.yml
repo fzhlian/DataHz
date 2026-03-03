@@ -156,7 +156,7 @@ jobs:
           }
           Write-Host "Fallback package cleanup verified."
 
-      - name: Start API for smoke test
+      - name: Smoke test
         if: matrix.runtime == 'win-x64'
         run: |
           $publishDir = (Resolve-Path .\DataHz2\artifacts\publish\release-win-x64).Path
@@ -170,47 +170,39 @@ jobs:
           $port = ($listener.LocalEndpoint).Port
           $listener.Stop()
           $smokeUrl = "http://127.0.0.1:$port"
-
           $outLog = Join-Path $env:RUNNER_TEMP "datahz2-api-release-smoke.out.log"
           $errLog = Join-Path $env:RUNNER_TEMP "datahz2-api-release-smoke.err.log"
-          $proc = Start-Process `
-            -FilePath $apiExe `
-            -ArgumentList @("--contentRoot", $publishDir, "--environment", "Production", "--urls", $smokeUrl) `
-            -PassThru `
-            -WindowStyle Hidden `
-            -RedirectStandardOutput $outLog `
-            -RedirectStandardError $errLog
+          $proc = $null
 
-          "DATAHZ2_SMOKE_PID=$($proc.Id)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          "DATAHZ2_SMOKE_LOG=$outLog" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          "DATAHZ2_SMOKE_ERR_LOG=$errLog" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          "DATAHZ2_SMOKE_URL=$smokeUrl" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          Start-Sleep -Seconds 6
+          try {
+            $proc = Start-Process `
+              -FilePath $apiExe `
+              -ArgumentList @("--contentRoot", $publishDir, "--environment", "Production", "--urls", $smokeUrl) `
+              -PassThru `
+              -WindowStyle Hidden `
+              -RedirectStandardOutput $outLog `
+              -RedirectStandardError $errLog
 
-      - name: Smoke test
-        if: matrix.runtime == 'win-x64'
-        run: |
-          .\DataHz2\scripts\smoke-test-api.ps1 `
-            -BaseUrl $env:DATAHZ2_SMOKE_URL `
-            -TimeoutSeconds 120
-
-      - name: Dump API log on failure
-        if: failure() && matrix.runtime == 'win-x64'
-        run: |
-          if (-not [string]::IsNullOrWhiteSpace($env:DATAHZ2_SMOKE_LOG) -and (Test-Path $env:DATAHZ2_SMOKE_LOG)) {
-            Write-Host "----- DataHz2 API release smoke stdout -----"
-            Get-Content $env:DATAHZ2_SMOKE_LOG
+            Start-Sleep -Seconds 6
+            .\DataHz2\scripts\smoke-test-api.ps1 `
+              -BaseUrl $smokeUrl `
+              -TimeoutSeconds 120
           }
-          if (-not [string]::IsNullOrWhiteSpace($env:DATAHZ2_SMOKE_ERR_LOG) -and (Test-Path $env:DATAHZ2_SMOKE_ERR_LOG)) {
-            Write-Host "----- DataHz2 API release smoke stderr -----"
-            Get-Content $env:DATAHZ2_SMOKE_ERR_LOG
+          catch {
+            if (Test-Path $outLog) {
+              Write-Host "----- DataHz2 API release smoke stdout -----"
+              Get-Content $outLog
+            }
+            if (Test-Path $errLog) {
+              Write-Host "----- DataHz2 API release smoke stderr -----"
+              Get-Content $errLog
+            }
+            throw
           }
-
-      - name: Stop API after smoke test
-        if: always() && matrix.runtime == 'win-x64'
-        run: |
-          if (-not [string]::IsNullOrWhiteSpace($env:DATAHZ2_SMOKE_PID)) {
-            Stop-Process -Id ([int]$env:DATAHZ2_SMOKE_PID) -Force -ErrorAction SilentlyContinue
+          finally {
+            if ($null -ne $proc -and -not $proc.HasExited) {
+              Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+            }
           }
 
       - name: Upload build artifact
