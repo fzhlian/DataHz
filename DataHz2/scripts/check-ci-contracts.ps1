@@ -465,6 +465,15 @@ $results.Add((Run-Case -Name "ci-smoke-summary-contract" -Action {
     if (-not ($summaryBlock -like "*$env:GITHUB_STEP_SUMMARY*")) {
         throw "CI workflow 'Publish smoke summary' step must write into GITHUB_STEP_SUMMARY."
     }
+    if (-not ($summaryBlock -like "*averageCheckDurationMs*")) {
+        throw "CI workflow 'Publish smoke summary' step must include average check duration."
+    }
+    if (-not ($summaryBlock -like "*maxCheckDurationMs*")) {
+        throw "CI workflow 'Publish smoke summary' step must include max check duration."
+    }
+    if (-not ($summaryBlock -like "*Sort-Object DurationMs -Descending*")) {
+        throw "CI workflow 'Publish smoke summary' step must include slow-check ranking."
+    }
 }))
 
 $results.Add((Run-Case -Name "release-smoke-summary-contract" -Action {
@@ -481,6 +490,15 @@ $results.Add((Run-Case -Name "release-smoke-summary-contract" -Action {
     }
     if (-not ($summaryBlock -like "*$env:GITHUB_STEP_SUMMARY*")) {
         throw "Release workflow 'Publish smoke summary' step must write into GITHUB_STEP_SUMMARY."
+    }
+    if (-not ($summaryBlock -like "*averageCheckDurationMs*")) {
+        throw "Release workflow 'Publish smoke summary' step must include average check duration."
+    }
+    if (-not ($summaryBlock -like "*maxCheckDurationMs*")) {
+        throw "Release workflow 'Publish smoke summary' step must include max check duration."
+    }
+    if (-not ($summaryBlock -like "*Sort-Object DurationMs -Descending*")) {
+        throw "Release workflow 'Publish smoke summary' step must include slow-check ranking."
     }
 }))
 

@@ -241,6 +241,18 @@ jobs:
           $lines.Add("- Total checks: $($report.totalChecks)")
           $lines.Add("- Failed checks: $($report.failedChecks)")
           $lines.Add("- Elapsed ms: $($report.elapsedMilliseconds)")
+          $lines.Add("- Avg check ms: $($report.averageCheckDurationMs)")
+          $lines.Add("- Max check: $($report.maxCheckName) ($($report.maxCheckDurationMs) ms)")
+          $lines.Add("")
+
+          $lines.Add("Top 3 slow checks:")
+          $lines.Add("")
+          $lines.Add("| Check | Duration ms | Attempts | Endpoint |")
+          $lines.Add("| --- | ---: | ---: | --- |")
+          $slowest = @($report.results | Sort-Object DurationMs -Descending | Select-Object -First 3)
+          foreach ($item in $slowest) {
+            $lines.Add("| $($item.Check) | $($item.DurationMs) | $($item.Attempts) | $($item.Endpoint) |")
+          }
           $lines.Add("")
 
           if ([int]$report.failedChecks -gt 0) {

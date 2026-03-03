@@ -412,6 +412,14 @@ foreach ($item in $apiChecks) {
 $failed = @($results | Where-Object { -not $_.Passed })
 $runFinishedAtUtc = (Get-Date).ToUniversalTime()
 $elapsedMilliseconds = [int][Math]::Round(($runFinishedAtUtc - $runStartedAtUtc).TotalMilliseconds)
+$averageCheckDurationMs = 0
+if ($results.Count -gt 0) {
+    $averageCheckDurationMs = [int][Math]::Round((($results | Measure-Object -Property DurationMs -Average).Average))
+}
+
+$maxDurationItem = $results | Sort-Object DurationMs -Descending | Select-Object -First 1
+$maxCheckDurationMs = if ($null -ne $maxDurationItem) { [int]$maxDurationItem.DurationMs } else { 0 }
+$maxCheckName = if ($null -ne $maxDurationItem) { [string]$maxDurationItem.Check } else { "" }
 
 $reportPayload = [pscustomobject]@{
     startedUtc = $runStartedAtUtc.ToString("o")
@@ -427,6 +435,9 @@ $reportPayload = [pscustomobject]@{
     failureContentSnippetLength = $effectiveFailureContentSnippetLength
     totalChecks = $results.Count
     failedChecks = $failed.Count
+    averageCheckDurationMs = $averageCheckDurationMs
+    maxCheckDurationMs = $maxCheckDurationMs
+    maxCheckName = $maxCheckName
     results = @($results)
 }
 
@@ -436,6 +447,7 @@ $results | Format-Table -AutoSize Check, Passed, Attempts, DurationMs, Endpoint,
 
 Write-Host ""
 Write-Host "Smoke summary: total=$($results.Count), failed=$($failed.Count), elapsedMs=$elapsedMilliseconds"
+Write-Host "Smoke durations: avgCheckMs=$averageCheckDurationMs, maxCheckMs=$maxCheckDurationMs, maxCheck=$maxCheckName"
 
 $slowestChecks = @($results | Sort-Object DurationMs -Descending | Select-Object -First 3)
 if ($slowestChecks.Count -gt 0) {
