@@ -319,9 +319,15 @@ $results.Add((Run-Case -Name "release-fallback-step-args-contract" -Action {
 $results.Add((Run-Case -Name "ci-smoke-step-gate-contract" -Action {
     $smokeBlock = Get-StepBlock -Path $ciWorkflow -StepName "Smoke test"
     Assert-StepWinX64Gate -StepBlock $smokeBlock -StepName "Smoke test" -WorkflowLabel "CI workflow"
+    if (-not ($smokeBlock -like "*-TimeoutSeconds 45*")) {
+        throw "CI workflow Smoke test step must use -TimeoutSeconds 45."
+    }
 
     $startBlock = Get-StepBlock -Path $ciWorkflow -StepName "Start API for smoke test"
     Assert-StepWinX64Gate -StepBlock $startBlock -StepName "Start API for smoke test" -WorkflowLabel "CI workflow"
+    if (-not ($startBlock -like "*Start-Sleep -Seconds 6*")) {
+        throw "CI workflow Start API step must wait at least 6 seconds before smoke test."
+    }
     if (-not ($startBlock -like "*-RedirectStandardOutput `$outLog*")) {
         throw "CI workflow Start API step must redirect stdout to `$outLog."
     }
@@ -336,9 +342,15 @@ $results.Add((Run-Case -Name "ci-smoke-step-gate-contract" -Action {
 $results.Add((Run-Case -Name "release-smoke-step-gate-contract" -Action {
     $smokeBlock = Get-StepBlock -Path $releaseWorkflow -StepName "Smoke test"
     Assert-StepWinX64Gate -StepBlock $smokeBlock -StepName "Smoke test" -WorkflowLabel "Release workflow"
+    if (-not ($smokeBlock -like "*-TimeoutSeconds 45*")) {
+        throw "Release workflow Smoke test step must use -TimeoutSeconds 45."
+    }
 
     $startBlock = Get-StepBlock -Path $releaseWorkflow -StepName "Start API for smoke test"
     Assert-StepWinX64Gate -StepBlock $startBlock -StepName "Start API for smoke test" -WorkflowLabel "Release workflow"
+    if (-not ($startBlock -like "*Start-Sleep -Seconds 6*")) {
+        throw "Release workflow Start API step must wait at least 6 seconds before smoke test."
+    }
     if (-not ($startBlock -like "*-RedirectStandardOutput `$outLog*")) {
         throw "Release workflow Start API step must redirect stdout to `$outLog."
     }
