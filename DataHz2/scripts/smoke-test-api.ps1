@@ -132,15 +132,21 @@ function Invoke-CheckWithRetry([scriptblock]$CheckOperation, [int]$MaxAttempts, 
 function Wait-ForHealthReady([string]$Url, [int]$MaxWaitSeconds, [string]$ApiKeyValue, [string]$JwtValue) {
     $deadline = (Get-Date).AddSeconds([Math]::Max(1, $MaxWaitSeconds))
     $lastError = ""
+    $attempts = 0
 
     while ((Get-Date) -lt $deadline) {
+        $attempts++
         try {
             $resp = Invoke-Get -Url $Url -Timeout 3 -ApiKeyValue $ApiKeyValue -JwtValue $JwtValue
             if ($resp.StatusCode -eq 200) {
                 try {
                     $obj = $resp.Content | ConvertFrom-Json
                     if ($null -ne $obj -and ($obj.status -eq "ok" -or $obj.Status -eq "ok")) {
-                        return $true
+                        return [pscustomobject]@{
+                            Ready = $true
+                            Detail = "status=ok"
+                            Attempts = $attempts
+                        }
                     }
 
                     $lastError = "Health endpoint returned HTTP 200 but status is not ok."
@@ -160,7 +166,15 @@ function Wait-ForHealthReady([string]$Url, [int]$MaxWaitSeconds, [string]$ApiKey
         Start-Sleep -Milliseconds 500
     }
 
-    return $lastError
+    if ([string]::IsNullOrWhiteSpace($lastError)) {
+        $lastError = "Health endpoint did not become ready before timeout."
+    }
+
+    return [pscustomobject]@{
+        Ready = $false
+        Detail = $lastError
+        Attempts = $attempts
+    }
 }
 
 if (-not [string]::IsNullOrWhiteSpace($ServiceName)) {
@@ -178,33 +192,21 @@ if (-not [string]::IsNullOrWhiteSpace($ServiceName)) {
 
 $healthUrl = "$base/health"
 $healthReady = Wait-ForHealthReady -Url $healthUrl -MaxWaitSeconds $TimeoutSeconds -ApiKeyValue $ApiKey -JwtValue $BearerToken
-if ($healthReady -is [string]) {
-    Add-Result -Check "health" -Passed $false -Detail $healthReady
+if (-not $healthReady.Ready) {
+    $healthDetail = $healthReady.Detail
+    if ($healthReady.Attempts -gt 1) {
+        $healthDetail = "$healthDetail (attempts=$($healthReady.Attempts))"
+    }
+
+    Add-Result -Check "health" -Passed $false -Detail $healthDetail
 }
 else {
-try {
-    $health = Invoke-Get -Url $healthUrl -Timeout $TimeoutSeconds -ApiKeyValue $ApiKey -JwtValue $BearerToken
-    if ($health.StatusCode -ne 200) {
-        Add-Result -Check "health" -Passed $false -Detail "HTTP $($health.StatusCode)."
+    $healthDetail = $healthReady.Detail
+    if ($healthReady.Attempts -gt 1) {
+        $healthDetail = "$healthDetail (attempts=$($healthReady.Attempts))"
     }
-    else {
-        try {
-            $obj = $health.Content | ConvertFrom-Json
-            if ($null -ne $obj -and ($obj.status -eq "ok" -or $obj.Status -eq "ok")) {
-                Add-Result -Check "health" -Passed $true -Detail "status=ok"
-            }
-            else {
-                Add-Result -Check "health" -Passed $false -Detail "HTTP 200 but status is not ok."
-            }
-        }
-        catch {
-            Add-Result -Check "health" -Passed $false -Detail "HTTP 200 but response is not valid JSON."
-        }
-    }
-}
-catch {
-    Add-Result -Check "health" -Passed $false -Detail $_.Exception.Message
-}
+
+    Add-Result -Check "health" -Passed $true -Detail $healthDetail
 }
 
 foreach ($item in @(
