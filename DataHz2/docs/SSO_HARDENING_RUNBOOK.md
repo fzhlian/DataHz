@@ -1,64 +1,58 @@
-# SSO Hardening Runbook (DataHz.Api)
+# SSO/JWT 生产加固手册（DataHz.Api）
 
-## Scope
+最后更新：2026-03-03
 
-This runbook applies to deployments that enable `Security.Jwt.Enabled=true`.
-Target date baseline: 2026-03-03.
+适用范围：`Security.Jwt.Enabled=true` 的部署环境。
 
-## Baseline Controls
+## 基线控制
 
-1. Enforce trusted issuer:
-   - Set `Security.Jwt.ValidIssuer` to your IdP issuer URL.
-   - If OIDC discovery is used, set `Security.Jwt.Authority` to the same trust domain.
-2. Enforce audience:
-   - Set `Security.Jwt.ValidAudience` (or `Security.Jwt.Audience`) to the API resource ID.
-3. Enforce HTTPS metadata in production:
-   - Set `Security.Jwt.RequireHttpsMetadata=true`.
-4. Keep token lifetime strict:
-   - Default clock skew is 2 minutes; do not raise without incident justification.
-5. Use role claims mapped to platform roles:
-   - Keep `Security.Jwt.RoleClaimType` aligned with IdP (`role` or `roles`).
-   - Map only `Viewer`, `Operator`, `Admin`.
-6. Protect signing material:
-   - Prefer env/external secret provider over inline config.
-   - If using Azure Key Vault, set `Security.Secrets.ExternalProvider=azurekv` and store signing key as a secret.
-   - Rotate symmetric signing keys at least every 90 days for non-OIDC local mode.
+1. 固定可信签发方
+   - 设置 `Security.Jwt.ValidIssuer`
+   - 若使用 OIDC，`Authority` 与 `ValidIssuer` 应保持同一信任域
+2. 固定受众
+   - 设置 `Security.Jwt.ValidAudience`（或 `Audience`）
+3. 强制 HTTPS 元数据
+   - 生产设置 `Security.Jwt.RequireHttpsMetadata=true`
+4. 保持严格时钟偏移
+   - 默认偏移 2 分钟，除非事故处置不得放宽
+5. 角色 Claim 对齐
+   - `RoleClaimType` 与 IdP 保持一致（如 `role`/`roles`）
+   - 仅映射 `Viewer`、`Operator`、`Admin`
+6. 密钥保护
+   - 优先使用外部密钥服务，不在配置文件中存明文
+   - 对称签名模式建议每 90 天轮换一次
 
-## Deployment Checklist
+## 发布前检查
 
-1. Validate config before release:
+1. 配置一致性
    - `Security.Jwt.Enabled=true`
-   - `Security.ApiKey.Enabled` mode chosen intentionally (`false` for pure SSO, `true` for hybrid break-glass).
-2. Verify trust path:
-   - `Authority` reachable from app host.
-   - TLS certificate chain valid.
-3. Verify claim mapping:
-   - Use `/api/security/whoami` with a real token.
-   - Confirm `role` resolved as expected.
-4. Verify authorization boundaries:
-   - `Viewer` can read monitor/runtime.
-   - `Operator` can submit/cancel jobs.
-   - `Admin` can call `/api/audit/export` and `/api/security/hardening`.
-5. Verify audit:
-   - Ensure `Audit.Enabled=true` in production.
-   - Confirm auth failures produce `security.*` audit actions.
+   - `Security.ApiKey.Enabled` 是否按预期（纯 SSO 或混合应急）
+2. 信任链路
+   - `Authority` 从部署机可达
+   - TLS 证书链合法
+3. 身份映射
+   - 使用真实令牌调用 `/api/security/whoami`
+4. 鉴权边界
+   - `Viewer` 仅可读
+   - `Operator` 可提交/取消任务
+   - `Admin` 可访问安全与审计管理接口
+5. 审计有效
+   - `Audit.Enabled=true`
+   - 鉴权失败写入 `security.*` 事件
 
-## Incident Response
+## 事件响应
 
-1. Suspected token abuse:
-   - Rotate signing key or revoke IdP keys/session.
-   - Temporarily disable affected role mapping in IdP.
-2. Suspected secret leak:
-   - Rotate external secret immediately.
-   - Validate no plaintext secret remains in config history.
-3. Emergency containment:
-   - Enable hybrid mode and use short-lived admin API key for break-glass.
-   - Restrict ingress to trusted network segment until IdP trust is restored.
+1. 疑似令牌滥用
+   - 轮换签名密钥或在 IdP 侧吊销会话/密钥
+2. 疑似密钥泄露
+   - 立即更新外部密钥，排查配置与日志中是否残留明文
+3. 应急兜底
+   - 可临时启用混合模式，用短时效管理员 API Key 做故障处置
+   - 同步收缩入口网络范围
 
-## Validation Commands
+## 验证命令
 
 ```powershell
-# Build and run tests
-& "C:\Program Files\dotnet\dotnet.exe" build .\DataHz2.sln -c Release
-& "C:\Program Files\dotnet\dotnet.exe" test .\DataHz2.sln -c Release
+dotnet build .\DataHz2.sln -c Release
+dotnet test .\DataHz2.sln -c Release
 ```

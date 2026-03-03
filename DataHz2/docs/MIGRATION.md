@@ -1,34 +1,40 @@
-﻿# Migration Map (VB6 -> DataHz 2.0)
+# 迁移映射（VB6 -> DataHz 2.0）
 
-## Core Correspondence
+最后更新：2026-03-03
+
+## 核心能力映射
 
 - `GetTableInfo` / `GetTableInfo_xlsx` / `GetTableInfo_LL_xlsx`
-  -> `ITemplateParser` (`LegacyIniTemplateParser` in phase-1)
+  - 对应 `ITemplateParser`
+  - 当前实现：`LegacyIniTemplateParser`、`LegacyXlsxTemplateParser`
 - `GetXZCode`
-  -> `IAreaCodeProvider` (`TextAreaCodeProvider`)
+  - 对应 `IAreaCodeProvider`
+  - 当前实现：`TextAreaCodeProvider`
 - `FormatText`
-  -> `PlaceholderResolver`
+  - 对应 `PlaceholderResolver`
 - `SumTable` / `SumTable_LL` / `SumTable_To_Mdb`
-  -> `ITaskPlanner` + `IExecutionEngine` (dry-run now, SQL engine in phase-2)
+  - 对应 `ITaskPlanner` + `IExecutionEngine`
 - `OpenDB`
-  -> planned connector layer (phase-2)
+  - 对应 Access 执行引擎中的数据库连接流程
 - `DoExpor` / `ExporToExcel`
-  -> planned export service (phase-2)
+  - 对应模板化导出与流向汇总写出
 
-## Phase Plan
+## 分阶段进展
 
-1. Phase-1 (done): architecture baseline + legacy INI compatibility + task planning API.
-2. Phase-2 (done): Access connector + SQL execution engine + column summary pipeline.
-3. Phase-3 (done in current baseline):
-   - xlsx parser (standard + FX flow template),
-   - template-based Excel export,
-   - county-level incremental cache (source file timestamp + template hash),
-   - flow rollup file generation.
-4. Phase-4 (in progress): production hardening
-   - done: async job queue + file-backed persistence + queue stats + cancel API + configurable worker concurrency + API key auth switch + role-based key permissions + JWT bearer integration (OIDC/symmetric mode) + env/command secret overrides + external secret provider abstraction (file/vault/azure key vault/aws secrets manager/gcp secret manager/aliyun kms) + online key rotation support (API key/JWT symmetric key without restart) + rotation grace window + secret cache/stale fallback + admin secret runtime/refresh/events API + external provider runtime telemetry (attempt/success/latency/error) + security hardening report API + monitor external-secrets API + monitor external-secrets export/reset API + audit trail + monitor overview API + monitor job drill-down API + audit export API + built-in dashboard UI + API integration tests + SSO hardening runbook.
+1. 第一阶段（已完成）
+   - 架构基线、INI 模板兼容、任务规划 API。
+2. 第二阶段（已完成）
+   - Access 连接与 SQL 执行引擎、列汇总流水线。
+3. 第三阶段（已完成）
+   - 标准/流向 XLSX 模板解析、模板导出、县级增量缓存、流向汇总文件生成。
+4. 第四阶段（持续演进）
+   - 异步任务队列、文件持久化、取消与统计。
+   - API Key + JWT 鉴权与角色权限。
+   - 外部密钥服务、动态密钥轮换、密钥运行态监控。
+   - 审计链路、监控总览、Dashboard、发布加固脚本。
 
-## Risk Controls
+## 迁移风险控制
 
-- Keep old template semantics unchanged where possible.
-- Build regression packs from representative historical templates.
-- Compare county-level outputs against VB6 output baselines.
+1. 模板语义优先保持与历史行为一致。
+2. 使用历史模板样本建立回归包，对比 VB6 与 DataHz2 输出。
+3. 以县级结果对齐作为验收基线，逐步扩大到地市/省级汇总。

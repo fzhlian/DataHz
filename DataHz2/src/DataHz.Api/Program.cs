@@ -9,6 +9,7 @@ using DataHz.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using System.Diagnostics;
 using System.Reflection;
 using System.Security.Claims;
@@ -38,7 +39,32 @@ builder.Services
 builder.Services.AddAuthorization();
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "DataHz API 文档",
+        Version = "v1",
+        Description = "DataHz 2.0 服务接口（本地化中文说明）"
+    });
+
+    options.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.ApiKey,
+        In = ParameterLocation.Header,
+        Name = "X-Api-Key",
+        Description = "API Key 鉴权，请在请求头中传入 X-Api-Key。"
+    });
+
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "JWT 鉴权，请填写 Bearer Token（无需手工输入 Bearer 前缀）。"
+    });
+});
 builder.Services.AddDataHzInfrastructure();
 builder.Services.AddSingleton<IAuditTrail, FileAuditTrail>();
 builder.Services.AddSingleton<IAuditLogReader, FileAuditLogReader>();
@@ -213,18 +239,28 @@ app.Use(async (context, next) =>
 });
 
 app.UseSwagger();
-app.UseSwaggerUI();
+app.UseSwaggerUI(options =>
+{
+    options.DocumentTitle = "DataHz API 文档";
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "DataHz API v1（中文）");
+    options.InjectJavascript("/swagger-zh.js");
+    options.DisplayRequestDuration();
+});
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
-app.MapGet("/dashboard", () => Results.Redirect("/dashboard/"));
+app.MapGet("/dashboard", () => Results.Redirect("/dashboard/"))
+    .ExcludeFromDescription();
 
 app.MapGet("/health", () => Results.Ok(new
 {
     status = "ok",
     service = "DataHz.Api",
     utc = DateTimeOffset.UtcNow
-}));
+}))
+    .WithTags("系统")
+    .WithSummary("健康检查")
+    .WithDescription("返回服务健康状态、服务名和当前 UTC 时间。");
 
 app.MapGet("/api/security/whoami", (HttpContext context) =>
 {
@@ -240,12 +276,18 @@ app.MapGet("/api/security/whoami", (HttpContext context) =>
         role = principal?.Role.ToString() ?? (securityEnabled ? "none" : AccessRole.Admin.ToString()),
         source = principal?.Source ?? (securityEnabled ? "none" : "local")
     });
-});
+})
+    .WithTags("安全")
+    .WithSummary("当前身份信息")
+    .WithDescription("返回当前请求的鉴权状态、身份来源与角色信息。");
 
 app.MapGet("/api/security/hardening", (ISecurityHardeningInspector inspector) =>
 {
     return Results.Ok(inspector.Inspect());
-});
+})
+    .WithTags("安全")
+    .WithSummary("安全加固检查")
+    .WithDescription("返回当前配置下的安全加固检查结果。");
 
 app.MapGet("/api/security/secrets/runtime", (HttpContext context) =>
 {
@@ -292,7 +334,10 @@ app.MapGet("/api/security/secrets/runtime", (HttpContext context) =>
         cache = SecuritySecretResolver.GetRuntimeCacheState(),
         providers = SecuritySecretResolver.GetExternalProviderRuntimeState()
     });
-});
+})
+    .WithTags("安全")
+    .WithSummary("密钥运行态")
+    .WithDescription("返回密钥来源、缓存状态和外部密钥提供方运行态（不包含明文密钥）。");
 
 app.MapPost("/api/security/secrets/refresh", (HttpContext context) =>
 {
@@ -332,7 +377,10 @@ app.MapPost("/api/security/secrets/refresh", (HttpContext context) =>
         cache = SecuritySecretResolver.GetRuntimeCacheState(),
         providers = SecuritySecretResolver.GetExternalProviderRuntimeState()
     });
-});
+})
+    .WithTags("安全")
+    .WithSummary("刷新密钥缓存")
+    .WithDescription("强制刷新 API Key/JWT 密钥来源和运行态缓存。");
 
 app.MapGet("/api/security/secrets/events", (int? take, IAuditLogReader auditReader) =>
 {
@@ -348,7 +396,10 @@ app.MapGet("/api/security/secrets/events", (int? take, IAuditLogReader auditRead
         .ToList();
 
     return Results.Ok(rows);
-});
+})
+    .WithTags("安全")
+    .WithSummary("密钥操作事件")
+    .WithDescription("查询最近的密钥运行态读取和刷新审计事件。");
 
 app.MapGet("/api/runtime/dotnet", () =>
 {
@@ -360,7 +411,10 @@ app.MapGet("/api/runtime/dotnet", () =>
         os = Environment.OSVersion.ToString(),
         is64Bit = Environment.Is64BitProcess
     });
-});
+})
+    .WithTags("系统")
+    .WithSummary(".NET 运行时信息")
+    .WithDescription("返回当前进程的 .NET、操作系统与位数信息。");
 
 app.MapGet("/api/monitor/overview", (int? jobs, int? audit, IExecutionJobQueue queue, IAuditLogReader auditReader) =>
 {
@@ -453,7 +507,10 @@ app.MapGet("/api/monitor/overview", (int? jobs, int? audit, IExecutionJobQueue q
                 .ToList()
         }
     });
-});
+})
+    .WithTags("监控")
+    .WithSummary("监控总览")
+    .WithDescription("返回服务运行态、队列状态、最近作业、审计与外部密钥提供方概览。");
 
 app.MapGet("/api/monitor/external-secrets",
     (int? take, string? provider, string? purpose, string? status, int? windowMinutes, DateTimeOffset? fromUtc, DateTimeOffset? toUtc) =>
@@ -496,7 +553,10 @@ app.MapGet("/api/monitor/external-secrets",
         },
         rows
     });
-});
+})
+    .WithTags("监控")
+    .WithSummary("外部密钥提供方状态")
+    .WithDescription("按条件筛选外部密钥提供方的最近调用状态与统计信息。");
 
 app.MapGet("/api/monitor/external-secrets/export",
     (string? format, int? take, string? provider, string? purpose, string? status, int? windowMinutes, DateTimeOffset? fromUtc, DateTimeOffset? toUtc) =>
@@ -534,7 +594,10 @@ app.MapGet("/api/monitor/external-secrets/export",
         fileContents: Encoding.UTF8.GetBytes(csv),
         contentType: "text/csv; charset=utf-8",
         fileDownloadName: csvName);
-});
+})
+    .WithTags("监控")
+    .WithSummary("导出外部密钥状态")
+    .WithDescription("导出外部密钥提供方状态为 CSV 或 JSONL。");
 
 app.MapPost("/api/monitor/external-secrets/reset",
     (HttpContext context, string? provider, string? purpose, string? status, int? windowMinutes, DateTimeOffset? fromUtc, DateTimeOffset? toUtc) =>
@@ -576,7 +639,10 @@ app.MapPost("/api/monitor/external-secrets/reset",
         },
         clearedCount
     });
-});
+})
+    .WithTags("监控")
+    .WithSummary("清理外部密钥状态")
+    .WithDescription("按过滤条件清理外部密钥提供方运行态记录。");
 
 app.MapGet("/api/monitor/jobs/{id:guid}", (Guid id, int? audit, IExecutionJobQueue queue, IAuditLogReader auditReader) =>
 {
@@ -591,7 +657,10 @@ app.MapGet("/api/monitor/jobs/{id:guid}", (Guid id, int? audit, IExecutionJobQue
         job = record,
         events = auditReader.ReadByJob(id, auditTake)
     });
-});
+})
+    .WithTags("监控")
+    .WithSummary("作业监控明细")
+    .WithDescription("查询单个作业详情及关联审计事件。");
 
 app.MapGet("/api/audit/export",
     (string? format,
@@ -633,7 +702,10 @@ app.MapGet("/api/audit/export",
         fileContents: Encoding.UTF8.GetBytes(csv),
         contentType: "text/csv; charset=utf-8",
         fileDownloadName: csvName);
-});
+})
+    .WithTags("审计")
+    .WithSummary("导出审计日志")
+    .WithDescription("按过滤条件导出审计日志（CSV/JSONL）。");
 
 app.MapPost("/api/templates/parse", (ParseTemplateRequest request, ITemplateParser parser) =>
 {
@@ -660,7 +732,10 @@ app.MapPost("/api/templates/parse", (ParseTemplateRequest request, ITemplatePars
     {
         return Results.BadRequest(new { message = ex.Message });
     }
-});
+})
+    .WithTags("模板")
+    .WithSummary("解析模板")
+    .WithDescription("解析 INI/XLSX 模板并返回模板结构摘要。");
 
 app.MapPost("/api/tasks/plan", (PlanTasksRequest request, ITaskPlanner planner) =>
 {
@@ -695,7 +770,10 @@ app.MapPost("/api/tasks/plan", (PlanTasksRequest request, ITaskPlanner planner) 
     {
         return Results.BadRequest(new { message = ex.Message });
     }
-});
+})
+    .WithTags("任务")
+    .WithSummary("生成执行计划")
+    .WithDescription("根据模板和行政区代码生成可执行任务计划。");
 
 app.MapPost("/api/tasks/execute", (ExecuteRequestContract request, ITaskPlanner planner, IExecutionEngine engine) =>
 {
@@ -716,7 +794,10 @@ app.MapPost("/api/tasks/execute", (ExecuteRequestContract request, ITaskPlanner 
     {
         return Results.BadRequest(new { message = ex.Message });
     }
-});
+})
+    .WithTags("任务")
+    .WithSummary("同步执行任务")
+    .WithDescription("按请求计划立即执行任务，支持 dryRun 与 incremental。");
 
 app.MapPost("/api/jobs/submit", (SubmitJobRequest request, IExecutionJobQueue queue, HttpContext http) =>
 {
@@ -734,7 +815,10 @@ app.MapPost("/api/jobs/submit", (SubmitJobRequest request, IExecutionJobQueue qu
             ? "Reused existing active job by idempotency key."
             : "Job accepted."
     });
-});
+})
+    .WithTags("作业队列")
+    .WithSummary("提交异步作业")
+    .WithDescription("提交后台异步执行作业，支持幂等键去重。");
 
 app.MapPost("/api/jobs/{id:guid}/cancel", (Guid id, CancelJobRequest? request, IExecutionJobQueue queue) =>
 {
@@ -746,25 +830,37 @@ app.MapPost("/api/jobs/{id:guid}/cancel", (Guid id, CancelJobRequest? request, I
         ExecutionJobCancelStatus.CancellationRequested => Results.Accepted($"/api/jobs/{id}", new { jobId = id, result.Status, result.Message, result.JobStatus }),
         _ => Results.Ok(new { jobId = id, result.Status, result.Message, result.JobStatus })
     };
-});
+})
+    .WithTags("作业队列")
+    .WithSummary("取消异步作业")
+    .WithDescription("取消指定作业；队列中作业立即取消，运行中作业会请求中止。");
 
 app.MapGet("/api/jobs", (int? take, IExecutionJobQueue queue) =>
 {
     var max = take.GetValueOrDefault(50);
     return Results.Ok(queue.List(max));
-});
+})
+    .WithTags("作业队列")
+    .WithSummary("查询作业列表")
+    .WithDescription("分页查询最近作业记录。");
 
 app.MapGet("/api/jobs/stats", (IExecutionJobQueue queue) =>
 {
     return Results.Ok(queue.GetStats());
-});
+})
+    .WithTags("作业队列")
+    .WithSummary("查询作业统计")
+    .WithDescription("返回队列中各状态作业统计信息。");
 
 app.MapGet("/api/jobs/{id:guid}", (Guid id, IExecutionJobQueue queue) =>
 {
     return queue.TryGet(id, out var record)
         ? Results.Ok(record)
         : Results.NotFound(new { message = "Job not found.", jobId = id });
-});
+})
+    .WithTags("作业队列")
+    .WithSummary("查询作业详情")
+    .WithDescription("按作业 ID 查询作业完整详情。");
 
 app.Run();
 

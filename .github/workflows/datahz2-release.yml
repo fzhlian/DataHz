@@ -49,6 +49,9 @@ jobs:
       - name: Check CI workflow contracts
         run: .\DataHz2\scripts\check-ci-contracts.ps1
 
+      - name: Check documentation sync
+        run: .\DataHz2\scripts\check-docs-sync.ps1
+
       - name: Restore
         run: dotnet restore .\DataHz2\DataHz2.sln
 

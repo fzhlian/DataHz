@@ -187,6 +187,8 @@ $results.Add((Run-Case -Name "ci-build-test-contracts" -Action {
     Assert-Contains -Path $ciWorkflow -Needle ".\DataHz2\scripts\check-history-audits.ps1" -Label "history-audit run command"
     Assert-Contains -Path $ciWorkflow -Needle "Check CI workflow contracts" -Label "build-test step"
     Assert-Contains -Path $ciWorkflow -Needle ".\DataHz2\scripts\check-ci-contracts.ps1" -Label "ci-contract run command"
+    Assert-Contains -Path $ciWorkflow -Needle "Check documentation sync" -Label "build-test step"
+    Assert-Contains -Path $ciWorkflow -Needle ".\DataHz2\scripts\check-docs-sync.ps1" -Label "docs-sync run command"
 }))
 
 $results.Add((Run-Case -Name "release-build-test-contracts" -Action {
@@ -196,6 +198,8 @@ $results.Add((Run-Case -Name "release-build-test-contracts" -Action {
     Assert-Contains -Path $releaseWorkflow -Needle ".\DataHz2\scripts\check-history-audits.ps1" -Label "history-audit run command"
     Assert-Contains -Path $releaseWorkflow -Needle "Check CI workflow contracts" -Label "build-test step"
     Assert-Contains -Path $releaseWorkflow -Needle ".\DataHz2\scripts\check-ci-contracts.ps1" -Label "ci-contract run command"
+    Assert-Contains -Path $releaseWorkflow -Needle "Check documentation sync" -Label "build-test step"
+    Assert-Contains -Path $releaseWorkflow -Needle ".\DataHz2\scripts\check-docs-sync.ps1" -Label "docs-sync run command"
 }))
 
 $results.Add((Run-Case -Name "ci-build-test-order-contract" -Action {
@@ -203,6 +207,7 @@ $results.Add((Run-Case -Name "ci-build-test-order-contract" -Action {
         "- name: Validate PowerShell scripts",
         "- name: Check history/deployment-status audits",
         "- name: Check CI workflow contracts",
+        "- name: Check documentation sync",
         "- name: Restore",
         "- name: Build",
         "- name: Test"
@@ -214,6 +219,7 @@ $results.Add((Run-Case -Name "release-build-test-order-contract" -Action {
         "- name: Validate PowerShell scripts",
         "- name: Check history/deployment-status audits",
         "- name: Check CI workflow contracts",
+        "- name: Check documentation sync",
         "- name: Restore",
         "- name: Build",
         "- name: Test"

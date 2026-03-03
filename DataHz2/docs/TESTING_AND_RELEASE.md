@@ -1,0 +1,65 @@
+# 测试与发布
+
+最后更新：2026-03-03
+
+## 测试命令
+
+```powershell
+dotnet test .\DataHz2.sln -c Release
+```
+
+## 脚本校验
+
+```powershell
+.\scripts\validate-scripts.ps1
+.\scripts\check-history-audits.ps1
+.\scripts\check-ci-contracts.ps1
+.\scripts\check-docs-sync.ps1
+```
+
+## CI 工作流
+
+- `/.github/workflows/datahz2-ci.yml`
+  - 触发：`push`、`pull_request`、`workflow_dispatch`
+  - 构建测试 + 双运行时打包校验（`win-x64`、`win-arm64`）
+- `/.github/workflows/datahz2-release.yml`
+  - 触发：标签 `datahz2-v*`
+  - 构建、测试、打包、资产复验、发布 GitHub Release
+
+## 本地发布与打包
+
+```powershell
+.\scripts\publish-api.ps1 -Configuration Release -Runtime win-x64
+.\scripts\package-release.ps1 -InputDir .\artifacts\publish\win-x64 -OutputDir .\artifacts\packages -Name datahz2-api-win-x64 -Overwrite
+.\scripts\verify-release.ps1 -PackageZip .\artifacts\packages\datahz2-api-win-x64.zip
+```
+
+## 生产发布
+
+```powershell
+.\scripts\deploy-prod.ps1 `
+  -ServiceName DataHz.Api `
+  -PackageZip .\artifacts\packages\datahz2-api-win-x64.zip `
+  -PackageSha256File .\artifacts\packages\datahz2-api-win-x64.sha256 `
+  -PackageManifestFile .\artifacts\packages\datahz2-api-win-x64.manifest.json `
+  -Urls "http://0.0.0.0:5080"
+```
+
+## 发布资产
+
+每个运行时至少包含：
+
+- `*.zip`
+- `*.sha256`
+- `*.manifest.json`
+
+多运行时汇总发布包含：
+
+- `datahz2-release-<tag>.index.json`
+- `datahz2-release-<tag>.sha256`
+
+## 失败回滚
+
+```powershell
+.\scripts\rollback-api.ps1 -ServiceName DataHz.Api -Urls "http://0.0.0.0:5080"
+```
