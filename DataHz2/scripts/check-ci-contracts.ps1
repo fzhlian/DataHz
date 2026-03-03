@@ -334,6 +334,9 @@ $results.Add((Run-Case -Name "ci-smoke-step-gate-contract" -Action {
     if (-not ($smokeBlock -like "*-CheckRetryDelayMilliseconds 800*")) {
         throw "CI workflow Smoke test step must use -CheckRetryDelayMilliseconds 800."
     }
+    if (-not ($smokeBlock -like "*-HealthPollDelayMilliseconds 500*")) {
+        throw "CI workflow Smoke test step must use -HealthPollDelayMilliseconds 500."
+    }
     if (-not ($smokeBlock -like "*-OutputJsonPath `$reportLog*")) {
         throw "CI workflow Smoke test step must pass -OutputJsonPath `$reportLog."
     }
@@ -371,6 +374,9 @@ $results.Add((Run-Case -Name "release-smoke-step-gate-contract" -Action {
     }
     if (-not ($smokeBlock -like "*-CheckRetryDelayMilliseconds 800*")) {
         throw "Release workflow Smoke test step must use -CheckRetryDelayMilliseconds 800."
+    }
+    if (-not ($smokeBlock -like "*-HealthPollDelayMilliseconds 500*")) {
+        throw "Release workflow Smoke test step must use -HealthPollDelayMilliseconds 500."
     }
     if (-not ($smokeBlock -like "*-OutputJsonPath `$reportLog*")) {
         throw "Release workflow Smoke test step must pass -OutputJsonPath `$reportLog."
@@ -471,6 +477,9 @@ $results.Add((Run-Case -Name "ci-smoke-summary-contract" -Action {
     if (-not ($summaryBlock -like "*maxCheckDurationMs*")) {
         throw "CI workflow 'Publish smoke summary' step must include max check duration."
     }
+    if (-not ($summaryBlock -like "*healthPollDelayMilliseconds*")) {
+        throw "CI workflow 'Publish smoke summary' step must include health poll delay."
+    }
     if (-not ($summaryBlock -like "*Sort-Object DurationMs -Descending*")) {
         throw "CI workflow 'Publish smoke summary' step must include slow-check ranking."
     }
@@ -496,6 +505,9 @@ $results.Add((Run-Case -Name "release-smoke-summary-contract" -Action {
     }
     if (-not ($summaryBlock -like "*maxCheckDurationMs*")) {
         throw "Release workflow 'Publish smoke summary' step must include max check duration."
+    }
+    if (-not ($summaryBlock -like "*healthPollDelayMilliseconds*")) {
+        throw "Release workflow 'Publish smoke summary' step must include health poll delay."
     }
     if (-not ($summaryBlock -like "*Sort-Object DurationMs -Descending*")) {
         throw "Release workflow 'Publish smoke summary' step must include slow-check ranking."

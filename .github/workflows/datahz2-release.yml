@@ -193,6 +193,7 @@ jobs:
               -TimeoutSeconds 120 `
               -CheckRetryCount 5 `
               -CheckRetryDelayMilliseconds 800 `
+              -HealthPollDelayMilliseconds 500 `
               -OutputJsonPath $reportLog
           }
           catch {
@@ -237,6 +238,7 @@ jobs:
           $lines.Add("- Elapsed ms: $($report.elapsedMilliseconds)")
           $lines.Add("- Avg check ms: $($report.averageCheckDurationMs)")
           $lines.Add("- Max check: $($report.maxCheckName) ($($report.maxCheckDurationMs) ms)")
+          $lines.Add("- Health poll delay ms: $($report.healthPollDelayMilliseconds)")
           $lines.Add("")
 
           $lines.Add("Top 3 slow checks:")
