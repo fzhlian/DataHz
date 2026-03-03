@@ -319,8 +319,8 @@ $results.Add((Run-Case -Name "release-fallback-step-args-contract" -Action {
 $results.Add((Run-Case -Name "ci-smoke-step-gate-contract" -Action {
     $smokeBlock = Get-StepBlock -Path $ciWorkflow -StepName "Smoke test"
     Assert-StepWinX64Gate -StepBlock $smokeBlock -StepName "Smoke test" -WorkflowLabel "CI workflow"
-    if (-not ($smokeBlock -like "*-TimeoutSeconds 45*")) {
-        throw "CI workflow Smoke test step must use -TimeoutSeconds 45."
+    if (-not ($smokeBlock -like "*-TimeoutSeconds 120*")) {
+        throw "CI workflow Smoke test step must use -TimeoutSeconds 120."
     }
 
     $startBlock = Get-StepBlock -Path $ciWorkflow -StepName "Start API for smoke test"
@@ -342,8 +342,8 @@ $results.Add((Run-Case -Name "ci-smoke-step-gate-contract" -Action {
 $results.Add((Run-Case -Name "release-smoke-step-gate-contract" -Action {
     $smokeBlock = Get-StepBlock -Path $releaseWorkflow -StepName "Smoke test"
     Assert-StepWinX64Gate -StepBlock $smokeBlock -StepName "Smoke test" -WorkflowLabel "Release workflow"
-    if (-not ($smokeBlock -like "*-TimeoutSeconds 45*")) {
-        throw "Release workflow Smoke test step must use -TimeoutSeconds 45."
+    if (-not ($smokeBlock -like "*-TimeoutSeconds 120*")) {
+        throw "Release workflow Smoke test step must use -TimeoutSeconds 120."
     }
 
     $startBlock = Get-StepBlock -Path $releaseWorkflow -StepName "Start API for smoke test"

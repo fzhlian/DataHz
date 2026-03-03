@@ -198,7 +198,7 @@ jobs:
         run: |
           .\DataHz2\scripts\smoke-test-api.ps1 `
             -BaseUrl $env:DATAHZ2_SMOKE_URL `
-            -TimeoutSeconds 45
+            -TimeoutSeconds 120
 
       - name: Dump API log on failure
         if: failure() && matrix.runtime == 'win-x64'

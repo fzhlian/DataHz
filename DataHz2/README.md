@@ -416,7 +416,7 @@ GitHub Actions workflow: `.github/workflows/datahz2-ci.yml`
 - assert fallback guard artifacts are auto-cleaned after self-test
 - run package smoke test on `win-x64`
 - collect smoke stdout/stderr separately on failure for faster troubleshooting
-- use 6-second startup warmup + 45-second smoke timeout to reduce cold-start flakes
+- use 6-second startup warmup + 120-second smoke timeout to reduce cold-start flakes
 - publish runtime-specific artifacts:
   - `datahz2-win-x64-package`
   - `datahz2-win-arm64-package`
@@ -435,7 +435,7 @@ Tag release workflow: `.github/workflows/datahz2-release.yml`
 - assert fallback guard artifacts are auto-cleaned after self-test
 - run package smoke test on `win-x64`
 - collect smoke stdout/stderr separately on failure for faster troubleshooting
-- use 6-second startup warmup + 45-second smoke timeout to reduce cold-start flakes
+- use 6-second startup warmup + 120-second smoke timeout to reduce cold-start flakes
 - publish assets in a separate `publish-release` job gated by GitHub Environment `datahz2-production`
 - verify downloaded release assets again in `publish-release` (`verify-release-assets.ps1`) before uploading to GitHub Release
 - create GitHub Release and upload:
