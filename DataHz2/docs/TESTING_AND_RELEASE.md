@@ -17,6 +17,10 @@ dotnet test .\DataHz2.sln -c Release
 .\scripts\check-docs-sync.ps1
 ```
 
+`smoke-test-api.ps1` 的静态页面探测规则说明：
+- `swagger` 使用 `/swagger/index.html`，必须返回 `200` 且包含 `Swagger UI`。
+- `dashboard` 使用 `/dashboard/`，允许 `200` 或标准重定向（`301/302/307/308`）。
+
 ## CI 工作流
 
 - `/.github/workflows/datahz2-ci.yml`

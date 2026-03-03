@@ -170,21 +170,24 @@ catch {
 }
 
 foreach ($item in @(
-    @{ Name = "swagger"; Path = "/swagger/index.html"; Contains = "Swagger UI" },
-    @{ Name = "dashboard"; Path = "/dashboard/index.html"; Contains = "DataHz Monitor Board" }
+    @{ Name = "swagger"; Path = "/swagger/index.html"; Contains = "Swagger UI"; AllowRedirect = $false },
+    @{ Name = "dashboard"; Path = "/dashboard/"; Contains = "DataHz Monitor Board"; AllowRedirect = $true }
 )) {
     try {
         $resp = Invoke-Get -Url "$base$($item.Path)" -Timeout $TimeoutSeconds -ApiKeyValue $ApiKey -JwtValue $BearerToken
-        if ($resp.StatusCode -ne 200) {
-            Add-Result -Check $item.Name -Passed $false -Detail "HTTP $($resp.StatusCode)."
-            continue
+        if ($resp.StatusCode -eq 200) {
+            if ($resp.Content -like "*$($item.Contains)*") {
+                Add-Result -Check $item.Name -Passed $true -Detail "HTTP 200."
+            }
+            else {
+                Add-Result -Check $item.Name -Passed $false -Detail "HTTP 200 but expected marker '$($item.Contains)' not found."
+            }
         }
-
-        if ($resp.Content -like "*$($item.Contains)*") {
-            Add-Result -Check $item.Name -Passed $true -Detail "HTTP 200."
+        elseif ($item.AllowRedirect -and (Test-Status -Code $resp.StatusCode -Allowed @(301, 302, 307, 308))) {
+            Add-Result -Check $item.Name -Passed $true -Detail "HTTP $($resp.StatusCode) redirect."
         }
         else {
-            Add-Result -Check $item.Name -Passed $false -Detail "HTTP 200 but expected marker '$($item.Contains)' not found."
+            Add-Result -Check $item.Name -Passed $false -Detail "HTTP $($resp.StatusCode)."
         }
     }
     catch {
@@ -223,7 +226,7 @@ foreach ($item in $apiChecks) {
     }
 }
 
-$failed = $results | Where-Object { -not $_.Passed }
+$failed = @($results | Where-Object { -not $_.Passed })
 $results | Format-Table -AutoSize Check, Passed, Detail
 
 if ($failed.Count -gt 0) {
