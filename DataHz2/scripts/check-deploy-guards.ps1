@@ -276,6 +276,7 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             status = "warming"
                             authorization = $authHeader
                             authorization_alt = "Bearer guard-alt-authorization-should-redact"
+                            authorization_alt_stage = "Bearer guard-alt-stage-authorization-should-redact"
                             proxy_authorization = "Bearer guard-proxy-authorization-should-redact"
                             cookie = "guard-cookie-header-should-redact"
                             "set-cookie" = "sessionid=guard-cookie-session-should-redact; Path=/; HttpOnly"
@@ -284,6 +285,7 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             note_basic = "free-text basic=Basic guard-freeform-basic-should-redact"
                             x_api_key = $apiKeyHeader
                             x_api_key_alt = "guard-x-api-key-should-redact"
+                            x_api_key_alt_backup = "guard-x-api-key-backup-should-redact"
                             token = $apiKeyHeader
                             access_token = $authHeader
                             refresh_token = "guard-refresh-token-should-redact"
@@ -291,7 +293,7 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             secret = "guard-plain-secret-should-redact"
                             password = "guard-password-should-redact"
                             jwt = $authHeader
-                            target_url = "http://guard-url-user:guard-url-pass@127.0.0.1/internal?access_token=guard-url-token-should-redact&api_key=guard-url-apikey-should-redact&x_api_key=guard-url-xapikey-should-redact&client_secret=guard-client-secret-should-redact&password=guard-url-password-should-redact&authorization=guard-url-authorization-should-redact&proxy_authorization=Basic%20guard-url-basic-should-redact&cookie=guard-url-cookie-should-redact&sessionid=guard-url-session-should-redact"
+                            target_url = "http://guard-url-user:guard-url-pass@127.0.0.1/internal?access_token=guard-url-token-should-redact&api_key=guard-url-apikey-should-redact&x_api_key=guard-url-xapikey-should-redact&x_api_key_alt_backup=guard-url-xapikey-backup-should-redact&client_secret=guard-client-secret-should-redact&password=guard-url-password-should-redact&authorization=guard-url-authorization-should-redact&authorization_alt_stage=guard-url-authorization-alt-stage-should-redact&proxy_authorization=Basic%20guard-url-basic-should-redact&cookie=guard-url-cookie-should-redact&sessionid=guard-url-session-should-redact"
                         }
                         $body = ($payload | ConvertTo-Json -Compress)
                     }
@@ -300,6 +302,7 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             error = "simulated-failure"
                             authorization = $authHeader
                             authorization_alt = "Bearer guard-alt-authorization-should-redact"
+                            authorization_alt_stage = "Bearer guard-alt-stage-authorization-should-redact"
                             proxy_authorization = "Bearer guard-proxy-authorization-should-redact"
                             cookie = "guard-cookie-header-should-redact"
                             "set-cookie" = "sessionid=guard-cookie-session-should-redact; Path=/; HttpOnly"
@@ -308,6 +311,7 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             note_basic = "free-text basic=Basic guard-freeform-basic-should-redact"
                             x_api_key = $apiKeyHeader
                             x_api_key_alt = "guard-x-api-key-should-redact"
+                            x_api_key_alt_backup = "guard-x-api-key-backup-should-redact"
                             token = $apiKeyHeader
                             access_token = $authHeader
                             refresh_token = "guard-refresh-token-should-redact"
@@ -315,7 +319,7 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             secret = "guard-plain-secret-should-redact"
                             password = "guard-password-should-redact"
                             jwt = $authHeader
-                            target_url = "http://guard-url-user:guard-url-pass@127.0.0.1/internal?access_token=guard-url-token-should-redact&api_key=guard-url-apikey-should-redact&x_api_key=guard-url-xapikey-should-redact&client_secret=guard-client-secret-should-redact&password=guard-url-password-should-redact&authorization=guard-url-authorization-should-redact&proxy_authorization=Basic%20guard-url-basic-should-redact&cookie=guard-url-cookie-should-redact&sessionid=guard-url-session-should-redact"
+                            target_url = "http://guard-url-user:guard-url-pass@127.0.0.1/internal?access_token=guard-url-token-should-redact&api_key=guard-url-apikey-should-redact&x_api_key=guard-url-xapikey-should-redact&x_api_key_alt_backup=guard-url-xapikey-backup-should-redact&client_secret=guard-client-secret-should-redact&password=guard-url-password-should-redact&authorization=guard-url-authorization-should-redact&authorization_alt_stage=guard-url-authorization-alt-stage-should-redact&proxy_authorization=Basic%20guard-url-basic-should-redact&cookie=guard-url-cookie-should-redact&sessionid=guard-url-session-should-redact"
                         }
                         $body = ($payload | ConvertTo-Json -Compress)
                     }
@@ -1517,9 +1521,11 @@ try {
                     $jwtSecret,
                     "Bearer $jwtSecret",
                     "guard-alt-authorization-should-redact",
+                    "guard-alt-stage-authorization-should-redact",
                     "guard-proxy-authorization-should-redact",
                     "guard-freeform-xapikey-should-redact",
                     "guard-x-api-key-should-redact",
+                    "guard-x-api-key-backup-should-redact",
                     "guard-freeform-basic-should-redact",
                     "guard-cookie-header-should-redact",
                     "guard-cookie-session-should-redact",
@@ -1533,7 +1539,9 @@ try {
                     "guard-url-token-should-redact",
                     "guard-url-apikey-should-redact",
                     "guard-url-xapikey-should-redact",
+                    "guard-url-xapikey-backup-should-redact",
                     "guard-url-authorization-should-redact",
+                    "guard-url-authorization-alt-stage-should-redact",
                     "guard-url-proxy-auth-should-redact",
                     "guard-url-basic-should-redact",
                     "guard-url-cookie-should-redact",
@@ -1723,10 +1731,12 @@ try {
             $queryAuthorizationSecret = "guard-baseurl-authorization-secret"
             $queryIdTokenSecret = "guard-baseurl-idtoken-secret"
             $queryXApiKeySecret = "guard-baseurl-xapikey-secret"
-            $rawBaseUrl = ('http://127.0.0.1:{0}?api_key={1}&x_api_key={2}&password={3}&client_secret={4}&refresh_token={5}&cookie={6}&sessionid={7}&authorization={8}&id_token={9}' -f `
+            $queryXApiKeyBackupSecret = "guard-baseurl-xapikey-backup-secret"
+            $rawBaseUrl = ('http://127.0.0.1:{0}?api_key={1}&x_api_key={2}&x_api_key_alt_backup={3}&password={4}&client_secret={5}&refresh_token={6}&cookie={7}&sessionid={8}&authorization={9}&id_token={10}' -f `
                 $smokePort, `
                 $queryApiKeySecret, `
                 $queryXApiKeySecret, `
+                $queryXApiKeyBackupSecret, `
                 $queryPasswordSecret, `
                 $queryClientSecret, `
                 $queryRefreshSecret, `
@@ -1734,7 +1744,7 @@ try {
                 $querySessionSecret, `
                 $queryAuthorizationSecret, `
                 $queryIdTokenSecret)
-            $expectedBaseUrl = ('http://127.0.0.1:{0}?api_key=[REDACTED]&x_api_key=[REDACTED]&password=[REDACTED]&client_secret=[REDACTED]&refresh_token=[REDACTED]&cookie=[REDACTED]&sessionid=[REDACTED]&authorization=[REDACTED]&id_token=[REDACTED]' -f $smokePort)
+            $expectedBaseUrl = ('http://127.0.0.1:{0}?api_key=[REDACTED]&x_api_key=[REDACTED]&x_api_key_alt_backup=[REDACTED]&password=[REDACTED]&client_secret=[REDACTED]&refresh_token=[REDACTED]&cookie=[REDACTED]&sessionid=[REDACTED]&authorization=[REDACTED]&id_token=[REDACTED]' -f $smokePort)
             $caseRoot = Join-Path $tempRoot "case-smoke-baseurl-query-secrets-redacted"
             New-Item -ItemType Directory -Force -Path $caseRoot | Out-Null
             $reportPath = Join-Path $caseRoot "smoke.report.json"
@@ -1782,6 +1792,7 @@ try {
                 foreach ($forbidden in @(
                     $queryApiKeySecret,
                     $queryXApiKeySecret,
+                    $queryXApiKeyBackupSecret,
                     $queryPasswordSecret,
                     $queryClientSecret,
                     $queryRefreshSecret,

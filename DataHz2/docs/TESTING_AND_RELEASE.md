@@ -405,12 +405,13 @@ How to validate:
 ## 2026-03-05 x-api-key alias redaction hardening
 
 What changed:
-- `smoke-test-api.ps1` redaction patterns now explicitly cover `x-api-key` / `x_api_key` aliases for both key-value text and URL query parameters, including derived names such as `x_api_key_alt`.
+- `smoke-test-api.ps1` redaction patterns now explicitly cover `x-api-key` / `x_api_key` aliases for both key-value text and URL query parameters, including derived names with multi-segment suffixes such as `x_api_key_alt_backup`.
 - `check-deploy-guards.ps1` strengthens `smoke-detail-redacts-secrets` with:
   - non-request `x_api_key_alt` payload value,
+  - non-request `x_api_key_alt_backup` payload value,
   - free-text `note_api_key` (`X-Api-Key: ...`) payload value,
-  - URL query `x_api_key` secret in echoed target URL.
-- `smoke-baseurl-query-secrets-redacted` now also injects `x_api_key` in `BaseUrl` and requires redacted output.
+  - URL query `x_api_key` / `x_api_key_alt_backup` secrets in echoed target URL.
+- `smoke-baseurl-query-secrets-redacted` now also injects `x_api_key_alt_backup` in `BaseUrl` and requires redacted output.
 
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
