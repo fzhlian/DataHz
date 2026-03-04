@@ -49,6 +49,7 @@ dotnet test .\DataHz2.sln -c Release
 - `deploy-api.ps1` 新增 `SmokeCheckRetryCount`、`SmokeCheckRetryDelayMilliseconds`、`SmokeHealthPollDelayMilliseconds`、`SmokeWarnCheckDurationMilliseconds`、`SmokeFailCheckDurationMilliseconds`、`SmokeFailureContentSnippetLength`、`SmokeOutputJsonPath` 参数，并透传给 `smoke-test-api.ps1`。
 - `deploy-api.ps1` 的主部署 smoke 与失败后自动回滚 smoke 现在使用同一组透传参数，减少两条路径的行为偏差。
 - `deploy-prod.ps1` 与 `rollback-api.ps1` 新增同名 `Smoke*` 参数，并继续向 `deploy-api.ps1` / `smoke-test-api.ps1` 透传，支持在生产发布与手工回滚时统一调参。
+- 修复 `check-ci-contracts.ps1` 对 `GITHUB_STEP_SUMMARY` 的匹配方式：改为匹配字面量 `'$env:GITHUB_STEP_SUMMARY'`，避免 CI 环境变量展开后出现误报失败（本地可能通过、CI 失败）。
 
 如何使用/验证：
 - 本地执行示例：
@@ -95,6 +96,16 @@ dotnet test .\DataHz2.sln -c Release
   -SmokeFailCheckDurationMilliseconds 0 `
   -SmokeOutputJsonPath .\artifacts\smoke\rollback-smoke.json
 ```
+
+- CI 合约脚本回归验证（建议在提交前执行）：
+
+```powershell
+.\scripts\check-ci-contracts.ps1
+```
+
+预期结果：
+- `ci-smoke-summary-contract` 与 `release-smoke-summary-contract` 均为 `true`。
+- 不再出现“must write into GITHUB_STEP_SUMMARY”误报。
 
 ## CI 工作流
 

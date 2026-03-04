@@ -480,7 +480,7 @@ $results.Add((Run-Case -Name "ci-smoke-summary-contract" -Action {
     if (-not ($summaryBlock -like "*ConvertFrom-Json*")) {
         throw "CI workflow 'Publish smoke summary' step must parse JSON report."
     }
-    if (-not ($summaryBlock -like "*$env:GITHUB_STEP_SUMMARY*")) {
+    if (-not ($summaryBlock -like '*$env:GITHUB_STEP_SUMMARY*')) {
         throw "CI workflow 'Publish smoke summary' step must write into GITHUB_STEP_SUMMARY."
     }
     if (-not ($summaryBlock -like "*averageCheckDurationMs*")) {
@@ -527,7 +527,7 @@ $results.Add((Run-Case -Name "release-smoke-summary-contract" -Action {
     if (-not ($summaryBlock -like "*ConvertFrom-Json*")) {
         throw "Release workflow 'Publish smoke summary' step must parse JSON report."
     }
-    if (-not ($summaryBlock -like "*$env:GITHUB_STEP_SUMMARY*")) {
+    if (-not ($summaryBlock -like '*$env:GITHUB_STEP_SUMMARY*')) {
         throw "Release workflow 'Publish smoke summary' step must write into GITHUB_STEP_SUMMARY."
     }
     if (-not ($summaryBlock -like "*averageCheckDurationMs*")) {
