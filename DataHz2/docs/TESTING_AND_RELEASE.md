@@ -464,3 +464,14 @@ What changed:
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
 - Expect case `smoke-detail-redacts-secrets` to pass with no raw basic-auth secret fragments in outputs.
+
+## 2026-03-05 secret/cookie/session multi-suffix redaction hardening
+
+What changed:
+- `smoke-test-api.ps1` expands multi-segment suffix matching to additional key families in diagnostics/query redaction: `secret*`, `client_secret*`, `password*`, `cookie*`, `set-cookie*`, `session*`/`sessionid*`.
+- `check-deploy-guards.ps1` strengthens `smoke-detail-redacts-secrets` with suffix-style payload/query keys (`secret_backup`, `client_secret_stage`, `password_temp`, `cookie_alt`, `set-cookie-alt`, `sessionid_backup`) and asserts raw values are absent from stdout/stderr/report.
+- `smoke-baseurl-query-secrets-redacted` now injects the same suffix-style families in `BaseUrl` query parameters and requires `report.baseUrl` to keep keys while redacting all values.
+
+How to validate:
+- Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
+- Expect `smoke-detail-redacts-secrets` and `smoke-baseurl-query-secrets-redacted` to pass with no raw suffix-family secret fragments in outputs.

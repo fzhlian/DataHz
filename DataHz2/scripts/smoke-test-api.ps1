@@ -124,7 +124,7 @@ function Redact-SensitiveText([string]$Text) {
 
     $sanitized = [System.Text.RegularExpressions.Regex]::Replace(
         $sanitized,
-        '(?i)("?(?:x[-_ ]?api[-_ ]?key(?:[_-][a-z0-9]+)*|api[-_ ]?key|authorization(?:[_-][a-z0-9]+)*|proxy[-_ ]?authorization(?:[_-][a-z0-9]+)*|token(?:[_-][a-z0-9]+)*|id[_-]?token(?:[_-][a-z0-9]+)*|access[_-]?token(?:[_-][a-z0-9]+)*|refresh[_-]?token(?:[_-][a-z0-9]+)*|jwt(?:[_-][a-z0-9]+)*|secret|client[_-]?secret|password|cookie|set[-_ ]?cookie|session(?:[_-]?id)?)"?\s*[:=]\s*"?)[^",&#\r\n]+',
+        '(?i)("?(?:x[-_ ]?api[-_ ]?key(?:[_-][a-z0-9]+)*|api[-_ ]?key|authorization(?:[_-][a-z0-9]+)*|proxy[-_ ]?authorization(?:[_-][a-z0-9]+)*|token(?:[_-][a-z0-9]+)*|id[_-]?token(?:[_-][a-z0-9]+)*|access[_-]?token(?:[_-][a-z0-9]+)*|refresh[_-]?token(?:[_-][a-z0-9]+)*|jwt(?:[_-][a-z0-9]+)*|secret(?:[_-][a-z0-9]+)*|client[_-]?secret(?:[_-][a-z0-9]+)*|password(?:[_-][a-z0-9]+)*|cookie(?:[_-][a-z0-9]+)*|set[-_ ]?cookie(?:[_-][a-z0-9]+)*|session(?:[_-]?id)?(?:[_-][a-z0-9]+)*)"?\s*[:=]\s*"?)[^",&#\r\n]+',
         '$1[REDACTED]'
     )
 
@@ -145,7 +145,7 @@ function Redact-SensitiveText([string]$Text) {
     # Redact sensitive URL query parameters while keeping keys visible.
     $sanitized = [System.Text.RegularExpressions.Regex]::Replace(
         $sanitized,
-        '(?i)([?&](?:x[-_]?api[-_]?key(?:[_-][a-z0-9]+)*|api[-_]?key|authorization(?:[_-][a-z0-9]+)*|proxy[_-]?authorization(?:[_-][a-z0-9]+)*|token(?:[_-][a-z0-9]+)*|id[_-]?token(?:[_-][a-z0-9]+)*|access[_-]?token(?:[_-][a-z0-9]+)*|refresh[_-]?token(?:[_-][a-z0-9]+)*|jwt(?:[_-][a-z0-9]+)*|secret|client[_-]?secret|password|cookie|set[_-]?cookie|session(?:[_-]?id)?)=)[^&#\s]+',
+        '(?i)([?&](?:x[-_]?api[-_]?key(?:[_-][a-z0-9]+)*|api[-_]?key|authorization(?:[_-][a-z0-9]+)*|proxy[_-]?authorization(?:[_-][a-z0-9]+)*|token(?:[_-][a-z0-9]+)*|id[_-]?token(?:[_-][a-z0-9]+)*|access[_-]?token(?:[_-][a-z0-9]+)*|refresh[_-]?token(?:[_-][a-z0-9]+)*|jwt(?:[_-][a-z0-9]+)*|secret(?:[_-][a-z0-9]+)*|client[_-]?secret(?:[_-][a-z0-9]+)*|password(?:[_-][a-z0-9]+)*|cookie(?:[_-][a-z0-9]+)*|set[_-]?cookie(?:[_-][a-z0-9]+)*|session(?:[_-]?id)?(?:[_-][a-z0-9]+)*)=)[^&#\s]+',
         '$1[REDACTED]'
     )
 
