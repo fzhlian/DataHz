@@ -105,15 +105,27 @@ function Save-StatusSnapshot(
     }
 }
 
+function Append-Utf8LogLine(
+    [string]$LogPath,
+    [string]$Text
+) {
+    $line = if ($null -eq $Text) { "" } else { [string]$Text }
+    Add-Content -Path $LogPath -Value $line -Encoding UTF8
+}
+
 function Invoke-StepWithLog(
     [string]$StepName,
     [string]$LogPath,
     [scriptblock]$Operation
 ) {
-    "=== $StepName started at $((Get-Date).ToUniversalTime().ToString("O")) ===" | Out-File -FilePath $LogPath -Encoding UTF8
+    Set-Content -Path $LogPath -Encoding UTF8 -Value "=== $StepName started at $((Get-Date).ToUniversalTime().ToString("O")) ==="
     try {
-        & $Operation *>&1 | Tee-Object -FilePath $LogPath -Append
-        "=== $StepName completed at $((Get-Date).ToUniversalTime().ToString("O")) ===" | Out-File -FilePath $LogPath -Append -Encoding UTF8
+        & $Operation *>&1 | ForEach-Object {
+            $line = [string]$_
+            Write-Host $line
+            Append-Utf8LogLine -LogPath $LogPath -Text $line
+        }
+        Append-Utf8LogLine -LogPath $LogPath -Text "=== $StepName completed at $((Get-Date).ToUniversalTime().ToString("O")) ==="
         return [pscustomobject]@{
             succeeded = $true
             errorMessage = ""
@@ -122,10 +134,14 @@ function Invoke-StepWithLog(
     catch {
         $message = $_ | Out-String
         if (-not [string]::IsNullOrWhiteSpace($message)) {
-            $message.TrimEnd() | Out-File -FilePath $LogPath -Append -Encoding UTF8
+            $trimmed = $message.TrimEnd()
+            foreach ($line in ($trimmed -split "`r?`n")) {
+                Write-Host $line
+                Append-Utf8LogLine -LogPath $LogPath -Text $line
+            }
         }
 
-        "=== $StepName failed at $((Get-Date).ToUniversalTime().ToString("O")) ===" | Out-File -FilePath $LogPath -Append -Encoding UTF8
+        Append-Utf8LogLine -LogPath $LogPath -Text "=== $StepName failed at $((Get-Date).ToUniversalTime().ToString("O")) ==="
         return [pscustomobject]@{
             succeeded = $false
             errorMessage = $_.Exception.Message

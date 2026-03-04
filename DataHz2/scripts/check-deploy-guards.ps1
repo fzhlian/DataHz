@@ -433,6 +433,22 @@ function Convert-DryRunOutputToObject([object[]]$OutputLines) {
     return $jsonText | ConvertFrom-Json
 }
 
+function Assert-TextLogHasNoNulBytes(
+    [string]$LogPath,
+    [string]$Label
+) {
+    if ([string]::IsNullOrWhiteSpace($LogPath) -or -not (Test-Path $LogPath)) {
+        throw "$Label not found: $LogPath"
+    }
+
+    $bytes = [System.IO.File]::ReadAllBytes([System.IO.Path]::GetFullPath($LogPath))
+    foreach ($value in $bytes) {
+        if ($value -eq 0) {
+            throw "$Label contains NUL bytes (possible mixed encoding): $LogPath"
+        }
+    }
+}
+
 function New-RunId {
     $timestamp = (Get-Date).ToUniversalTime().ToString("yyyyMMdd-HHmmss-fff")
     $suffix = [Guid]::NewGuid().ToString("N").Substring(0, 8)
@@ -898,6 +914,7 @@ try {
             if ([string]::IsNullOrWhiteSpace($summary.deploy.logPath) -or -not (Test-Path $summary.deploy.logPath)) {
                 throw "Wrapper deploy log path missing or not found."
             }
+            Assert-TextLogHasNoNulBytes -LogPath $summary.deploy.logPath -Label "Wrapper deploy log"
 
             if ([string]::IsNullOrWhiteSpace($summary.snapshots.before) -or -not (Test-Path $summary.snapshots.before)) {
                 throw "Wrapper status-before snapshot missing."
@@ -1144,6 +1161,7 @@ try {
             if ([string]::IsNullOrWhiteSpace($summary.deploy.logPath) -or -not (Test-Path $summary.deploy.logPath)) {
                 throw "From-release wrapper deploy log path missing or not found."
             }
+            Assert-TextLogHasNoNulBytes -LogPath $summary.deploy.logPath -Label "From-release wrapper deploy log"
 
             if (-not [bool]$summary.deploy.succeeded) {
                 throw "Expected from-release wrapper deploy.succeeded=true in summary."

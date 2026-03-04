@@ -292,3 +292,16 @@ What changed:
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
 - Expect case `prod-from-release-validate-assets-summary` to pass with no fallback to exit code `1`.
+
+## 2026-03-04 log encoding hardening (auto-rollback wrapper)
+
+What changed:
+- `deploy-prod-with-auto-rollback.ps1` no longer uses `Tee-Object -FilePath` for step logs.
+- Wrapper step logs are now appended line-by-line with explicit UTF-8 encoding, avoiding mixed UTF-8/UTF-16 content in `deploy.log` / `rollback.log`.
+- `check-deploy-guards.ps1` now asserts wrapper deploy logs contain no NUL bytes in:
+  - `prod-auto-wrapper-fail-skip-rollback`
+  - `prod-from-release-validate-assets-summary`
+
+How to validate:
+- Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
+- Expect both wrapper-related guard cases to pass and generated `deploy.log` to be plain UTF-8 text (no embedded NUL bytes).
