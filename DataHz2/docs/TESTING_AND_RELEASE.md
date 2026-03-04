@@ -123,6 +123,7 @@ dotnet test .\DataHz2.sln -c Release
 - `prod-auto-wrapper-fail-skip-rollback` 为 `true`。
 - `prod-auto-wrapper-smoke-success` 为 `true`（仅在 `-IncludeOnlineSmokeCase` 时执行）。
 - `prod-from-release-invalid-tag`、`prod-from-release-dryrun-x64`、`prod-from-release-dryrun-arm64`、`prod-from-release-dryrun-env-token` 均为 `true`。
+- `prod-from-release-validate-assets-local-success` 与 `prod-from-release-validate-assets-local-failure` 均为 `true`。
 - 不再出现 `Deployment failed. Argument types do not match`。
 
 ## CI 工作流
@@ -235,7 +236,10 @@ $base = "https://github.com/fzhlian/DataHz/releases/download/$tag"
 - 新增 `.\scripts\deploy-prod-from-release.ps1`，通过 `-Tag` + `-Runtime` 自动拼装 GitHub Release 资产 URL，并调用 `deploy-prod-with-auto-rollback.ps1` 执行生产部署。
 - 默认支持 `win-x64`、`win-arm64` 两个运行时；若未显式传 `-PackageBearerToken`，会自动读取当前进程 `GITHUB_TOKEN` 环境变量。
 - 新增 `-DryRun`，用于输出最终透传参数（JSON）并提前验证命令，不实际部署。
+- 新增 `-ValidateAssetUrls`，可在部署前校验 5 个 release 资产 URL 的可达性（支持 `-ValidateAssetTimeoutSeconds`、`-ValidateAssetRetryCount`）。
+- 新增 `-ReleaseDownloadBaseUrl`，用于覆盖默认 GitHub 下载前缀（例如内网镜像或本地守卫测试）。
 - `check-deploy-guards.ps1` 新增 `deploy-prod-from-release.ps1` 守卫用例，覆盖 `invalid-tag`、`dryrun-x64/arm64`、`env token 透传`。
+- `check-deploy-guards.ps1` 进一步覆盖 `ValidateAssetUrls` 的本地成功/失败路径。
 
 如何使用/验证：
 - `win-x64` 实际部署：
@@ -246,7 +250,8 @@ $base = "https://github.com/fzhlian/DataHz/releases/download/$tag"
   -Runtime "win-x64" `
   -ServiceName "DataHz.Api" `
   -SmokeRequireAuthenticatedApi `
-  -SmokeApiKey $env:DATAHZ_API_KEY
+  -SmokeApiKey $env:DATAHZ_API_KEY `
+  -ValidateAssetUrls
 ```
 
 - `win-arm64` 实际部署：
@@ -266,9 +271,11 @@ $base = "https://github.com/fzhlian/DataHz/releases/download/$tag"
 .\scripts\deploy-prod-from-release.ps1 `
   -Tag "datahz2-v1.0.8" `
   -Runtime "win-arm64" `
+  -ValidateAssetUrls `
   -DryRun
 ```
 
 预期结果：
 - `DryRun` 输出中应包含 5 个 release URL：`zip`、`sha256`、`manifest`、`index.json`、`index.sha256`。
+- 启用 `-ValidateAssetUrls` 时，`DryRun` 输出的 `assetValidation` 应包含 5 条记录；真实可达资源应全部 `Passed=true`。
 - 实际部署时会进入 `deploy-prod-with-auto-rollback.ps1` 统一流程，并在 `artifacts\deploy-runs` 生成运行日志与总结。

@@ -486,12 +486,31 @@ Copy-Item -Path $validIndexPath -Destination (Join-Path $urlAssetRoot $validInde
 Copy-Item -Path $validIndexShaPath -Destination (Join-Path $urlAssetRoot $validIndexShaUrlName) -Force
 Copy-Item -Path $invalidIndexShaPath -Destination (Join-Path $urlAssetRoot $invalidIndexShaUrlName) -Force
 
+$fromReleaseRuntime = if ($zipName -like "*arm64*") { "win-arm64" } elseif ($zipName -like "*x64*") { "win-x64" } else { "win-x64" }
+$fromReleaseTag = "datahz2-v9.9.9-selftest"
+$fromReleaseZipName = "datahz2-api-$fromReleaseRuntime-$fromReleaseTag.zip"
+$fromReleaseShaName = "datahz2-api-$fromReleaseRuntime-$fromReleaseTag.sha256"
+$fromReleaseManifestName = "datahz2-api-$fromReleaseRuntime-$fromReleaseTag.manifest.json"
+$fromReleaseIndexName = "datahz2-release-$fromReleaseTag.index.json"
+$fromReleaseIndexShaName = "datahz2-release-$fromReleaseTag.sha256"
+
+Copy-Item -Path $resolvedZip -Destination (Join-Path $urlAssetRoot $fromReleaseZipName) -Force
+Copy-Item -Path $resolvedManifest -Destination (Join-Path $urlAssetRoot $fromReleaseManifestName) -Force
+Copy-Item -Path $validIndexPath -Destination (Join-Path $urlAssetRoot $fromReleaseIndexName) -Force
+Set-Content -Path (Join-Path $urlAssetRoot $fromReleaseShaName) -Encoding UTF8 -Value "$zipSha  $fromReleaseZipName"
+
+$fromReleaseIndexPath = Join-Path $urlAssetRoot $fromReleaseIndexName
+$fromReleaseIndexHash = (Get-FileHash -Path $fromReleaseIndexPath -Algorithm SHA256).Hash.ToLowerInvariant()
+Set-Content -Path (Join-Path $urlAssetRoot $fromReleaseIndexShaName) -Encoding UTF8 -Value "$fromReleaseIndexHash  $fromReleaseIndexName"
+
 $serverPort = Get-FreeTcpPort
 $urlServer = Start-StaticFileServer -RootPath $urlAssetRoot -Port $serverPort
 $urlBase = $urlServer.BaseUrl
 if (-not $urlBase.EndsWith("/")) {
     $urlBase += "/"
 }
+
+$fromReleaseBaseUrl = $urlBase.TrimEnd("/")
 
 $zipFileUri = $urlBase + $zipUrlName
 $manifestFileUri = $urlBase + $manifestUrlName
@@ -897,6 +916,68 @@ try {
                     Remove-Item Env:GITHUB_TOKEN -ErrorAction SilentlyContinue
                 }
             }
+        }))
+
+    $results.Add((Run-Case `
+        -Name "prod-from-release-validate-assets-local-success" `
+        -ExpectFailure $false `
+        -ExpectedMessagePart "" `
+        -Action {
+            $dryRunOutput = & $deployProdFromReleaseScript `
+                -Tag $fromReleaseTag `
+                -Runtime $fromReleaseRuntime `
+                -ReleaseDownloadBaseUrl $fromReleaseBaseUrl `
+                -ValidateAssetUrls `
+                -ValidateAssetTimeoutSeconds 5 `
+                -ValidateAssetRetryCount 1 `
+                -DryRun
+
+            $dryRun = Convert-DryRunOutputToObject -OutputLines $dryRunOutput
+            if (-not $dryRun -or -not $dryRun.params) {
+                throw "DryRun payload missing params."
+            }
+
+            $p = $dryRun.params
+            if ($p.PackageUrl -ne "$fromReleaseBaseUrl/$fromReleaseZipName") {
+                throw "Unexpected PackageUrl in local validate success case: $($p.PackageUrl)"
+            }
+            if ($p.PackageSha256Url -ne "$fromReleaseBaseUrl/$fromReleaseShaName") {
+                throw "Unexpected PackageSha256Url in local validate success case: $($p.PackageSha256Url)"
+            }
+            if ($p.PackageManifestUrl -ne "$fromReleaseBaseUrl/$fromReleaseManifestName") {
+                throw "Unexpected PackageManifestUrl in local validate success case: $($p.PackageManifestUrl)"
+            }
+            if ($p.PackageIndexUrl -ne "$fromReleaseBaseUrl/$fromReleaseIndexName") {
+                throw "Unexpected PackageIndexUrl in local validate success case: $($p.PackageIndexUrl)"
+            }
+            if ($p.PackageIndexSha256Url -ne "$fromReleaseBaseUrl/$fromReleaseIndexShaName") {
+                throw "Unexpected PackageIndexSha256Url in local validate success case: $($p.PackageIndexSha256Url)"
+            }
+
+            $assetValidation = @($dryRun.assetValidation)
+            if ($assetValidation.Count -ne 5) {
+                throw "Expected 5 asset validation entries, got $($assetValidation.Count)."
+            }
+
+            $failed = @($assetValidation | Where-Object { -not $_.Passed })
+            if ($failed.Count -gt 0) {
+                throw "Expected all local asset validation entries to pass."
+            }
+        }))
+
+    $results.Add((Run-Case `
+        -Name "prod-from-release-validate-assets-local-failure" `
+        -ExpectFailure $true `
+        -ExpectedMessagePart "Asset URL validation failed" `
+        -Action {
+            & $deployProdFromReleaseScript `
+                -Tag "$fromReleaseTag-missing" `
+                -Runtime $fromReleaseRuntime `
+                -ReleaseDownloadBaseUrl $fromReleaseBaseUrl `
+                -ValidateAssetUrls `
+                -ValidateAssetTimeoutSeconds 5 `
+                -ValidateAssetRetryCount 1 `
+                -DryRun
         }))
 
     $results.Add((Run-Case `
