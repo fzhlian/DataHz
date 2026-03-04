@@ -508,3 +508,14 @@ What changed:
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
 - Expect `smoke-detail-redacts-secrets` and `smoke-baseurl-query-secrets-redacted` to pass with no raw camelCase suffix secret fragments in outputs.
+
+## 2026-03-05 URL fragment secret redaction hardening
+
+What changed:
+- `smoke-test-api.ps1` now redacts sensitive parameters in URL fragment sections (`#...`) in addition to query sections (`?...`), while preserving keys.
+- `check-deploy-guards.ps1` extends `smoke-detail-redacts-secrets` with fragment secrets in echoed `target_url` (for example `#access_token=...&apiKeyAlt=...&sessionIdBackup=...`) and asserts raw values never appear in smoke outputs.
+- `smoke-baseurl-query-secrets-redacted` now injects fragment secrets into `BaseUrl` and requires `report.baseUrl` to keep fragment keys while redacting values.
+
+How to validate:
+- Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
+- Expect `smoke-detail-redacts-secrets` and `smoke-baseurl-query-secrets-redacted` to pass with no raw fragment secret fragments in outputs.
