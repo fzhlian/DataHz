@@ -279,6 +279,7 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             proxy_authorization = "Bearer guard-proxy-authorization-should-redact"
                             cookie = "guard-cookie-header-should-redact"
                             "set-cookie" = "sessionid=guard-cookie-session-should-redact; Path=/; HttpOnly"
+                            note = "free-text bearer=Bearer guard-freeform-bearer-should-redact jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.guardpayload.guardsignature"
                             x_api_key = $apiKeyHeader
                             token = $apiKeyHeader
                             access_token = $authHeader
@@ -299,6 +300,7 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             proxy_authorization = "Bearer guard-proxy-authorization-should-redact"
                             cookie = "guard-cookie-header-should-redact"
                             "set-cookie" = "sessionid=guard-cookie-session-should-redact; Path=/; HttpOnly"
+                            note = "free-text bearer=Bearer guard-freeform-bearer-should-redact jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.guardpayload.guardsignature"
                             x_api_key = $apiKeyHeader
                             token = $apiKeyHeader
                             access_token = $authHeader
@@ -1512,6 +1514,10 @@ try {
                     "guard-proxy-authorization-should-redact",
                     "guard-cookie-header-should-redact",
                     "guard-cookie-session-should-redact",
+                    "guard-freeform-bearer-should-redact",
+                    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.guardpayload.guardsignature",
+                    "guardpayload",
+                    "guardsignature",
                     "guard-url-user",
                     "guard-url-pass",
                     "guard-url-user:guard-url-pass@",

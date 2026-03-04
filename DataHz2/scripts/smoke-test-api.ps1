@@ -108,10 +108,24 @@ function Redact-SensitiveText([string]$Text) {
         '$1[REDACTED]'
     )
 
+    # Guard free-text bearer tokens that may appear in arbitrary diagnostics fields.
+    $sanitized = [System.Text.RegularExpressions.Regex]::Replace(
+        $sanitized,
+        '(?i)(\bBearer\s+)[^\s"'';,]+',
+        '$1[REDACTED]'
+    )
+
     $sanitized = [System.Text.RegularExpressions.Regex]::Replace(
         $sanitized,
         '(?i)("?(?:api[-_ ]?key|authorization(?:[_-][a-z0-9]+)?|proxy[-_ ]?authorization(?:[_-][a-z0-9]+)?|token|id[_-]?token|access[_-]?token|refresh[_-]?token|jwt|secret|client[_-]?secret|password|cookie|set[-_ ]?cookie|session(?:[_-]?id)?)"?\s*[:=]\s*"?)[^",&#\r\n]+',
         '$1[REDACTED]'
+    )
+
+    # Guard compact JWT values that may be logged without an explicit key.
+    $sanitized = [System.Text.RegularExpressions.Regex]::Replace(
+        $sanitized,
+        '(?i)\beyJ[a-z0-9_-]+\.[a-z0-9_-]+\.[a-z0-9_-]+\b',
+        '[REDACTED]'
     )
 
     # Redact userinfo in URLs: http(s)://user[:pass]@host -> http(s)://[REDACTED]@host

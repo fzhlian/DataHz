@@ -423,3 +423,14 @@ What changed:
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
 - Expect case `smoke-detail-redacts-secrets` to pass with no cookie/session secret fragments in outputs.
+
+## 2026-03-04 free-text bearer/JWT redaction hardening
+
+What changed:
+- `smoke-test-api.ps1` now redacts free-text bearer tokens (`Bearer <value>`) even when they are not tied to a known sensitive key.
+- `smoke-test-api.ps1` now redacts compact JWT-like strings (`eyJ...<dot>...<dot>...`) in diagnostics text.
+- `check-deploy-guards.ps1` extends `smoke-detail-redacts-secrets` with a non-sensitive `note` field containing a free-text bearer token and JWT sample, then asserts raw fragments never appear in smoke stdout/stderr/report.
+
+How to validate:
+- Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
+- Expect case `smoke-detail-redacts-secrets` to pass with no free-text bearer/JWT secret fragments in outputs.
