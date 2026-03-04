@@ -355,3 +355,18 @@ What changed:
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
 - Expect case `smoke-detail-redacts-secrets` to pass.
+
+## 2026-03-04 smoke base URL userinfo redaction guard
+
+What changed:
+- `check-deploy-guards.ps1` adds `smoke-baseurl-userinfo-redacted`.
+- The case runs `smoke-test-api.ps1` with a base URL containing userinfo (`http://user:pass@host`) against the local smoke mock server.
+- Guard assertions require:
+  - smoke succeeds (`exit code 0`, `failedChecks=0`);
+  - report `baseUrl` equals sanitized host-only URL (no userinfo);
+  - stdout/stderr/report content does not contain raw username/password fragments;
+  - smoke context output includes sanitized `BaseUrl`.
+
+How to validate:
+- Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
+- Expect case `smoke-baseurl-userinfo-redacted` to pass.
