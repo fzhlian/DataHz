@@ -448,3 +448,16 @@ What changed:
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
 - Expect case `smoke-detail-redacts-secrets` to pass with no free-text bearer/JWT secret fragments in outputs.
+
+## 2026-03-05 free-text basic auth redaction hardening
+
+What changed:
+- `smoke-test-api.ps1` now redacts free-text basic credentials (`Basic <value>`) in diagnostics text, even when not tied to known sensitive keys.
+- `check-deploy-guards.ps1` extends `smoke-detail-redacts-secrets` with:
+  - `note_basic` containing `Basic <secret>` free-text content,
+  - `target_url` query containing `proxy_authorization=Basic%20<secret>`.
+- Guard assertions now require these raw basic-auth fragments never appear in smoke stdout/stderr/report.
+
+How to validate:
+- Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
+- Expect case `smoke-detail-redacts-secrets` to pass with no raw basic-auth secret fragments in outputs.
