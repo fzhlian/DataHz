@@ -227,3 +227,46 @@ $base = "https://github.com/fzhlian/DataHz/releases/download/$tag"
 - 发布成功：脚本退出码 `0`，`run-summary.json` 中 `deploy.succeeded=true`。
 - 发布失败 + 回滚成功：默认退出码 `1`（若启用 `-TreatRollbackSuccessAsSuccess` 则为 `0`）。
 - 发布失败 + 回滚失败：退出码 `2`，并可在 `run-summary.json` + `*.log` + `*.zip` 中定位原因。
+
+## 2026-03-04 按 Tag/Runtime 自动部署
+
+做了什么变更：
+- 新增 `.\scripts\deploy-prod-from-release.ps1`，通过 `-Tag` + `-Runtime` 自动拼装 GitHub Release 资产 URL，并调用 `deploy-prod-with-auto-rollback.ps1` 执行生产部署。
+- 默认支持 `win-x64`、`win-arm64` 两个运行时；若未显式传 `-PackageBearerToken`，会自动读取当前进程 `GITHUB_TOKEN` 环境变量。
+- 新增 `-DryRun`，用于输出最终透传参数（JSON）并提前验证命令，不实际部署。
+
+如何使用/验证：
+- `win-x64` 实际部署：
+
+```powershell
+.\scripts\deploy-prod-from-release.ps1 `
+  -Tag "datahz2-v1.0.8" `
+  -Runtime "win-x64" `
+  -ServiceName "DataHz.Api" `
+  -SmokeRequireAuthenticatedApi `
+  -SmokeApiKey $env:DATAHZ_API_KEY
+```
+
+- `win-arm64` 实际部署：
+
+```powershell
+.\scripts\deploy-prod-from-release.ps1 `
+  -Tag "datahz2-v1.0.8" `
+  -Runtime "win-arm64" `
+  -ServiceName "DataHz.Api" `
+  -SmokeRequireAuthenticatedApi `
+  -SmokeApiKey $env:DATAHZ_API_KEY
+```
+
+- 仅检查参数拼装（不部署）：
+
+```powershell
+.\scripts\deploy-prod-from-release.ps1 `
+  -Tag "datahz2-v1.0.8" `
+  -Runtime "win-arm64" `
+  -DryRun
+```
+
+预期结果：
+- `DryRun` 输出中应包含 5 个 release URL：`zip`、`sha256`、`manifest`、`index.json`、`index.sha256`。
+- 实际部署时会进入 `deploy-prod-with-auto-rollback.ps1` 统一流程，并在 `artifacts\deploy-runs` 生成运行日志与总结。
