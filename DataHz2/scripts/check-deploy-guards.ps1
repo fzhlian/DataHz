@@ -243,6 +243,88 @@ function Start-BinarySmokeServer([int]$Port) {
     }
 }
 
+function Start-SecretEchoSmokeServer([int]$Port) {
+    $prefix = "http://127.0.0.1:$Port/"
+
+    $job = Start-Job -ArgumentList $prefix -ScriptBlock {
+        param($serverPrefix)
+
+        $listener = [System.Net.HttpListener]::new()
+        $listener.Prefixes.Add($serverPrefix)
+        $listener.Start()
+        try {
+            while ($true) {
+                $ctx = $listener.GetContext()
+                $resp = $ctx.Response
+                try {
+                    $path = $ctx.Request.Url.AbsolutePath
+                    $statusCode = 500
+                    $contentType = "application/json; charset=utf-8"
+                    $body = ""
+                    $authHeader = [string]$ctx.Request.Headers["Authorization"]
+                    $apiKeyHeader = [string]$ctx.Request.Headers["X-Api-Key"]
+                    if ([string]::IsNullOrWhiteSpace($authHeader)) {
+                        $authHeader = "<none>"
+                    }
+                    if ([string]::IsNullOrWhiteSpace($apiKeyHeader)) {
+                        $apiKeyHeader = "<none>"
+                    }
+
+                    if ($path -match "^/health/?$") {
+                        $statusCode = 200
+                        $payload = [ordered]@{
+                            status = "warming"
+                            authorization = $authHeader
+                            x_api_key = $apiKeyHeader
+                            token = $apiKeyHeader
+                            access_token = $authHeader
+                            jwt = $authHeader
+                        }
+                        $body = ($payload | ConvertTo-Json -Compress)
+                    }
+                    else {
+                        $payload = [ordered]@{
+                            error = "simulated-failure"
+                            authorization = $authHeader
+                            x_api_key = $apiKeyHeader
+                            token = $apiKeyHeader
+                            access_token = $authHeader
+                            jwt = $authHeader
+                        }
+                        $body = ($payload | ConvertTo-Json -Compress)
+                    }
+
+                    $bytes = [System.Text.Encoding]::UTF8.GetBytes($body)
+                    $resp.StatusCode = $statusCode
+                    $resp.ContentType = $contentType
+                    $resp.ContentLength64 = $bytes.LongLength
+                    if (-not $ctx.Request.HttpMethod.Equals("HEAD", [System.StringComparison]::OrdinalIgnoreCase)) {
+                        $resp.OutputStream.Write($bytes, 0, $bytes.Length)
+                    }
+                }
+                catch {
+                    $resp.StatusCode = 500
+                }
+                finally {
+                    $resp.OutputStream.Close()
+                }
+            }
+        }
+        finally {
+            if ($listener.IsListening) {
+                $listener.Stop()
+            }
+            $listener.Close()
+        }
+    }
+
+    Start-Sleep -Milliseconds 300
+    return [pscustomobject]@{
+        Job = $job
+        BaseUrl = $prefix
+    }
+}
+
 function Test-IsValidPublishDir([string]$Path) {
     if ([string]::IsNullOrWhiteSpace($Path)) {
         return $false
@@ -514,6 +596,20 @@ function Assert-StringHasNoControlChars(
 
     if ([System.Text.RegularExpressions.Regex]::IsMatch($Value, "[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]")) {
         throw "$Label contains control characters."
+    }
+}
+
+function Assert-StringDoesNotContain(
+    [string]$Value,
+    [string]$Forbidden,
+    [string]$Label
+) {
+    if ([string]::IsNullOrEmpty($Forbidden) -or [string]::IsNullOrEmpty($Value)) {
+        return
+    }
+
+    if ($Value.IndexOf($Forbidden, [System.StringComparison]::Ordinal) -ge 0) {
+        throw "$Label contains forbidden value."
     }
 }
 
@@ -1329,6 +1425,79 @@ try {
                 if ($binaryServer -and $binaryServer.Job) {
                     Stop-Job -Job $binaryServer.Job -ErrorAction SilentlyContinue
                     Remove-Job -Job $binaryServer.Job -Force -ErrorAction SilentlyContinue
+                }
+            }
+        }))
+
+    $results.Add((Run-Case `
+        -Name "smoke-detail-redacts-secrets" `
+        -ExpectFailure $false `
+        -ExpectedMessagePart "" `
+        -Action {
+            $smokePort = Get-FreeTcpPort
+            $secretServer = Start-SecretEchoSmokeServer -Port $smokePort
+            $secretBaseUrl = $secretServer.BaseUrl.TrimEnd("/")
+            $caseRoot = Join-Path $tempRoot "case-smoke-detail-redacts-secrets"
+            New-Item -ItemType Directory -Force -Path $caseRoot | Out-Null
+            $reportPath = Join-Path $caseRoot "smoke.report.json"
+            $stdoutPath = Join-Path $caseRoot "smoke.stdout.log"
+            $stderrPath = Join-Path $caseRoot "smoke.stderr.log"
+            $apiKeySecret = "guard-api-key-should-redact"
+            $jwtSecret = "guard-bearer-token-should-redact"
+            try {
+                $invoke = Invoke-ScriptSubprocess `
+                    -ScriptPath $smokeTestScript `
+                    -ArgumentList @(
+                        "-BaseUrl", $secretBaseUrl,
+                        "-TimeoutSeconds", "3",
+                        "-CheckRetryCount", "1",
+                        "-CheckRetryDelayMilliseconds", "25",
+                        "-HealthPollDelayMilliseconds", "25",
+                        "-FailureContentSnippetLength", "240",
+                        "-ApiKey", $apiKeySecret,
+                        "-BearerToken", $jwtSecret,
+                        "-RequireAuthenticatedApi",
+                        "-OutputJsonPath", $reportPath
+                    ) `
+                    -StdOutPath $stdoutPath `
+                    -StdErrPath $stderrPath
+
+                if ($invoke.ExitCode -ne 1) {
+                    $out = if (Test-Path $stdoutPath) { Get-Content -Path $stdoutPath -Raw } else { "" }
+                    $err = if (Test-Path $stderrPath) { Get-Content -Path $stderrPath -Raw } else { "" }
+                    throw "Expected smoke subprocess exit code 1, got $($invoke.ExitCode). Out='$out' Err='$err'"
+                }
+
+                Assert-TextLogHasNoNulBytes -LogPath $stdoutPath -Label "Smoke stdout log"
+                Assert-TextLogHasNoNulBytes -LogPath $stderrPath -Label "Smoke stderr log"
+
+                if (-not (Test-Path $reportPath)) {
+                    throw "Smoke report was not generated: $reportPath"
+                }
+
+                $report = Get-Content -Path $reportPath -Raw | ConvertFrom-Json
+                if ([int]$report.failedChecks -le 0) {
+                    throw "Expected failedChecks > 0 for secret-redaction smoke case."
+                }
+
+                $details = @($report.results | ForEach-Object { [string]$_.Detail })
+                $detailText = [string]::Join(" ", $details)
+                $stdoutText = if (Test-Path $stdoutPath) { Get-Content -Path $stdoutPath -Raw } else { "" }
+                $stderrText = if (Test-Path $stderrPath) { Get-Content -Path $stderrPath -Raw } else { "" }
+                $combinedText = "$detailText`n$stdoutText`n$stderrText"
+
+                foreach ($forbidden in @($apiKeySecret, $jwtSecret, "Bearer $jwtSecret")) {
+                    Assert-StringDoesNotContain -Value $combinedText -Forbidden $forbidden -Label "Smoke outputs"
+                }
+
+                if ($detailText.IndexOf("[REDACTED]", [System.StringComparison]::Ordinal) -lt 0) {
+                    throw "Expected smoke details to include [REDACTED] marker."
+                }
+            }
+            finally {
+                if ($secretServer -and $secretServer.Job) {
+                    Stop-Job -Job $secretServer.Job -ErrorAction SilentlyContinue
+                    Remove-Job -Job $secretServer.Job -Force -ErrorAction SilentlyContinue
                 }
             }
         }))

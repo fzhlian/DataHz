@@ -340,3 +340,18 @@ What changed:
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
 - Expect case `smoke-binary-error-detail-sanitized` to pass, generated smoke logs to be plain text without embedded NUL bytes, and report `Endpoint`/`Detail` fields to be control-char free.
+
+## 2026-03-04 smoke secret redaction guard
+
+What changed:
+- `check-deploy-guards.ps1` adds `smoke-detail-redacts-secrets`.
+- The case starts a local mock server that echoes `Authorization` / `X-Api-Key` values in JSON error bodies, then runs `smoke-test-api.ps1` with both `-ApiKey` and `-BearerToken`.
+- Guard assertions now require:
+  - smoke report generation with expected failure path (`exit code 1`);
+  - smoke stdout/stderr logs remain text-safe (no NUL bytes);
+  - report/log outputs do not contain raw secret values;
+  - smoke details include `[REDACTED]` marker.
+
+How to validate:
+- Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
+- Expect case `smoke-detail-redacts-secrets` to pass.
