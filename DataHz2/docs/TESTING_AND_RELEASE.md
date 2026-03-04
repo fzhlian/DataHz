@@ -122,6 +122,7 @@ dotnet test .\DataHz2.sln -c Release
 - `prod-wrapper-smoke-success` 为 `true`。
 - `prod-auto-wrapper-fail-skip-rollback` 为 `true`。
 - `prod-auto-wrapper-smoke-success` 为 `true`（仅在 `-IncludeOnlineSmokeCase` 时执行）。
+- `prod-from-release-invalid-tag`、`prod-from-release-dryrun-x64`、`prod-from-release-dryrun-arm64`、`prod-from-release-dryrun-env-token` 均为 `true`。
 - 不再出现 `Deployment failed. Argument types do not match`。
 
 ## CI 工作流
@@ -234,6 +235,7 @@ $base = "https://github.com/fzhlian/DataHz/releases/download/$tag"
 - 新增 `.\scripts\deploy-prod-from-release.ps1`，通过 `-Tag` + `-Runtime` 自动拼装 GitHub Release 资产 URL，并调用 `deploy-prod-with-auto-rollback.ps1` 执行生产部署。
 - 默认支持 `win-x64`、`win-arm64` 两个运行时；若未显式传 `-PackageBearerToken`，会自动读取当前进程 `GITHUB_TOKEN` 环境变量。
 - 新增 `-DryRun`，用于输出最终透传参数（JSON）并提前验证命令，不实际部署。
+- `check-deploy-guards.ps1` 新增 `deploy-prod-from-release.ps1` 守卫用例，覆盖 `invalid-tag`、`dryrun-x64/arm64`、`env token 透传`。
 
 如何使用/验证：
 - `win-x64` 实际部署：

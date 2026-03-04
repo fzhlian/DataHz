@@ -330,6 +330,25 @@ function Get-LatestRunSummary([string]$LogsRootPath) {
     return Get-Content -Path $summaryPath -Raw | ConvertFrom-Json
 }
 
+function Convert-DryRunOutputToObject([object[]]$OutputLines) {
+    if ($null -eq $OutputLines -or $OutputLines.Count -eq 0) {
+        throw "DryRun produced no JSON output."
+    }
+
+    $text = ($OutputLines | ForEach-Object { "$_" }) -join [Environment]::NewLine
+    if ([string]::IsNullOrWhiteSpace($text)) {
+        throw "DryRun produced empty output."
+    }
+
+    $jsonStart = $text.IndexOf("{")
+    if ($jsonStart -lt 0) {
+        throw "DryRun output does not contain JSON payload."
+    }
+
+    $jsonText = $text.Substring($jsonStart)
+    return $jsonText | ConvertFrom-Json
+}
+
 function New-RunId {
     $timestamp = (Get-Date).ToUniversalTime().ToString("yyyyMMdd-HHmmss-fff")
     $suffix = [Guid]::NewGuid().ToString("N").Substring(0, 8)
@@ -353,6 +372,7 @@ $resolvedSha = Resolve-ShaPath -ZipPath $resolvedZip
 $deployApiScript = Join-Path $PSScriptRoot "deploy-api.ps1"
 $deployProdScript = Join-Path $PSScriptRoot "deploy-prod.ps1"
 $deployProdAutoRollbackScript = Join-Path $PSScriptRoot "deploy-prod-with-auto-rollback.ps1"
+$deployProdFromReleaseScript = Join-Path $PSScriptRoot "deploy-prod-from-release.ps1"
 if (-not $script:PowerShellExecutable) {
     $script:PowerShellExecutable = Get-PowerShellExecutablePath
 }
@@ -364,6 +384,9 @@ if (-not (Test-Path $deployProdScript)) {
 }
 if (-not (Test-Path $deployProdAutoRollbackScript)) {
     throw "deploy-prod-with-auto-rollback.ps1 not found: $deployProdAutoRollbackScript"
+}
+if (-not (Test-Path $deployProdFromReleaseScript)) {
+    throw "deploy-prod-from-release.ps1 not found: $deployProdFromReleaseScript"
 }
 
 $runId = New-RunId
@@ -763,6 +786,116 @@ try {
 
             if ([string]::IsNullOrWhiteSpace($summary.runId)) {
                 throw "Wrapper summary runId is empty."
+            }
+        }))
+
+    $results.Add((Run-Case `
+        -Name "prod-from-release-invalid-tag" `
+        -ExpectFailure $true `
+        -ExpectedMessagePart "Tag must start with 'datahz2-v'" `
+        -Action {
+            & $deployProdFromReleaseScript `
+                -Tag "v1.0.8" `
+                -Runtime "win-x64" `
+                -DryRun
+        }))
+
+    $results.Add((Run-Case `
+        -Name "prod-from-release-dryrun-x64" `
+        -ExpectFailure $false `
+        -ExpectedMessagePart "" `
+        -Action {
+            $tag = "datahz2-v1.0.8"
+            $repo = "fzhlian/DataHz"
+            $dryRunOutput = & $deployProdFromReleaseScript `
+                -Tag $tag `
+                -Runtime "win-x64" `
+                -Repository $repo `
+                -DryRun
+
+            $dryRun = Convert-DryRunOutputToObject -OutputLines $dryRunOutput
+            if (-not $dryRun -or -not $dryRun.params) {
+                throw "DryRun payload missing params."
+            }
+
+            $base = "https://github.com/$repo/releases/download/$tag"
+            $p = $dryRun.params
+            if ($p.PackageUrl -ne "$base/datahz2-api-win-x64-$tag.zip") {
+                throw "Unexpected PackageUrl in dryrun-x64 case: $($p.PackageUrl)"
+            }
+            if ($p.PackageSha256Url -ne "$base/datahz2-api-win-x64-$tag.sha256") {
+                throw "Unexpected PackageSha256Url in dryrun-x64 case: $($p.PackageSha256Url)"
+            }
+            if ($p.PackageManifestUrl -ne "$base/datahz2-api-win-x64-$tag.manifest.json") {
+                throw "Unexpected PackageManifestUrl in dryrun-x64 case: $($p.PackageManifestUrl)"
+            }
+            if ($p.PackageIndexUrl -ne "$base/datahz2-release-$tag.index.json") {
+                throw "Unexpected PackageIndexUrl in dryrun-x64 case: $($p.PackageIndexUrl)"
+            }
+            if ($p.PackageIndexSha256Url -ne "$base/datahz2-release-$tag.sha256") {
+                throw "Unexpected PackageIndexSha256Url in dryrun-x64 case: $($p.PackageIndexSha256Url)"
+            }
+            if ($p.RunLabel -ne "release-win-x64-$tag") {
+                throw "Unexpected RunLabel in dryrun-x64 case: $($p.RunLabel)"
+            }
+        }))
+
+    $results.Add((Run-Case `
+        -Name "prod-from-release-dryrun-arm64" `
+        -ExpectFailure $false `
+        -ExpectedMessagePart "" `
+        -Action {
+            $tag = "datahz2-v1.0.8"
+            $repo = "fzhlian/DataHz"
+            $dryRunOutput = & $deployProdFromReleaseScript `
+                -Tag $tag `
+                -Runtime "win-arm64" `
+                -Repository $repo `
+                -DryRun
+
+            $dryRun = Convert-DryRunOutputToObject -OutputLines $dryRunOutput
+            if (-not $dryRun -or -not $dryRun.params) {
+                throw "DryRun payload missing params."
+            }
+
+            $base = "https://github.com/$repo/releases/download/$tag"
+            $p = $dryRun.params
+            if ($p.PackageUrl -ne "$base/datahz2-api-win-arm64-$tag.zip") {
+                throw "Unexpected PackageUrl in dryrun-arm64 case: $($p.PackageUrl)"
+            }
+            if ($p.PackageManifestUrl -ne "$base/datahz2-api-win-arm64-$tag.manifest.json") {
+                throw "Unexpected PackageManifestUrl in dryrun-arm64 case: $($p.PackageManifestUrl)"
+            }
+            if ($p.RunLabel -ne "release-win-arm64-$tag") {
+                throw "Unexpected RunLabel in dryrun-arm64 case: $($p.RunLabel)"
+            }
+        }))
+
+    $results.Add((Run-Case `
+        -Name "prod-from-release-dryrun-env-token" `
+        -ExpectFailure $false `
+        -ExpectedMessagePart "" `
+        -Action {
+            $hadToken = Test-Path Env:GITHUB_TOKEN
+            $previousToken = if ($hadToken) { $env:GITHUB_TOKEN } else { "" }
+            try {
+                $env:GITHUB_TOKEN = "guard-token-value"
+                $dryRunOutput = & $deployProdFromReleaseScript `
+                    -Tag "datahz2-v1.0.8" `
+                    -Runtime "win-x64" `
+                    -DryRun
+                $dryRun = Convert-DryRunOutputToObject -OutputLines $dryRunOutput
+                if ($dryRun.params.PackageBearerToken -ne "guard-token-value") {
+                    throw "DryRun did not propagate env GITHUB_TOKEN into PackageBearerToken."
+                }
+            }
+            finally {
+                if ($hadToken) {
+                    $env:GITHUB_TOKEN = $previousToken
+                }
+                else {
+                    Remove-Item Env:GITHUB_TOKEN -ErrorAction SilentlyContinue
+                }
             }
         }))
 
