@@ -394,7 +394,7 @@ else {
 }
 
 foreach ($item in @(
-    @{ Name = "swagger"; Path = "/swagger/index.html"; Contains = "Swagger UI"; AllowRedirect = $false },
+    @{ Name = "swagger"; Path = "/swagger/index.html"; Contains = "swagger-ui"; AllowRedirect = $false },
     @{ Name = "dashboard"; Path = "/dashboard/"; Contains = "DataHz Monitor Board"; AllowRedirect = $true }
 )) {
     $outcome = Invoke-CheckWithRetry `

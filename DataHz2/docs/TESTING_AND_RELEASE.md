@@ -18,7 +18,7 @@ dotnet test .\DataHz2.sln -c Release
 ```
 
 `smoke-test-api.ps1` 的静态页面探测规则说明：
-- `swagger` 使用 `/swagger/index.html`，必须返回 `200` 且包含 `Swagger UI`。
+- `swagger` 使用 `/swagger/index.html`，必须返回 `200` 且包含 `swagger-ui` 关键字（兼容本地化标题页面）。
 - `dashboard` 使用 `/dashboard/`，允许 `200` 或标准重定向（`301/302/307/308`）。
 - `health` 通过 `Wait-ForHealthReady` 轮询判定就绪后直接记为通过，不再额外执行第二次确认请求。
 
@@ -51,6 +51,7 @@ dotnet test .\DataHz2.sln -c Release
 - `deploy-prod.ps1` 与 `rollback-api.ps1` 新增同名 `Smoke*` 参数，并继续向 `deploy-api.ps1` / `smoke-test-api.ps1` 透传，支持在生产发布与手工回滚时统一调参。
 - 修复 `check-ci-contracts.ps1` 对 `GITHUB_STEP_SUMMARY` 的匹配方式：改为匹配字面量 `'$env:GITHUB_STEP_SUMMARY'`，避免 CI 环境变量展开后出现误报失败（本地可能通过、CI 失败）。
 - 修复 `smoke-test-api.ps1` 构建结构化报告时的集合转换方式：将 `results` 从 `@($results)` 改为 `$results.ToArray()`，避免在 `check-deploy-guards.ps1` 在线冒烟路径触发 `Argument types do not match`。
+- 修复 `smoke-test-api.ps1` 的 swagger 页面标记匹配：从固定 `Swagger UI` 调整为 `swagger-ui`，兼容本地化 Swagger 页面文本差异。
 
 如何使用/验证：
 - 本地执行示例：
