@@ -486,3 +486,14 @@ What changed:
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
 - Expect `smoke-detail-redacts-secrets` and `smoke-baseurl-query-secrets-redacted` to pass with no raw dot-suffix secret fragments in outputs.
+
+## 2026-03-05 dot-separated base-key redaction hardening
+
+What changed:
+- `smoke-test-api.ps1` now also treats `.` as a valid separator inside sensitive base key names (for example `x.api.key`, `api.key`, `access.token`, `id.token`, `refresh.token`, `proxy.authorization`, `client.secret`, `set.cookie`, `session.id`) in both key-value text and URL query redaction.
+- `check-deploy-guards.ps1` extends `smoke-detail-redacts-secrets` with the above dot-separated base-key variants in mock payload and echoed `target_url`, then asserts raw values never appear in smoke stdout/stderr/report.
+- `smoke-baseurl-query-secrets-redacted` now injects dot-separated base-key query params and requires redacted `report.baseUrl` output with keys preserved.
+
+How to validate:
+- Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
+- Expect `smoke-detail-redacts-secrets` and `smoke-baseurl-query-secrets-redacted` to pass with no raw dot-separated base-key secret fragments in outputs.
