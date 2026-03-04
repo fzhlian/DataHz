@@ -401,3 +401,14 @@ What changed:
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
 - Expect case `smoke-baseurl-query-secrets-redacted` to pass.
+
+## 2026-03-04 authorization-field secret redaction hardening
+
+What changed:
+- `smoke-test-api.ps1` expands generic key-based redaction to include `authorization*`, `proxy_authorization*`, and `id_token` fields in diagnostics text (including derived names such as `authorization_alt`).
+- URL query redaction now also covers `authorization`, `proxy_authorization`, and `id_token` keys.
+- `check-deploy-guards.ps1` strengthens `smoke-detail-redacts-secrets` by injecting non-request authorization secrets in mock JSON (`authorization_alt`, `proxy_authorization`) and in URL query params, then asserting they never appear in smoke stdout/stderr/report.
+
+How to validate:
+- Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
+- Expect case `smoke-detail-redacts-secrets` to pass with no raw authorization/proxy-authorization secret fragments in outputs.

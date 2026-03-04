@@ -275,6 +275,8 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                         $payload = [ordered]@{
                             status = "warming"
                             authorization = $authHeader
+                            authorization_alt = "Bearer guard-alt-authorization-should-redact"
+                            proxy_authorization = "Bearer guard-proxy-authorization-should-redact"
                             x_api_key = $apiKeyHeader
                             token = $apiKeyHeader
                             access_token = $authHeader
@@ -283,7 +285,7 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             secret = "guard-plain-secret-should-redact"
                             password = "guard-password-should-redact"
                             jwt = $authHeader
-                            target_url = "http://guard-url-user:guard-url-pass@127.0.0.1/internal?access_token=guard-url-token-should-redact&api_key=guard-url-apikey-should-redact&client_secret=guard-client-secret-should-redact&password=guard-url-password-should-redact"
+                            target_url = "http://guard-url-user:guard-url-pass@127.0.0.1/internal?access_token=guard-url-token-should-redact&api_key=guard-url-apikey-should-redact&client_secret=guard-client-secret-should-redact&password=guard-url-password-should-redact&authorization=guard-url-authorization-should-redact&proxy_authorization=guard-url-proxy-auth-should-redact"
                         }
                         $body = ($payload | ConvertTo-Json -Compress)
                     }
@@ -291,6 +293,8 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                         $payload = [ordered]@{
                             error = "simulated-failure"
                             authorization = $authHeader
+                            authorization_alt = "Bearer guard-alt-authorization-should-redact"
+                            proxy_authorization = "Bearer guard-proxy-authorization-should-redact"
                             x_api_key = $apiKeyHeader
                             token = $apiKeyHeader
                             access_token = $authHeader
@@ -299,7 +303,7 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             secret = "guard-plain-secret-should-redact"
                             password = "guard-password-should-redact"
                             jwt = $authHeader
-                            target_url = "http://guard-url-user:guard-url-pass@127.0.0.1/internal?access_token=guard-url-token-should-redact&api_key=guard-url-apikey-should-redact&client_secret=guard-client-secret-should-redact&password=guard-url-password-should-redact"
+                            target_url = "http://guard-url-user:guard-url-pass@127.0.0.1/internal?access_token=guard-url-token-should-redact&api_key=guard-url-apikey-should-redact&client_secret=guard-client-secret-should-redact&password=guard-url-password-should-redact&authorization=guard-url-authorization-should-redact&proxy_authorization=guard-url-proxy-auth-should-redact"
                         }
                         $body = ($payload | ConvertTo-Json -Compress)
                     }
@@ -1500,11 +1504,15 @@ try {
                     $apiKeySecret,
                     $jwtSecret,
                     "Bearer $jwtSecret",
+                    "guard-alt-authorization-should-redact",
+                    "guard-proxy-authorization-should-redact",
                     "guard-url-user",
                     "guard-url-pass",
                     "guard-url-user:guard-url-pass@",
                     "guard-url-token-should-redact",
                     "guard-url-apikey-should-redact",
+                    "guard-url-authorization-should-redact",
+                    "guard-url-proxy-auth-should-redact",
                     "guard-url-password-should-redact",
                     "guard-client-secret-should-redact",
                     "guard-refresh-token-should-redact",
