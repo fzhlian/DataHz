@@ -391,7 +391,7 @@ How to validate:
 
 What changed:
 - `check-deploy-guards.ps1` adds `smoke-baseurl-query-secrets-redacted`.
-- The case runs smoke with sensitive query parameters in `BaseUrl` (`api_key`, `x_api_key`, `password`, `client_secret`, `refresh_token`, `cookie`, `sessionid`, `authorization`, `id_token`) and verifies output hygiene.
+- The case runs smoke with sensitive query parameters in `BaseUrl` (`api_key`, `x_api_key`, `x_api_key_alt_backup`, `password`, `client_secret`, `refresh_token`, `access_token_alt_stage`, `cookie`, `sessionid`, `authorization`, `id_token`, `id_token_backup`) and verifies output hygiene.
 - Guard assertions require:
   - expected failure path (`exit code 1`) with report generated;
   - `report.baseUrl` keeps query keys but redacts values as `[REDACTED]`;
@@ -406,12 +406,14 @@ How to validate:
 
 What changed:
 - `smoke-test-api.ps1` redaction patterns now explicitly cover `x-api-key` / `x_api_key` aliases for both key-value text and URL query parameters, including derived names with multi-segment suffixes such as `x_api_key_alt_backup`.
+- The same multi-segment suffix strategy now applies to `authorization*`, `proxy_authorization*`, `token*`, `access_token*`, `refresh_token*`, `id_token*`, and `jwt*` key families.
 - `check-deploy-guards.ps1` strengthens `smoke-detail-redacts-secrets` with:
   - non-request `x_api_key_alt` payload value,
   - non-request `x_api_key_alt_backup` payload value,
+  - non-request `authorization_alt_stage` / `access_token_alt_stage` / `id_token_backup` / `jwt_stage` payload values,
   - free-text `note_api_key` (`X-Api-Key: ...`) payload value,
-  - URL query `x_api_key` / `x_api_key_alt_backup` secrets in echoed target URL.
-- `smoke-baseurl-query-secrets-redacted` now also injects `x_api_key_alt_backup` in `BaseUrl` and requires redacted output.
+  - URL query `x_api_key` / `x_api_key_alt_backup` plus token-family suffix secrets in echoed target URL.
+- `smoke-baseurl-query-secrets-redacted` now also injects `x_api_key_alt_backup`, `access_token_alt_stage`, and `id_token_backup` in `BaseUrl` and requires redacted output.
 
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
