@@ -168,3 +168,57 @@ dotnet test .\DataHz2.sln -c Release
 ```powershell
 .\scripts\rollback-api.ps1 -ServiceName DataHz.Api -Urls "http://0.0.0.0:5080"
 ```
+
+## 2026-03-04 一键部署失败自动回滚与日志归档
+
+做了什么变更：
+- 新增 `.\scripts\deploy-prod-with-auto-rollback.ps1`，封装 `deploy-prod.ps1` 与 `rollback-api.ps1`，用于生产发布失败后的自动回滚。
+- 新脚本会按次生成运行目录（默认 `.\artifacts\deploy-runs\<runId>\`），落盘以下诊断文件：
+  - `deploy.log`、`rollback.log`（执行日志）
+  - `status-before.json`、`status-after-deploy.json`、`status-after-rollback.json`（部署状态快照）
+  - `run-summary.json`（本次运行汇总）
+- 每次运行会额外生成同名 zip 归档（`.\artifacts\deploy-runs\<runId>.zip`），便于离线传阅与追溯。
+
+如何使用/验证：
+- 直接发布（失败自动回滚）：
+
+```powershell
+$tag = "datahz2-v1.0.7"
+$base = "https://github.com/fzhlian/DataHz/releases/download/$tag"
+
+.\scripts\deploy-prod-with-auto-rollback.ps1 `
+  -ServiceName "DataHz.Api" `
+  -PackageUrl "$base/datahz2-api-win-arm64-$tag.zip" `
+  -PackageSha256Url "$base/datahz2-api-win-arm64-$tag.sha256" `
+  -PackageManifestUrl "$base/datahz2-api-win-arm64-$tag.manifest.json" `
+  -PackageIndexUrl "$base/datahz2-release-$tag.index.json" `
+  -PackageIndexSha256Url "$base/datahz2-release-$tag.sha256" `
+  -PackageBearerToken $env:GITHUB_TOKEN `
+  -SmokeRequireAuthenticatedApi `
+  -SmokeApiKey $env:DATAHZ_API_KEY
+```
+
+- 指定回滚目标版本（可选）：
+
+```powershell
+.\scripts\deploy-prod-with-auto-rollback.ps1 `
+  -ServiceName "DataHz.Api" `
+  -PackageUrl "$base/datahz2-api-win-arm64-$tag.zip" `
+  -PackageManifestUrl "$base/datahz2-api-win-arm64-$tag.manifest.json" `
+  -RollbackTargetReleaseId "20260304-085901"
+```
+
+- 若“部署失败但自动回滚成功”仍需返回成功退出码（某些编排场景）：
+
+```powershell
+.\scripts\deploy-prod-with-auto-rollback.ps1 `
+  -ServiceName "DataHz.Api" `
+  -PackageUrl "$base/datahz2-api-win-arm64-$tag.zip" `
+  -PackageManifestUrl "$base/datahz2-api-win-arm64-$tag.manifest.json" `
+  -TreatRollbackSuccessAsSuccess
+```
+
+预期结果：
+- 发布成功：脚本退出码 `0`，`run-summary.json` 中 `deploy.succeeded=true`。
+- 发布失败 + 回滚成功：默认退出码 `1`（若启用 `-TreatRollbackSuccessAsSuccess` 则为 `0`）。
+- 发布失败 + 回滚失败：退出码 `2`，并可在 `run-summary.json` + `*.log` + `*.zip` 中定位原因。
