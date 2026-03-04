@@ -1311,6 +1311,11 @@ try {
                     Assert-StringHasNoControlChars -Value $detail -Label "Smoke report detail"
                 }
 
+                $endpoints = @($report.results | ForEach-Object { [string]$_.Endpoint })
+                foreach ($endpoint in $endpoints) {
+                    Assert-StringHasNoControlChars -Value $endpoint -Label "Smoke report endpoint"
+                }
+
                 $binaryHintRows = @($details | Where-Object {
                     $_ -like "*binary response body omitted*" -or
                     $_ -like "*non-text response body omitted*" -or

@@ -334,8 +334,9 @@ What changed:
 - `check-deploy-guards.ps1` now asserts `smoke-binary-error-detail-sanitized` subprocess logs are text-safe:
   - `smoke.stdout.log` must not contain NUL bytes.
   - `smoke.stderr.log` must not contain NUL bytes.
+- The same case now also asserts `smoke.report.json` `results[*].Endpoint` values contain no control characters (matching the existing `Detail` sanitization guard).
 - This prevents regressions where mixed encodings make smoke diagnostics unreadable in CI artifacts.
 
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
-- Expect case `smoke-binary-error-detail-sanitized` to pass and generated smoke logs to be plain text without embedded NUL bytes.
+- Expect case `smoke-binary-error-detail-sanitized` to pass, generated smoke logs to be plain text without embedded NUL bytes, and report `Endpoint`/`Detail` fields to be control-char free.
