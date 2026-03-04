@@ -104,6 +104,90 @@ function Start-StaticFileServer([string]$RootPath, [int]$Port) {
     }
 }
 
+function Start-SmokeMockServer([int]$Port) {
+    $prefix = "http://127.0.0.1:$Port/"
+
+    $job = Start-Job -ArgumentList $prefix -ScriptBlock {
+        param($serverPrefix)
+
+        $listener = [System.Net.HttpListener]::new()
+        $listener.Prefixes.Add($serverPrefix)
+        $listener.Start()
+        try {
+            while ($true) {
+                $ctx = $listener.GetContext()
+                $resp = $ctx.Response
+                try {
+                    $path = $ctx.Request.Url.AbsolutePath
+                    $statusCode = 200
+                    $contentType = "application/json; charset=utf-8"
+                    $body = "{""status"":""ok""}"
+
+                    switch -Regex ($path) {
+                        "^/health/?$" {
+                            $body = "{""status"":""ok""}"
+                            break
+                        }
+                        "^/swagger/index\.html$" {
+                            $contentType = "text/html; charset=utf-8"
+                            $body = "<html><body>swagger-ui</body></html>"
+                            break
+                        }
+                        "^/dashboard/?$" {
+                            $contentType = "text/html; charset=utf-8"
+                            $body = "<html><body>DataHz Monitor Board</body></html>"
+                            break
+                        }
+                        "^/api/security/whoami$" {
+                            $body = "{""user"":""guard""}"
+                            break
+                        }
+                        "^/api/jobs/stats$" {
+                            $body = "{""running"":0}"
+                            break
+                        }
+                        "^/api/monitor/overview$" {
+                            $body = "{""jobs"":[],""audit"":[]}"
+                            break
+                        }
+                        default {
+                            $statusCode = 404
+                            $body = "{""error"":""not found""}"
+                            break
+                        }
+                    }
+
+                    $bytes = [System.Text.Encoding]::UTF8.GetBytes($body)
+                    $resp.StatusCode = $statusCode
+                    $resp.ContentType = $contentType
+                    $resp.ContentLength64 = $bytes.LongLength
+                    if (-not $ctx.Request.HttpMethod.Equals("HEAD", [System.StringComparison]::OrdinalIgnoreCase)) {
+                        $resp.OutputStream.Write($bytes, 0, $bytes.Length)
+                    }
+                }
+                catch {
+                    $resp.StatusCode = 500
+                }
+                finally {
+                    $resp.OutputStream.Close()
+                }
+            }
+        }
+        finally {
+            if ($listener.IsListening) {
+                $listener.Stop()
+            }
+            $listener.Close()
+        }
+    }
+
+    Start-Sleep -Milliseconds 300
+    return [pscustomobject]@{
+        Job = $job
+        BaseUrl = $prefix
+    }
+}
+
 function Test-IsValidPublishDir([string]$Path) {
     if ([string]::IsNullOrWhiteSpace($Path)) {
         return $false
@@ -373,6 +457,7 @@ $deployApiScript = Join-Path $PSScriptRoot "deploy-api.ps1"
 $deployProdScript = Join-Path $PSScriptRoot "deploy-prod.ps1"
 $deployProdAutoRollbackScript = Join-Path $PSScriptRoot "deploy-prod-with-auto-rollback.ps1"
 $deployProdFromReleaseScript = Join-Path $PSScriptRoot "deploy-prod-from-release.ps1"
+$verifyReleaseAssetsScript = Join-Path $PSScriptRoot "verify-release-assets.ps1"
 if (-not $script:PowerShellExecutable) {
     $script:PowerShellExecutable = Get-PowerShellExecutablePath
 }
@@ -387,6 +472,9 @@ if (-not (Test-Path $deployProdAutoRollbackScript)) {
 }
 if (-not (Test-Path $deployProdFromReleaseScript)) {
     throw "deploy-prod-from-release.ps1 not found: $deployProdFromReleaseScript"
+}
+if (-not (Test-Path $verifyReleaseAssetsScript)) {
+    throw "verify-release-assets.ps1 not found: $verifyReleaseAssetsScript"
 }
 
 $runId = New-RunId
@@ -495,13 +583,31 @@ $fromReleaseIndexName = "datahz2-release-$fromReleaseTag.index.json"
 $fromReleaseIndexShaName = "datahz2-release-$fromReleaseTag.sha256"
 
 Copy-Item -Path $resolvedZip -Destination (Join-Path $urlAssetRoot $fromReleaseZipName) -Force
-Copy-Item -Path $resolvedManifest -Destination (Join-Path $urlAssetRoot $fromReleaseManifestName) -Force
-Copy-Item -Path $validIndexPath -Destination (Join-Path $urlAssetRoot $fromReleaseIndexName) -Force
-Set-Content -Path (Join-Path $urlAssetRoot $fromReleaseShaName) -Encoding UTF8 -Value "$zipSha  $fromReleaseZipName"
+$fromReleaseShaPath = Join-Path $urlAssetRoot $fromReleaseShaName
+Set-Content -Path $fromReleaseShaPath -Encoding UTF8 -Value "$zipSha  $fromReleaseZipName"
+
+$fromReleaseManifestPath = Join-Path $urlAssetRoot $fromReleaseManifestName
+$fromReleaseManifestRaw = Get-Content -Path $resolvedManifest -Raw
+$fromReleaseManifest = $fromReleaseManifestRaw | ConvertFrom-Json
+if ($null -eq $fromReleaseManifest -or $null -eq $fromReleaseManifest.package) {
+    throw "Resolved manifest for from-release guard case is invalid: $resolvedManifest"
+}
+
+$fromReleaseManifest.packageName = "datahz2-api-$fromReleaseRuntime-$fromReleaseTag"
+$fromReleaseManifest.package.file = $fromReleaseZipName
+$fromReleaseManifest.package.sha256 = $zipSha
+$fromReleaseManifest.package.sha256File = $fromReleaseShaName
+$fromReleaseManifest.package.sizeBytes = [long]$zipInfo.Length
+$fromReleaseManifest | ConvertTo-Json -Depth 20 | Set-Content -Path $fromReleaseManifestPath -Encoding UTF8
 
 $fromReleaseIndexPath = Join-Path $urlAssetRoot $fromReleaseIndexName
-$fromReleaseIndexHash = (Get-FileHash -Path $fromReleaseIndexPath -Algorithm SHA256).Hash.ToLowerInvariant()
-Set-Content -Path (Join-Path $urlAssetRoot $fromReleaseIndexShaName) -Encoding UTF8 -Value "$fromReleaseIndexHash  $fromReleaseIndexName"
+$fromReleaseIndexShaPath = Join-Path $urlAssetRoot $fromReleaseIndexShaName
+& $verifyReleaseAssetsScript `
+    -AssetsDir $urlAssetRoot `
+    -Tag $fromReleaseTag `
+    -Runtimes @($fromReleaseRuntime) `
+    -OutputIndexFile $fromReleaseIndexPath `
+    -OutputSha256ListFile $fromReleaseIndexShaPath
 
 $serverPort = Get-FreeTcpPort
 $urlServer = Start-StaticFileServer -RootPath $urlAssetRoot -Port $serverPort
@@ -992,30 +1098,42 @@ try {
             $wrapperOutLog = Join-Path $logsRoot "wrapper.out.log"
             $wrapperErrLog = Join-Path $logsRoot "wrapper.err.log"
 
-            $invoke = Invoke-ScriptSubprocess `
-                -ScriptPath $deployProdFromReleaseScript `
-                -ArgumentList @(
-                    "-Tag", $fromReleaseTag,
-                    "-Runtime", $fromReleaseRuntime,
-                    "-ReleaseDownloadBaseUrl", $fromReleaseBaseUrl,
-                    "-ValidateAssetUrls",
-                    "-ValidateAssetTimeoutSeconds", "5",
-                    "-ValidateAssetRetryCount", "1",
-                    "-AllowUnsafeBypass",
-                    "-SkipServiceInstall",
-                    "-SkipHealthCheck",
-                    "-SkipRollback",
-                    "-LogsRoot", $logsRoot,
-                    "-RunLabel", "guard-asset-summary",
-                    "-ReleaseRoot", $releaseRoot
-                ) `
-                -StdOutPath $wrapperOutLog `
-                -StdErrPath $wrapperErrLog
+            $smokePort = Get-FreeTcpPort
+            $smokeServer = Start-SmokeMockServer -Port $smokePort
+            $smokeBaseUrl = $smokeServer.BaseUrl.TrimEnd("/")
+            try {
+                $invoke = Invoke-ScriptSubprocess `
+                    -ScriptPath $deployProdFromReleaseScript `
+                    -ArgumentList @(
+                        "-Tag", $fromReleaseTag,
+                        "-Runtime", $fromReleaseRuntime,
+                        "-ReleaseDownloadBaseUrl", $fromReleaseBaseUrl,
+                        "-ValidateAssetUrls",
+                        "-ValidateAssetTimeoutSeconds", "5",
+                        "-ValidateAssetRetryCount", "1",
+                        "-AllowUnsafeBypass",
+                        "-SkipServiceInstall",
+                        "-SkipHealthCheck",
+                        "-SkipRollback",
+                        "-Urls", $smokeBaseUrl,
+                        "-LogsRoot", $logsRoot,
+                        "-RunLabel", "guard-asset-summary",
+                        "-ReleaseRoot", $releaseRoot
+                    ) `
+                    -StdOutPath $wrapperOutLog `
+                    -StdErrPath $wrapperErrLog
+            }
+            finally {
+                if ($smokeServer -and $smokeServer.Job) {
+                    Stop-Job -Job $smokeServer.Job -ErrorAction SilentlyContinue
+                    Remove-Job -Job $smokeServer.Job -Force -ErrorAction SilentlyContinue
+                }
+            }
 
-            if ($invoke.ExitCode -ne 0 -and $invoke.ExitCode -ne 1) {
+            if ($invoke.ExitCode -ne 0) {
                 $out = if (Test-Path $wrapperOutLog) { Get-Content -Path $wrapperOutLog -Raw } else { "" }
                 $err = if (Test-Path $wrapperErrLog) { Get-Content -Path $wrapperErrLog -Raw } else { "" }
-                throw "Expected from-release wrapper exit code 0/1, got $($invoke.ExitCode). Out='$out' Err='$err'"
+                throw "Expected from-release wrapper exit code 0, got $($invoke.ExitCode). Out='$out' Err='$err'"
             }
 
             $summary = Get-LatestRunSummary -LogsRootPath $logsRoot
@@ -1025,6 +1143,14 @@ try {
 
             if ([string]::IsNullOrWhiteSpace($summary.deploy.logPath) -or -not (Test-Path $summary.deploy.logPath)) {
                 throw "From-release wrapper deploy log path missing or not found."
+            }
+
+            if (-not [bool]$summary.deploy.succeeded) {
+                throw "Expected from-release wrapper deploy.succeeded=true in summary."
+            }
+
+            if ([bool]$summary.rollback.attempted) {
+                throw "Expected from-release wrapper rollback.attempted=false in summary."
             }
 
             $assetValidation = @($summary.assetValidation)

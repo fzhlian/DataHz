@@ -281,3 +281,14 @@ $base = "https://github.com/fzhlian/DataHz/releases/download/$tag"
 - `DryRun` 输出中应包含 5 个 release URL：`zip`、`sha256`、`manifest`、`index.json`、`index.sha256`。
 - 启用 `-ValidateAssetUrls` 时，`DryRun` 输出的 `assetValidation` 应包含 5 条记录；真实可达资源应全部 `Passed=true`。
 - 实际部署时会进入 `deploy-prod-with-auto-rollback.ps1` 统一流程，并在 `artifacts\deploy-runs` 生成运行日志与总结。
+
+## 2026-03-04 guard refinement (from-release summary)
+
+What changed:
+- `check-deploy-guards.ps1` now builds from-release test assets with a rewritten manifest and regenerated release index (`datahz2-release-<tag>.index.json` + `.sha256`) so metadata matches renamed files.
+- Guard case `prod-from-release-validate-assets-summary` is tightened to require wrapper exit code `0`.
+- The same guard now asserts `run-summary.json` includes `deploy.succeeded=true` and `rollback.attempted=false` in addition to `assetValidation` entries.
+
+How to validate:
+- Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
+- Expect case `prod-from-release-validate-assets-summary` to pass with no fallback to exit code `1`.
