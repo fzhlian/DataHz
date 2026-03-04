@@ -1671,6 +1671,90 @@ try {
         }))
 
     $results.Add((Run-Case `
+        -Name "smoke-baseurl-query-secrets-redacted" `
+        -ExpectFailure $false `
+        -ExpectedMessagePart "" `
+        -Action {
+            $smokePort = Get-FreeTcpPort
+            $smokeServer = Start-SmokeMockServer -Port $smokePort
+            $queryApiKeySecret = "guard-baseurl-query-secret"
+            $queryPasswordSecret = "guard-baseurl-password-secret"
+            $queryClientSecret = "guard-baseurl-client-secret"
+            $queryRefreshSecret = "guard-baseurl-refresh-secret"
+            $rawBaseUrl = ('http://127.0.0.1:{0}?api_key={1}&password={2}&client_secret={3}&refresh_token={4}' -f `
+                $smokePort, `
+                $queryApiKeySecret, `
+                $queryPasswordSecret, `
+                $queryClientSecret, `
+                $queryRefreshSecret)
+            $expectedBaseUrl = ('http://127.0.0.1:{0}?api_key=[REDACTED]&password=[REDACTED]&client_secret=[REDACTED]&refresh_token=[REDACTED]' -f $smokePort)
+            $caseRoot = Join-Path $tempRoot "case-smoke-baseurl-query-secrets-redacted"
+            New-Item -ItemType Directory -Force -Path $caseRoot | Out-Null
+            $reportPath = Join-Path $caseRoot "smoke.report.json"
+            $stdoutPath = Join-Path $caseRoot "smoke.stdout.log"
+            $stderrPath = Join-Path $caseRoot "smoke.stderr.log"
+            try {
+                $invoke = Invoke-ScriptSubprocess `
+                    -ScriptPath $smokeTestScript `
+                    -ArgumentList @(
+                        "-BaseUrl", $rawBaseUrl,
+                        "-TimeoutSeconds", "2",
+                        "-CheckRetryCount", "1",
+                        "-CheckRetryDelayMilliseconds", "25",
+                        "-HealthPollDelayMilliseconds", "25",
+                        "-FailureContentSnippetLength", "160",
+                        "-OutputJsonPath", $reportPath
+                    ) `
+                    -StdOutPath $stdoutPath `
+                    -StdErrPath $stderrPath
+
+                if ($invoke.ExitCode -ne 1) {
+                    $out = if (Test-Path $stdoutPath) { Get-Content -Path $stdoutPath -Raw } else { "" }
+                    $err = if (Test-Path $stderrPath) { Get-Content -Path $stderrPath -Raw } else { "" }
+                    throw "Expected smoke subprocess exit code 1, got $($invoke.ExitCode). Out='$out' Err='$err'"
+                }
+
+                Assert-TextLogHasNoNulBytes -LogPath $stdoutPath -Label "Smoke stdout log"
+                Assert-TextLogHasNoNulBytes -LogPath $stderrPath -Label "Smoke stderr log"
+
+                if (-not (Test-Path $reportPath)) {
+                    throw "Smoke report was not generated: $reportPath"
+                }
+
+                $reportText = Get-Content -Path $reportPath -Raw
+                $report = $reportText | ConvertFrom-Json
+                Assert-StringHasNoControlChars -Value ([string]$report.baseUrl) -Label "Smoke report baseUrl"
+                if ([string]$report.baseUrl -ne $expectedBaseUrl) {
+                    throw "Expected report.baseUrl='$expectedBaseUrl', got '$($report.baseUrl)'."
+                }
+
+                $stdoutText = if (Test-Path $stdoutPath) { Get-Content -Path $stdoutPath -Raw } else { "" }
+                $stderrText = if (Test-Path $stderrPath) { Get-Content -Path $stderrPath -Raw } else { "" }
+                $combinedText = "$reportText`n$stdoutText`n$stderrText"
+
+                foreach ($forbidden in @(
+                    $queryApiKeySecret,
+                    $queryPasswordSecret,
+                    $queryClientSecret,
+                    $queryRefreshSecret
+                )) {
+                    Assert-StringDoesNotContain -Value $combinedText -Forbidden $forbidden -Label "Smoke outputs"
+                }
+
+                $expectedContext = "BaseUrl: $expectedBaseUrl"
+                if ($stdoutText.IndexOf($expectedContext, [System.StringComparison]::Ordinal) -lt 0) {
+                    throw "Expected smoke stdout context to include redacted base URL: $expectedContext"
+                }
+            }
+            finally {
+                if ($smokeServer -and $smokeServer.Job) {
+                    Stop-Job -Job $smokeServer.Job -ErrorAction SilentlyContinue
+                    Remove-Job -Job $smokeServer.Job -Force -ErrorAction SilentlyContinue
+                }
+            }
+        }))
+
+    $results.Add((Run-Case `
         -Name "require-manifest-missing" `
         -ExpectFailure $true `
         -ExpectedMessagePart "RequireManifest is enabled, but package manifest file was not found." `

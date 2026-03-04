@@ -386,3 +386,18 @@ What changed:
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
 - Expect case `smoke-baseurl-whitespace-injection-sanitized` to pass.
+
+## 2026-03-04 smoke base URL query-secret redaction guard
+
+What changed:
+- `check-deploy-guards.ps1` adds `smoke-baseurl-query-secrets-redacted`.
+- The case runs smoke with sensitive query parameters in `BaseUrl` (`api_key`, `password`, `client_secret`, `refresh_token`) and verifies output hygiene.
+- Guard assertions require:
+  - expected failure path (`exit code 1`) with report generated;
+  - `report.baseUrl` keeps query keys but redacts values as `[REDACTED]`;
+  - stdout/stderr/report content does not contain raw query secret values;
+  - smoke context prints the redacted base URL.
+
+How to validate:
+- Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
+- Expect case `smoke-baseurl-query-secrets-redacted` to pass.
