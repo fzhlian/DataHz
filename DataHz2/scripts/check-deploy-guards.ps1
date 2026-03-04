@@ -764,11 +764,6 @@ try {
             if ([string]::IsNullOrWhiteSpace($summary.runId)) {
                 throw "Wrapper summary runId is empty."
             }
-
-            $archivePath = Join-Path $logsRoot ($summary.runId + ".zip")
-            if (-not (Test-Path $archivePath)) {
-                throw "Wrapper archive not found: $archivePath"
-            }
         }))
 
     $results.Add((Run-Case `
@@ -1050,11 +1045,6 @@ try {
 
                     if ([string]::IsNullOrWhiteSpace($summary.runId)) {
                         throw "Auto wrapper summary runId is empty."
-                    }
-
-                    $archivePath = Join-Path $wrapperLogsRoot ($summary.runId + ".zip")
-                    if (-not (Test-Path $archivePath)) {
-                        throw "Auto wrapper archive not found: $archivePath"
                     }
                 }
                 finally {

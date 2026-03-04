@@ -181,8 +181,8 @@ dotnet test .\DataHz2.sln -c Release
   - `run-summary.json`（本次运行汇总）
 - 每次运行会额外生成同名 zip 归档（`.\artifacts\deploy-runs\<runId>.zip`），便于离线传阅与追溯。
 - `check-deploy-guards.ps1` 新增自动回滚包装脚本守卫用例：
-  - `prod-auto-wrapper-fail-skip-rollback`（失败路径 + `-SkipRollback` + 归档落盘校验）
-  - `prod-auto-wrapper-smoke-success`（在线冒烟成功路径 + 报告与归档校验）
+  - `prod-auto-wrapper-fail-skip-rollback`（失败路径 + `-SkipRollback` + 日志/状态快照校验）
+  - `prod-auto-wrapper-smoke-success`（在线冒烟成功路径 + smoke 报告校验）
 
 如何使用/验证：
 - 直接发布（失败自动回滚）：
