@@ -37,7 +37,8 @@ param(
     [switch]$SkipRollback,
     [string]$RollbackTargetReleaseId = "",
     [switch]$SkipRollbackSmokeTest,
-    [switch]$TreatRollbackSuccessAsSuccess
+    [switch]$TreatRollbackSuccessAsSuccess,
+    [object[]]$AssetValidationResults = @()
 )
 
 $ErrorActionPreference = "Stop"
@@ -183,6 +184,20 @@ Save-StatusSnapshot `
 
 $startedAtUtc = (Get-Date).ToUniversalTime().ToString("O")
 
+$normalizedAssetValidationResults = @()
+if ($null -ne $AssetValidationResults -and @($AssetValidationResults).Count -gt 0) {
+    $normalizedAssetValidationResults = @($AssetValidationResults | ForEach-Object {
+        [ordered]@{
+            url = if ($null -eq $_.Url) { "" } else { [string]$_.Url }
+            passed = [bool]$_.Passed
+            statusCode = if ($null -eq $_.StatusCode) { 0 } else { [int]$_.StatusCode }
+            attempts = if ($null -eq $_.Attempts) { 0 } else { [int]$_.Attempts }
+            method = if ($null -eq $_.Method) { "" } else { [string]$_.Method }
+            detail = if ($null -eq $_.Detail) { "" } else { [string]$_.Detail }
+        }
+    })
+}
+
 $deployParams = @{
     ServiceName = $ServiceName
     Urls = $Urls
@@ -259,6 +274,7 @@ Write-Host "Starting deploy run with auto rollback wrapper."
 Write-Host "  RunId: $runId"
 Write-Host "  RunDir: $runDir"
 Write-Host "  StatusBaseUrl: $statusBaseUrl"
+Write-Host "  AssetValidationCount: $($normalizedAssetValidationResults.Count)"
 
 $deployStep = Invoke-StepWithLog -StepName "deploy-prod" -LogPath $deployLog -Operation {
     & $deployScript @deployParams
@@ -356,6 +372,7 @@ $summary = [ordered]@{
         afterDeploy = $statusAfterDeployPath
         afterRollback = $statusAfterRollbackPath
     }
+    assetValidation = @($normalizedAssetValidationResults)
 }
 
 $summary | ConvertTo-Json -Depth 10 | Set-Content -Path $summaryPath -Encoding UTF8

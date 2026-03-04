@@ -124,6 +124,7 @@ dotnet test .\DataHz2.sln -c Release
 - `prod-auto-wrapper-smoke-success` 为 `true`（仅在 `-IncludeOnlineSmokeCase` 时执行）。
 - `prod-from-release-invalid-tag`、`prod-from-release-dryrun-x64`、`prod-from-release-dryrun-arm64`、`prod-from-release-dryrun-env-token` 均为 `true`。
 - `prod-from-release-validate-assets-local-success` 与 `prod-from-release-validate-assets-local-failure` 均为 `true`。
+- `prod-from-release-validate-assets-summary` 为 `true`。
 - 不再出现 `Deployment failed. Argument types do not match`。
 
 ## CI 工作流
@@ -180,7 +181,7 @@ dotnet test .\DataHz2.sln -c Release
 - 新脚本会按次生成运行目录（默认 `.\artifacts\deploy-runs\<runId>\`），落盘以下诊断文件：
   - `deploy.log`、`rollback.log`（执行日志）
   - `status-before.json`、`status-after-deploy.json`、`status-after-rollback.json`（部署状态快照）
-  - `run-summary.json`（本次运行汇总）
+  - `run-summary.json`（本次运行汇总；若由 `deploy-prod-from-release.ps1 -ValidateAssetUrls` 调用，会附带 `assetValidation` 校验结果）
 - 每次运行会额外生成同名 zip 归档（`.\artifacts\deploy-runs\<runId>.zip`），便于离线传阅与追溯。
 - `check-deploy-guards.ps1` 新增自动回滚包装脚本守卫用例：
   - `prod-auto-wrapper-fail-skip-rollback`（失败路径 + `-SkipRollback` + 日志/状态快照校验）
@@ -240,6 +241,7 @@ $base = "https://github.com/fzhlian/DataHz/releases/download/$tag"
 - 新增 `-ReleaseDownloadBaseUrl`，用于覆盖默认 GitHub 下载前缀（例如内网镜像或本地守卫测试）。
 - `check-deploy-guards.ps1` 新增 `deploy-prod-from-release.ps1` 守卫用例，覆盖 `invalid-tag`、`dryrun-x64/arm64`、`env token 透传`。
 - `check-deploy-guards.ps1` 进一步覆盖 `ValidateAssetUrls` 的本地成功/失败路径。
+- `deploy-prod-with-auto-rollback.ps1` 的 `run-summary.json` 现支持记录 `assetValidation`（URL、状态码、尝试次数、方法、详情），便于集中排障。
 
 如何使用/验证：
 - `win-x64` 实际部署：

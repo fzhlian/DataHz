@@ -259,6 +259,9 @@ if ($SkipRollbackSmokeTest) {
 if ($TreatRollbackSuccessAsSuccess) {
     $deployParams.TreatRollbackSuccessAsSuccess = $true
 }
+if ($assetValidationResults.Count -gt 0) {
+    $deployParams.AssetValidationResults = @($assetValidationResults)
+}
 
 Write-Host "Deploy from release profile:"
 Write-Host "  Tag: $normalizedTag"

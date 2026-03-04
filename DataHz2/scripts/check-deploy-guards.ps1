@@ -981,6 +981,70 @@ try {
         }))
 
     $results.Add((Run-Case `
+        -Name "prod-from-release-validate-assets-summary" `
+        -ExpectFailure $false `
+        -ExpectedMessagePart "" `
+        -Action {
+            $logsRoot = Join-Path $tempRoot "case-prod-from-release-validate-assets-summary.logs"
+            $releaseRoot = Join-Path $tempRoot "case-prod-from-release-validate-assets-summary.release"
+            New-Item -ItemType Directory -Force -Path $logsRoot | Out-Null
+            New-Item -ItemType Directory -Force -Path $releaseRoot | Out-Null
+            $wrapperOutLog = Join-Path $logsRoot "wrapper.out.log"
+            $wrapperErrLog = Join-Path $logsRoot "wrapper.err.log"
+
+            $invoke = Invoke-ScriptSubprocess `
+                -ScriptPath $deployProdFromReleaseScript `
+                -ArgumentList @(
+                    "-Tag", $fromReleaseTag,
+                    "-Runtime", $fromReleaseRuntime,
+                    "-ReleaseDownloadBaseUrl", $fromReleaseBaseUrl,
+                    "-ValidateAssetUrls",
+                    "-ValidateAssetTimeoutSeconds", "5",
+                    "-ValidateAssetRetryCount", "1",
+                    "-AllowUnsafeBypass",
+                    "-SkipServiceInstall",
+                    "-SkipHealthCheck",
+                    "-SkipRollback",
+                    "-LogsRoot", $logsRoot,
+                    "-RunLabel", "guard-asset-summary",
+                    "-ReleaseRoot", $releaseRoot
+                ) `
+                -StdOutPath $wrapperOutLog `
+                -StdErrPath $wrapperErrLog
+
+            if ($invoke.ExitCode -ne 0 -and $invoke.ExitCode -ne 1) {
+                $out = if (Test-Path $wrapperOutLog) { Get-Content -Path $wrapperOutLog -Raw } else { "" }
+                $err = if (Test-Path $wrapperErrLog) { Get-Content -Path $wrapperErrLog -Raw } else { "" }
+                throw "Expected from-release wrapper exit code 0/1, got $($invoke.ExitCode). Out='$out' Err='$err'"
+            }
+
+            $summary = Get-LatestRunSummary -LogsRootPath $logsRoot
+            if ($null -eq $summary) {
+                throw "From-release wrapper run summary was not generated under $logsRoot"
+            }
+
+            if ([string]::IsNullOrWhiteSpace($summary.deploy.logPath) -or -not (Test-Path $summary.deploy.logPath)) {
+                throw "From-release wrapper deploy log path missing or not found."
+            }
+
+            $assetValidation = @($summary.assetValidation)
+            if ($assetValidation.Count -ne 5) {
+                throw "Expected 5 assetValidation entries in summary, got $($assetValidation.Count)."
+            }
+
+            $failed = @($assetValidation | Where-Object { -not $_.passed })
+            if ($failed.Count -gt 0) {
+                throw "Expected all assetValidation entries in summary to pass."
+            }
+
+            $expectedManifestUrl = "$fromReleaseBaseUrl/$fromReleaseManifestName"
+            $manifestRow = $assetValidation | Where-Object { $_.url -eq $expectedManifestUrl } | Select-Object -First 1
+            if (-not $manifestRow) {
+                throw "Expected assetValidation to include manifest URL: $expectedManifestUrl"
+            }
+        }))
+
+    $results.Add((Run-Case `
         -Name "require-manifest-missing" `
         -ExpectFailure $true `
         -ExpectedMessagePart "RequireManifest is enabled, but package manifest file was not found." `
