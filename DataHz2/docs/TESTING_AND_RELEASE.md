@@ -519,3 +519,14 @@ What changed:
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
 - Expect `smoke-detail-redacts-secrets` and `smoke-baseurl-query-secrets-redacted` to pass with no raw fragment secret fragments in outputs.
+
+## 2026-03-05 semicolon-delimited parameter redaction hardening
+
+What changed:
+- `smoke-test-api.ps1` now redacts sensitive parameters when URLs use `;` as a delimiter (query/fragment contexts), in addition to `?`, `#`, and `&`.
+- `check-deploy-guards.ps1` extends `smoke-detail-redacts-secrets` with semicolon-delimited secrets in echoed `target_url` (both query and fragment tails) and asserts those raw values never appear in smoke outputs.
+- `smoke-baseurl-query-secrets-redacted` remains as canonical URL-output validation; semicolon-delimited coverage is enforced via `smoke-detail-redacts-secrets` assertions.
+
+How to validate:
+- Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
+- Expect `smoke-detail-redacts-secrets` to pass with no raw semicolon-delimited secret fragments in outputs.
