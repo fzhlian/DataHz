@@ -1707,13 +1707,21 @@ try {
             $queryPasswordSecret = "guard-baseurl-password-secret"
             $queryClientSecret = "guard-baseurl-client-secret"
             $queryRefreshSecret = "guard-baseurl-refresh-secret"
-            $rawBaseUrl = ('http://127.0.0.1:{0}?api_key={1}&password={2}&client_secret={3}&refresh_token={4}' -f `
+            $queryCookieSecret = "guard-baseurl-cookie-secret"
+            $querySessionSecret = "guard-baseurl-session-secret"
+            $queryAuthorizationSecret = "guard-baseurl-authorization-secret"
+            $queryIdTokenSecret = "guard-baseurl-idtoken-secret"
+            $rawBaseUrl = ('http://127.0.0.1:{0}?api_key={1}&password={2}&client_secret={3}&refresh_token={4}&cookie={5}&sessionid={6}&authorization={7}&id_token={8}' -f `
                 $smokePort, `
                 $queryApiKeySecret, `
                 $queryPasswordSecret, `
                 $queryClientSecret, `
-                $queryRefreshSecret)
-            $expectedBaseUrl = ('http://127.0.0.1:{0}?api_key=[REDACTED]&password=[REDACTED]&client_secret=[REDACTED]&refresh_token=[REDACTED]' -f $smokePort)
+                $queryRefreshSecret, `
+                $queryCookieSecret, `
+                $querySessionSecret, `
+                $queryAuthorizationSecret, `
+                $queryIdTokenSecret)
+            $expectedBaseUrl = ('http://127.0.0.1:{0}?api_key=[REDACTED]&password=[REDACTED]&client_secret=[REDACTED]&refresh_token=[REDACTED]&cookie=[REDACTED]&sessionid=[REDACTED]&authorization=[REDACTED]&id_token=[REDACTED]' -f $smokePort)
             $caseRoot = Join-Path $tempRoot "case-smoke-baseurl-query-secrets-redacted"
             New-Item -ItemType Directory -Force -Path $caseRoot | Out-Null
             $reportPath = Join-Path $caseRoot "smoke.report.json"
@@ -1762,7 +1770,11 @@ try {
                     $queryApiKeySecret,
                     $queryPasswordSecret,
                     $queryClientSecret,
-                    $queryRefreshSecret
+                    $queryRefreshSecret,
+                    $queryCookieSecret,
+                    $querySessionSecret,
+                    $queryAuthorizationSecret,
+                    $queryIdTokenSecret
                 )) {
                     Assert-StringDoesNotContain -Value $combinedText -Forbidden $forbidden -Label "Smoke outputs"
                 }

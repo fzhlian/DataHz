@@ -391,7 +391,7 @@ How to validate:
 
 What changed:
 - `check-deploy-guards.ps1` adds `smoke-baseurl-query-secrets-redacted`.
-- The case runs smoke with sensitive query parameters in `BaseUrl` (`api_key`, `password`, `client_secret`, `refresh_token`) and verifies output hygiene.
+- The case runs smoke with sensitive query parameters in `BaseUrl` (`api_key`, `password`, `client_secret`, `refresh_token`, `cookie`, `sessionid`, `authorization`, `id_token`) and verifies output hygiene.
 - Guard assertions require:
   - expected failure path (`exit code 1`) with report generated;
   - `report.baseUrl` keeps query keys but redacts values as `[REDACTED]`;
