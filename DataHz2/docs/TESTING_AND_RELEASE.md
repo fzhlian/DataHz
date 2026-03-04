@@ -327,3 +327,15 @@ What changed:
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
 - Expect case `smoke-binary-error-detail-sanitized` to pass in both Windows PowerShell and PowerShell 7 environments.
+
+## 2026-03-04 smoke subprocess log encoding guard
+
+What changed:
+- `check-deploy-guards.ps1` now asserts `smoke-binary-error-detail-sanitized` subprocess logs are text-safe:
+  - `smoke.stdout.log` must not contain NUL bytes.
+  - `smoke.stderr.log` must not contain NUL bytes.
+- This prevents regressions where mixed encodings make smoke diagnostics unreadable in CI artifacts.
+
+How to validate:
+- Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
+- Expect case `smoke-binary-error-detail-sanitized` to pass and generated smoke logs to be plain text without embedded NUL bytes.

@@ -1294,6 +1294,9 @@ try {
                     throw "Expected smoke subprocess exit code 1, got $($invoke.ExitCode). Out='$out' Err='$err'"
                 }
 
+                Assert-TextLogHasNoNulBytes -LogPath $stdoutPath -Label "Smoke stdout log"
+                Assert-TextLogHasNoNulBytes -LogPath $stderrPath -Label "Smoke stderr log"
+
                 if (-not (Test-Path $reportPath)) {
                     throw "Smoke report was not generated: $reportPath"
                 }
