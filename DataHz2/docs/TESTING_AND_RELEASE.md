@@ -475,3 +475,14 @@ What changed:
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
 - Expect `smoke-detail-redacts-secrets` and `smoke-baseurl-query-secrets-redacted` to pass with no raw suffix-family secret fragments in outputs.
+
+## 2026-03-05 dot-suffix secret redaction hardening
+
+What changed:
+- `smoke-test-api.ps1` now treats `.` as a valid suffix separator in sensitive key families (for example `client_secret.stage`, `secret.backup`, `password.temp`, `cookie.alt`, `set-cookie.alt`, `sessionid.backup`) for both key-value diagnostics and URL query redaction.
+- `check-deploy-guards.ps1` extends `smoke-detail-redacts-secrets` with dot-suffix fields in mock payload and `target_url`, then asserts these raw values never appear in smoke stdout/stderr/report.
+- `smoke-baseurl-query-secrets-redacted` now injects dot-suffix query keys in `BaseUrl` and requires `report.baseUrl` to keep keys while redacting values.
+
+How to validate:
+- Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
+- Expect `smoke-detail-redacts-secrets` and `smoke-baseurl-query-secrets-redacted` to pass with no raw dot-suffix secret fragments in outputs.

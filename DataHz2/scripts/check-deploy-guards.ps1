@@ -280,8 +280,10 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             proxy_authorization = "Bearer guard-proxy-authorization-should-redact"
                             cookie = "guard-cookie-header-should-redact"
                             cookie_alt = "guard-cookie-alt-header-should-redact"
+                            "cookie.alt" = "guard-cookie-dot-alt-header-should-redact"
                             "set-cookie" = "sessionid=guard-cookie-session-should-redact; Path=/; HttpOnly"
                             "set-cookie-alt" = "sessionid=guard-cookie-alt-session-should-redact; Path=/; HttpOnly"
+                            "set-cookie.alt" = "sessionid=guard-cookie-dot-alt-session-should-redact; Path=/; HttpOnly"
                             note = "free-text bearer=Bearer guard-freeform-bearer-should-redact jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.guardpayload.guardsignature"
                             note_api_key = "X-Api-Key: guard-freeform-xapikey-should-redact"
                             note_basic = "free-text basic=Basic guard-freeform-basic-should-redact"
@@ -296,13 +298,17 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             refresh_token = "guard-refresh-token-should-redact"
                             client_secret = "guard-client-secret-should-redact"
                             client_secret_stage = "guard-client-secret-stage-should-redact"
+                            "client_secret.stage" = "guard-client-secret-dot-stage-should-redact"
                             secret = "guard-plain-secret-should-redact"
                             secret_backup = "guard-plain-secret-backup-should-redact"
+                            "secret.backup" = "guard-plain-secret-dot-backup-should-redact"
                             password = "guard-password-should-redact"
                             password_temp = "guard-password-temp-should-redact"
+                            "password.temp" = "guard-password-dot-temp-should-redact"
                             sessionid_backup = "guard-sessionid-backup-should-redact"
+                            "sessionid.backup" = "guard-sessionid-dot-backup-should-redact"
                             jwt = $authHeader
-                            target_url = "http://guard-url-user:guard-url-pass@127.0.0.1/internal?access_token=guard-url-token-should-redact&access_token_alt_stage=guard-url-access-token-alt-stage-should-redact&id_token_backup=guard-url-id-token-backup-should-redact&jwt_stage=guard-url-jwt-stage-should-redact&api_key=guard-url-apikey-should-redact&x_api_key=guard-url-xapikey-should-redact&x_api_key_alt_backup=guard-url-xapikey-backup-should-redact&client_secret=guard-client-secret-should-redact&client_secret_stage=guard-url-client-secret-stage-should-redact&secret_backup=guard-url-secret-backup-should-redact&password=guard-url-password-should-redact&password_temp=guard-url-password-temp-should-redact&authorization=guard-url-authorization-should-redact&authorization_alt_stage=guard-url-authorization-alt-stage-should-redact&proxy_authorization=Basic%20guard-url-basic-should-redact&cookie=guard-url-cookie-should-redact&cookie_alt=guard-url-cookie-alt-should-redact&set-cookie-alt=guard-url-set-cookie-alt-should-redact&sessionid=guard-url-session-should-redact&sessionid_backup=guard-url-sessionid-backup-should-redact"
+                            target_url = "http://guard-url-user:guard-url-pass@127.0.0.1/internal?access_token=guard-url-token-should-redact&access_token_alt_stage=guard-url-access-token-alt-stage-should-redact&id_token_backup=guard-url-id-token-backup-should-redact&jwt_stage=guard-url-jwt-stage-should-redact&api_key=guard-url-apikey-should-redact&x_api_key=guard-url-xapikey-should-redact&x_api_key_alt_backup=guard-url-xapikey-backup-should-redact&client_secret=guard-client-secret-should-redact&client_secret_stage=guard-url-client-secret-stage-should-redact&client_secret.stage=guard-url-client-secret-dot-stage-should-redact&secret_backup=guard-url-secret-backup-should-redact&secret.backup=guard-url-secret-dot-backup-should-redact&password=guard-url-password-should-redact&password_temp=guard-url-password-temp-should-redact&password.temp=guard-url-password-dot-temp-should-redact&authorization=guard-url-authorization-should-redact&authorization_alt_stage=guard-url-authorization-alt-stage-should-redact&proxy_authorization=Basic%20guard-url-basic-should-redact&cookie=guard-url-cookie-should-redact&cookie_alt=guard-url-cookie-alt-should-redact&cookie.alt=guard-url-cookie-dot-alt-should-redact&set-cookie-alt=guard-url-set-cookie-alt-should-redact&set-cookie.alt=guard-url-set-cookie-dot-alt-should-redact&sessionid=guard-url-session-should-redact&sessionid_backup=guard-url-sessionid-backup-should-redact&sessionid.backup=guard-url-sessionid-dot-backup-should-redact"
                         }
                         $body = ($payload | ConvertTo-Json -Compress)
                     }
@@ -315,8 +321,10 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             proxy_authorization = "Bearer guard-proxy-authorization-should-redact"
                             cookie = "guard-cookie-header-should-redact"
                             cookie_alt = "guard-cookie-alt-header-should-redact"
+                            "cookie.alt" = "guard-cookie-dot-alt-header-should-redact"
                             "set-cookie" = "sessionid=guard-cookie-session-should-redact; Path=/; HttpOnly"
                             "set-cookie-alt" = "sessionid=guard-cookie-alt-session-should-redact; Path=/; HttpOnly"
+                            "set-cookie.alt" = "sessionid=guard-cookie-dot-alt-session-should-redact; Path=/; HttpOnly"
                             note = "free-text bearer=Bearer guard-freeform-bearer-should-redact jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.guardpayload.guardsignature"
                             note_api_key = "X-Api-Key: guard-freeform-xapikey-should-redact"
                             note_basic = "free-text basic=Basic guard-freeform-basic-should-redact"
@@ -331,13 +339,17 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             refresh_token = "guard-refresh-token-should-redact"
                             client_secret = "guard-client-secret-should-redact"
                             client_secret_stage = "guard-client-secret-stage-should-redact"
+                            "client_secret.stage" = "guard-client-secret-dot-stage-should-redact"
                             secret = "guard-plain-secret-should-redact"
                             secret_backup = "guard-plain-secret-backup-should-redact"
+                            "secret.backup" = "guard-plain-secret-dot-backup-should-redact"
                             password = "guard-password-should-redact"
                             password_temp = "guard-password-temp-should-redact"
+                            "password.temp" = "guard-password-dot-temp-should-redact"
                             sessionid_backup = "guard-sessionid-backup-should-redact"
+                            "sessionid.backup" = "guard-sessionid-dot-backup-should-redact"
                             jwt = $authHeader
-                            target_url = "http://guard-url-user:guard-url-pass@127.0.0.1/internal?access_token=guard-url-token-should-redact&access_token_alt_stage=guard-url-access-token-alt-stage-should-redact&id_token_backup=guard-url-id-token-backup-should-redact&jwt_stage=guard-url-jwt-stage-should-redact&api_key=guard-url-apikey-should-redact&x_api_key=guard-url-xapikey-should-redact&x_api_key_alt_backup=guard-url-xapikey-backup-should-redact&client_secret=guard-client-secret-should-redact&client_secret_stage=guard-url-client-secret-stage-should-redact&secret_backup=guard-url-secret-backup-should-redact&password=guard-url-password-should-redact&password_temp=guard-url-password-temp-should-redact&authorization=guard-url-authorization-should-redact&authorization_alt_stage=guard-url-authorization-alt-stage-should-redact&proxy_authorization=Basic%20guard-url-basic-should-redact&cookie=guard-url-cookie-should-redact&cookie_alt=guard-url-cookie-alt-should-redact&set-cookie-alt=guard-url-set-cookie-alt-should-redact&sessionid=guard-url-session-should-redact&sessionid_backup=guard-url-sessionid-backup-should-redact"
+                            target_url = "http://guard-url-user:guard-url-pass@127.0.0.1/internal?access_token=guard-url-token-should-redact&access_token_alt_stage=guard-url-access-token-alt-stage-should-redact&id_token_backup=guard-url-id-token-backup-should-redact&jwt_stage=guard-url-jwt-stage-should-redact&api_key=guard-url-apikey-should-redact&x_api_key=guard-url-xapikey-should-redact&x_api_key_alt_backup=guard-url-xapikey-backup-should-redact&client_secret=guard-client-secret-should-redact&client_secret_stage=guard-url-client-secret-stage-should-redact&client_secret.stage=guard-url-client-secret-dot-stage-should-redact&secret_backup=guard-url-secret-backup-should-redact&secret.backup=guard-url-secret-dot-backup-should-redact&password=guard-url-password-should-redact&password_temp=guard-url-password-temp-should-redact&password.temp=guard-url-password-dot-temp-should-redact&authorization=guard-url-authorization-should-redact&authorization_alt_stage=guard-url-authorization-alt-stage-should-redact&proxy_authorization=Basic%20guard-url-basic-should-redact&cookie=guard-url-cookie-should-redact&cookie_alt=guard-url-cookie-alt-should-redact&cookie.alt=guard-url-cookie-dot-alt-should-redact&set-cookie-alt=guard-url-set-cookie-alt-should-redact&set-cookie.alt=guard-url-set-cookie-dot-alt-should-redact&sessionid=guard-url-session-should-redact&sessionid_backup=guard-url-sessionid-backup-should-redact&sessionid.backup=guard-url-sessionid-dot-backup-should-redact"
                         }
                         $body = ($payload | ConvertTo-Json -Compress)
                     }
@@ -1550,9 +1562,12 @@ try {
                     "guard-freeform-basic-should-redact",
                     "guard-cookie-header-should-redact",
                     "guard-cookie-alt-header-should-redact",
+                    "guard-cookie-dot-alt-header-should-redact",
                     "guard-cookie-session-should-redact",
                     "guard-cookie-alt-session-should-redact",
+                    "guard-cookie-dot-alt-session-should-redact",
                     "guard-sessionid-backup-should-redact",
+                    "guard-sessionid-dot-backup-should-redact",
                     "guard-freeform-bearer-should-redact",
                     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.guardpayload.guardsignature",
                     "guardpayload",
@@ -1573,18 +1588,26 @@ try {
                     "guard-url-basic-should-redact",
                     "guard-url-cookie-should-redact",
                     "guard-url-cookie-alt-should-redact",
+                    "guard-url-cookie-dot-alt-should-redact",
                     "guard-url-set-cookie-alt-should-redact",
+                    "guard-url-set-cookie-dot-alt-should-redact",
                     "guard-url-session-should-redact",
                     "guard-url-sessionid-backup-should-redact",
+                    "guard-url-sessionid-dot-backup-should-redact",
                     "guard-url-password-should-redact",
                     "guard-url-password-temp-should-redact",
+                    "guard-url-password-dot-temp-should-redact",
                     "guard-client-secret-should-redact",
                     "guard-client-secret-stage-should-redact",
+                    "guard-client-secret-dot-stage-should-redact",
                     "guard-url-client-secret-stage-should-redact",
+                    "guard-url-client-secret-dot-stage-should-redact",
                     "guard-refresh-token-should-redact",
                     "guard-plain-secret-should-redact",
                     "guard-plain-secret-backup-should-redact",
+                    "guard-plain-secret-dot-backup-should-redact",
                     "guard-url-secret-backup-should-redact",
+                    "guard-url-secret-dot-backup-should-redact",
                     "guard-password-should-redact"
                 )) {
                     Assert-StringDoesNotContain -Value $combinedText -Forbidden $forbidden -Label "Smoke outputs"
@@ -1775,6 +1798,12 @@ try {
             $queryCookieAltSecret = "guard-baseurl-cookie-alt-secret"
             $querySetCookieAltSecret = "guard-baseurl-set-cookie-alt-secret"
             $querySessionBackupSecret = "guard-baseurl-sessionid-backup-secret"
+            $queryPasswordDotTempSecret = "guard-baseurl-password-dot-temp-secret"
+            $queryClientSecretDotStageSecret = "guard-baseurl-client-secret-dot-stage-secret"
+            $querySecretDotBackupSecret = "guard-baseurl-secret-dot-backup-secret"
+            $queryCookieDotAltSecret = "guard-baseurl-cookie-dot-alt-secret"
+            $querySetCookieDotAltSecret = "guard-baseurl-set-cookie-dot-alt-secret"
+            $querySessionDotBackupSecret = "guard-baseurl-sessionid-dot-backup-secret"
             $rawBaseUrl = ('http://127.0.0.1:{0}?api_key={1}&x_api_key={2}&x_api_key_alt_backup={3}&password={4}&password_temp={5}&client_secret={6}&client_secret_stage={7}&secret_backup={8}&refresh_token={9}&access_token_alt_stage={10}&cookie={11}&cookie_alt={12}&set-cookie-alt={13}&sessionid={14}&sessionid_backup={15}&authorization={16}&id_token={17}&id_token_backup={18}' -f `
                 $smokePort, `
                 $queryApiKeySecret, `
@@ -1795,7 +1824,15 @@ try {
                 $queryAuthorizationSecret, `
                 $queryIdTokenSecret, `
                 $queryIdTokenBackupSecret)
+            $rawBaseUrl += ('&password.temp={0}&client_secret.stage={1}&secret.backup={2}&cookie.alt={3}&set-cookie.alt={4}&sessionid.backup={5}' -f `
+                $queryPasswordDotTempSecret, `
+                $queryClientSecretDotStageSecret, `
+                $querySecretDotBackupSecret, `
+                $queryCookieDotAltSecret, `
+                $querySetCookieDotAltSecret, `
+                $querySessionDotBackupSecret)
             $expectedBaseUrl = ('http://127.0.0.1:{0}?api_key=[REDACTED]&x_api_key=[REDACTED]&x_api_key_alt_backup=[REDACTED]&password=[REDACTED]&password_temp=[REDACTED]&client_secret=[REDACTED]&client_secret_stage=[REDACTED]&secret_backup=[REDACTED]&refresh_token=[REDACTED]&access_token_alt_stage=[REDACTED]&cookie=[REDACTED]&cookie_alt=[REDACTED]&set-cookie-alt=[REDACTED]&sessionid=[REDACTED]&sessionid_backup=[REDACTED]&authorization=[REDACTED]&id_token=[REDACTED]&id_token_backup=[REDACTED]' -f $smokePort)
+            $expectedBaseUrl += '&password.temp=[REDACTED]&client_secret.stage=[REDACTED]&secret.backup=[REDACTED]&cookie.alt=[REDACTED]&set-cookie.alt=[REDACTED]&sessionid.backup=[REDACTED]'
             $caseRoot = Join-Path $tempRoot "case-smoke-baseurl-query-secrets-redacted"
             New-Item -ItemType Directory -Force -Path $caseRoot | Out-Null
             $reportPath = Join-Path $caseRoot "smoke.report.json"
@@ -1856,6 +1893,12 @@ try {
                     $querySetCookieAltSecret,
                     $querySessionSecret,
                     $querySessionBackupSecret,
+                    $queryPasswordDotTempSecret,
+                    $queryClientSecretDotStageSecret,
+                    $querySecretDotBackupSecret,
+                    $queryCookieDotAltSecret,
+                    $querySetCookieDotAltSecret,
+                    $querySessionDotBackupSecret,
                     $queryAuthorizationSecret,
                     $queryIdTokenSecret,
                     $queryIdTokenBackupSecret
