@@ -305,3 +305,15 @@ What changed:
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
 - Expect both wrapper-related guard cases to pass and generated `deploy.log` to be plain UTF-8 text (no embedded NUL bytes).
+
+## 2026-03-04 smoke detail sanitization hardening
+
+What changed:
+- `smoke-test-api.ps1` adds text normalization for display/report fields, removing control characters from check `Detail`/`Endpoint`.
+- On non-2xx HTTP errors, response-body extraction now distinguishes text vs non-text payloads using content type and byte heuristics.
+- For non-text/binary payloads, failure details now use explicit placeholders (for example `binary response body omitted`) instead of raw undecodable bytes.
+- `check-deploy-guards.ps1` adds case `smoke-binary-error-detail-sanitized` to verify smoke JSON details contain no control chars and include binary/non-text placeholders when appropriate.
+
+How to validate:
+- Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
+- Expect case `smoke-binary-error-detail-sanitized` to pass.

@@ -117,6 +117,25 @@ function Redact-SensitiveText([string]$Text) {
     return $sanitized
 }
 
+function Normalize-DisplayText([string]$Text) {
+    if ([string]::IsNullOrEmpty($Text)) {
+        return $Text
+    }
+
+    $normalized = Redact-SensitiveText -Text $Text
+    $normalized = [System.Text.RegularExpressions.Regex]::Replace(
+        $normalized,
+        "[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]",
+        " "
+    )
+    $normalized = $normalized.Replace("`r", " ").Replace("`n", " ").Trim()
+    if ([string]::IsNullOrWhiteSpace($normalized)) {
+        return ""
+    }
+
+    return [System.Text.RegularExpressions.Regex]::Replace($normalized, "\s+", " ")
+}
+
 $safeDisplayBase = Redact-SensitiveText -Text $displayBase
 Write-Host "Smoke context:"
 Write-Host "  BaseUrl: $safeDisplayBase"
@@ -139,8 +158,8 @@ function Add-Result(
     [string]$Endpoint = "",
     [int]$DurationMs = 0
 ) {
-    $safeDetail = Redact-SensitiveText -Text $Detail
-    $safeEndpoint = Redact-SensitiveText -Text $Endpoint
+    $safeDetail = Normalize-DisplayText -Text $Detail
+    $safeEndpoint = Normalize-DisplayText -Text $Endpoint
     $script:results.Add([pscustomobject]@{
         Check = $Check
         Passed = $Passed
@@ -149,6 +168,117 @@ function Add-Result(
         Endpoint = $safeEndpoint
         Detail = $safeDetail
     })
+}
+
+function Test-IsTextContentType([string]$ContentType) {
+    if ([string]::IsNullOrWhiteSpace($ContentType)) {
+        return $true
+    }
+
+    $ct = $ContentType.Trim().ToLowerInvariant()
+    if ($ct.StartsWith("text/")) {
+        return $true
+    }
+
+    foreach ($marker in @("json", "xml", "html", "javascript", "x-www-form-urlencoded", "yaml")) {
+        if ($ct.Contains($marker)) {
+            return $true
+        }
+    }
+
+    return $false
+}
+
+function Test-IsLikelyTextBytes([byte[]]$Bytes) {
+    if ($null -eq $Bytes -or $Bytes.Length -eq 0) {
+        return $true
+    }
+
+    $sampleSize = [Math]::Min($Bytes.Length, 2048)
+    $controlCount = 0
+    for ($i = 0; $i -lt $sampleSize; $i++) {
+        $value = [int]$Bytes[$i]
+        if ($value -eq 0) {
+            return $false
+        }
+
+        if (($value -lt 9) -or ($value -gt 13 -and $value -lt 32) -or $value -eq 127) {
+            $controlCount++
+        }
+    }
+
+    return $controlCount -le [Math]::Ceiling($sampleSize * 0.10)
+}
+
+function Resolve-ResponseEncoding([string]$ContentType) {
+    if (-not [string]::IsNullOrWhiteSpace($ContentType)) {
+        $match = [System.Text.RegularExpressions.Regex]::Match($ContentType, "(?i)charset\s*=\s*[""']?(?<name>[^;""'\s]+)")
+        if ($match.Success) {
+            $charset = $match.Groups["name"].Value.Trim()
+            if (-not [string]::IsNullOrWhiteSpace($charset)) {
+                try {
+                    return [System.Text.Encoding]::GetEncoding($charset)
+                }
+                catch {
+                }
+            }
+        }
+    }
+
+    return [System.Text.Encoding]::UTF8
+}
+
+function Read-ResponseBody([object]$Response) {
+    if ($null -eq $Response) {
+        return ""
+    }
+
+    $stream = $null
+    try {
+        $stream = $Response.GetResponseStream()
+    }
+    catch {
+        return ""
+    }
+
+    if ($null -eq $stream) {
+        return ""
+    }
+
+    $bytes = @()
+    $memory = New-Object System.IO.MemoryStream
+    try {
+        $stream.CopyTo($memory)
+        $bytes = $memory.ToArray()
+    }
+    finally {
+        $memory.Dispose()
+        try { $stream.Dispose() } catch { }
+    }
+
+    $contentType = ""
+    try {
+        $contentType = [string]$Response.ContentType
+    }
+    catch {
+        $contentType = ""
+    }
+
+    if (-not (Test-IsTextContentType -ContentType $contentType)) {
+        return "[non-text response body omitted; contentType=$contentType; bytes=$($bytes.Length)]"
+    }
+
+    if (-not (Test-IsLikelyTextBytes -Bytes $bytes)) {
+        return "[binary response body omitted; bytes=$($bytes.Length)]"
+    }
+
+    $encoding = Resolve-ResponseEncoding -ContentType $contentType
+    try {
+        return $encoding.GetString($bytes)
+    }
+    catch {
+        return [System.Text.Encoding]::UTF8.GetString($bytes)
+    }
 }
 
 function Invoke-Get([string]$Url, [int]$Timeout, [string]$ApiKeyValue, [string]$JwtValue) {
@@ -186,12 +316,7 @@ function Invoke-Get([string]$Url, [int]$Timeout, [string]$ApiKeyValue, [string]$
             }
 
             try {
-                $stream = $_.Exception.Response.GetResponseStream()
-                if ($stream) {
-                    $reader = New-Object System.IO.StreamReader($stream)
-                    $content = $reader.ReadToEnd()
-                    $reader.Dispose()
-                }
+                $content = Read-ResponseBody -Response $_.Exception.Response
             }
             catch {
                 $content = ""
@@ -218,12 +343,11 @@ function Get-ContentSnippet([string]$Content, [int]$MaxLength) {
         return ""
     }
 
-    $normalized = (Redact-SensitiveText -Text $Content).Replace("`r", " ").Replace("`n", " ").Trim()
+    $normalized = Normalize-DisplayText -Text $Content
     if ([string]::IsNullOrWhiteSpace($normalized)) {
         return ""
     }
 
-    $normalized = [System.Text.RegularExpressions.Regex]::Replace($normalized, "\s+", " ")
     if ($normalized.Length -le $MaxLength) {
         return $normalized
     }

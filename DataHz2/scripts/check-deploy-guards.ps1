@@ -188,6 +188,61 @@ function Start-SmokeMockServer([int]$Port) {
     }
 }
 
+function Start-BinarySmokeServer([int]$Port) {
+    $prefix = "http://127.0.0.1:$Port/"
+
+    $job = Start-Job -ArgumentList $prefix -ScriptBlock {
+        param($serverPrefix)
+
+        $listener = [System.Net.HttpListener]::new()
+        $listener.Prefixes.Add($serverPrefix)
+        $listener.Start()
+        try {
+            while ($true) {
+                $ctx = $listener.GetContext()
+                $resp = $ctx.Response
+                try {
+                    $path = $ctx.Request.Url.AbsolutePath
+                    $statusCode = 500
+                    $contentType = "application/octet-stream"
+                    $bytes = [byte[]](0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 255, 254, 253)
+
+                    if ($path -match "^/health/?$") {
+                        $statusCode = 200
+                        $contentType = "application/json; charset=utf-8"
+                        $bytes = [System.Text.Encoding]::UTF8.GetBytes("{""status"":""ok""}")
+                    }
+
+                    $resp.StatusCode = $statusCode
+                    $resp.ContentType = $contentType
+                    $resp.ContentLength64 = $bytes.LongLength
+                    if (-not $ctx.Request.HttpMethod.Equals("HEAD", [System.StringComparison]::OrdinalIgnoreCase)) {
+                        $resp.OutputStream.Write($bytes, 0, $bytes.Length)
+                    }
+                }
+                catch {
+                    $resp.StatusCode = 500
+                }
+                finally {
+                    $resp.OutputStream.Close()
+                }
+            }
+        }
+        finally {
+            if ($listener.IsListening) {
+                $listener.Stop()
+            }
+            $listener.Close()
+        }
+    }
+
+    Start-Sleep -Milliseconds 300
+    return [pscustomobject]@{
+        Job = $job
+        BaseUrl = $prefix
+    }
+}
+
 function Test-IsValidPublishDir([string]$Path) {
     if ([string]::IsNullOrWhiteSpace($Path)) {
         return $false
@@ -449,6 +504,19 @@ function Assert-TextLogHasNoNulBytes(
     }
 }
 
+function Assert-StringHasNoControlChars(
+    [string]$Value,
+    [string]$Label
+) {
+    if ([string]::IsNullOrEmpty($Value)) {
+        return
+    }
+
+    if ([System.Text.RegularExpressions.Regex]::IsMatch($Value, "[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]")) {
+        throw "$Label contains control characters."
+    }
+}
+
 function New-RunId {
     $timestamp = (Get-Date).ToUniversalTime().ToString("yyyyMMdd-HHmmss-fff")
     $suffix = [Guid]::NewGuid().ToString("N").Substring(0, 8)
@@ -473,6 +541,7 @@ $deployApiScript = Join-Path $PSScriptRoot "deploy-api.ps1"
 $deployProdScript = Join-Path $PSScriptRoot "deploy-prod.ps1"
 $deployProdAutoRollbackScript = Join-Path $PSScriptRoot "deploy-prod-with-auto-rollback.ps1"
 $deployProdFromReleaseScript = Join-Path $PSScriptRoot "deploy-prod-from-release.ps1"
+$smokeTestScript = Join-Path $PSScriptRoot "smoke-test-api.ps1"
 $verifyReleaseAssetsScript = Join-Path $PSScriptRoot "verify-release-assets.ps1"
 if (-not $script:PowerShellExecutable) {
     $script:PowerShellExecutable = Get-PowerShellExecutablePath
@@ -488,6 +557,9 @@ if (-not (Test-Path $deployProdAutoRollbackScript)) {
 }
 if (-not (Test-Path $deployProdFromReleaseScript)) {
     throw "deploy-prod-from-release.ps1 not found: $deployProdFromReleaseScript"
+}
+if (-not (Test-Path $smokeTestScript)) {
+    throw "smoke-test-api.ps1 not found: $smokeTestScript"
 }
 if (-not (Test-Path $verifyReleaseAssetsScript)) {
     throw "verify-release-assets.ps1 not found: $verifyReleaseAssetsScript"
@@ -1185,6 +1257,67 @@ try {
             $manifestRow = $assetValidation | Where-Object { $_.url -eq $expectedManifestUrl } | Select-Object -First 1
             if (-not $manifestRow) {
                 throw "Expected assetValidation to include manifest URL: $expectedManifestUrl"
+            }
+        }))
+
+    $results.Add((Run-Case `
+        -Name "smoke-binary-error-detail-sanitized" `
+        -ExpectFailure $false `
+        -ExpectedMessagePart "" `
+        -Action {
+            $smokePort = Get-FreeTcpPort
+            $binaryServer = Start-BinarySmokeServer -Port $smokePort
+            $binaryBaseUrl = $binaryServer.BaseUrl.TrimEnd("/")
+            $caseRoot = Join-Path $tempRoot "case-smoke-binary-error-detail-sanitized"
+            New-Item -ItemType Directory -Force -Path $caseRoot | Out-Null
+            $reportPath = Join-Path $caseRoot "smoke.report.json"
+            $stdoutPath = Join-Path $caseRoot "smoke.stdout.log"
+            $stderrPath = Join-Path $caseRoot "smoke.stderr.log"
+            try {
+                $invoke = Invoke-ScriptSubprocess `
+                    -ScriptPath $smokeTestScript `
+                    -ArgumentList @(
+                        "-BaseUrl", $binaryBaseUrl,
+                        "-TimeoutSeconds", "3",
+                        "-CheckRetryCount", "1",
+                        "-CheckRetryDelayMilliseconds", "25",
+                        "-HealthPollDelayMilliseconds", "25",
+                        "-FailureContentSnippetLength", "200",
+                        "-OutputJsonPath", $reportPath
+                    ) `
+                    -StdOutPath $stdoutPath `
+                    -StdErrPath $stderrPath
+
+                if ($invoke.ExitCode -ne 1) {
+                    $out = if (Test-Path $stdoutPath) { Get-Content -Path $stdoutPath -Raw } else { "" }
+                    $err = if (Test-Path $stderrPath) { Get-Content -Path $stderrPath -Raw } else { "" }
+                    throw "Expected smoke subprocess exit code 1, got $($invoke.ExitCode). Out='$out' Err='$err'"
+                }
+
+                if (-not (Test-Path $reportPath)) {
+                    throw "Smoke report was not generated: $reportPath"
+                }
+
+                $report = Get-Content -Path $reportPath -Raw | ConvertFrom-Json
+                if ([int]$report.failedChecks -le 0) {
+                    throw "Expected failedChecks > 0 for binary smoke case."
+                }
+
+                $details = @($report.results | ForEach-Object { [string]$_.Detail })
+                foreach ($detail in $details) {
+                    Assert-StringHasNoControlChars -Value $detail -Label "Smoke report detail"
+                }
+
+                $binaryHintRows = @($details | Where-Object { $_ -like "*binary response body omitted*" -or $_ -like "*non-text response body omitted*" })
+                if ($binaryHintRows.Count -eq 0) {
+                    throw "Expected at least one smoke detail with binary/non-text body placeholder."
+                }
+            }
+            finally {
+                if ($binaryServer -and $binaryServer.Job) {
+                    Stop-Job -Job $binaryServer.Job -ErrorAction SilentlyContinue
+                    Remove-Job -Job $binaryServer.Job -Force -ErrorAction SilentlyContinue
+                }
             }
         }))
 
