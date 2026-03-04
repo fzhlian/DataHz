@@ -412,3 +412,14 @@ What changed:
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
 - Expect case `smoke-detail-redacts-secrets` to pass with no raw authorization/proxy-authorization secret fragments in outputs.
+
+## 2026-03-04 cookie/session secret redaction hardening
+
+What changed:
+- `smoke-test-api.ps1` now redacts cookie/session-style keys in diagnostics text (`cookie`, `set-cookie`, `session`, `sessionid`) in addition to token/password-like keys.
+- URL query redaction now also covers `cookie` and `sessionid` style keys.
+- `check-deploy-guards.ps1` extends `smoke-detail-redacts-secrets` mock payload with cookie secrets (JSON `cookie` + `set-cookie`, URL `cookie` + `sessionid`) and asserts raw values never appear in smoke stdout/stderr/report.
+
+How to validate:
+- Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
+- Expect case `smoke-detail-redacts-secrets` to pass with no cookie/session secret fragments in outputs.
