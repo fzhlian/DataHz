@@ -233,35 +233,68 @@ function Read-ResponseBody([object]$Response) {
         return ""
     }
 
-    $stream = $null
-    try {
-        $stream = $Response.GetResponseStream()
-    }
-    catch {
-        return ""
-    }
-
-    if ($null -eq $stream) {
-        return ""
-    }
-
-    $bytes = @()
-    $memory = New-Object System.IO.MemoryStream
-    try {
-        $stream.CopyTo($memory)
-        $bytes = $memory.ToArray()
-    }
-    finally {
-        $memory.Dispose()
-        try { $stream.Dispose() } catch { }
-    }
-
+    $bytes = $null
     $contentType = ""
-    try {
-        $contentType = [string]$Response.ContentType
+
+    # Windows PowerShell (HttpWebResponse path).
+    if ($Response.PSObject.Methods.Name -contains "GetResponseStream") {
+        $stream = $null
+        try {
+            $stream = $Response.GetResponseStream()
+        }
+        catch {
+            $stream = $null
+        }
+
+        if ($null -ne $stream) {
+            $memory = New-Object System.IO.MemoryStream
+            try {
+                $stream.CopyTo($memory)
+                $bytes = $memory.ToArray()
+            }
+            finally {
+                $memory.Dispose()
+                try { $stream.Dispose() } catch { }
+            }
+        }
+
+        try {
+            $contentType = [string]$Response.ContentType
+        }
+        catch {
+            $contentType = ""
+        }
     }
-    catch {
-        $contentType = ""
+
+    # PowerShell 7+ (HttpResponseMessage path).
+    if ($null -eq $bytes -and $Response.PSObject.Properties.Name -contains "Content" -and $null -ne $Response.Content) {
+        try {
+            $bytes = $Response.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult()
+        }
+        catch {
+            $bytes = $null
+        }
+
+        try {
+            if ($Response.Content.Headers -and $Response.Content.Headers.ContentType) {
+                $contentType = [string]$Response.Content.Headers.ContentType
+            }
+        }
+        catch {
+        }
+    }
+
+    if ($null -eq $bytes) {
+        return ""
+    }
+
+    if ([string]::IsNullOrWhiteSpace($contentType)) {
+        try {
+            $contentType = [string]$Response.ContentType
+        }
+        catch {
+            $contentType = ""
+        }
     }
 
     if (-not (Test-IsTextContentType -ContentType $contentType)) {
