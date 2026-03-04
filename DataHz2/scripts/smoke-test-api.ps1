@@ -285,7 +285,11 @@ function Read-ResponseBody([object]$Response) {
     }
 
     if ($null -eq $bytes) {
-        return ""
+        if (-not [string]::IsNullOrWhiteSpace($contentType)) {
+            return "[response body unavailable; contentType=$contentType]"
+        }
+
+        return "[response body unavailable]"
     }
 
     if ([string]::IsNullOrWhiteSpace($contentType)) {

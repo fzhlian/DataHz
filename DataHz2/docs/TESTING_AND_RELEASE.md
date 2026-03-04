@@ -317,3 +317,13 @@ What changed:
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
 - Expect case `smoke-binary-error-detail-sanitized` to pass.
+
+## 2026-03-04 smoke body-unavailable fallback (cross-shell)
+
+What changed:
+- `smoke-test-api.ps1` now emits a stable placeholder (`response body unavailable`) when HTTP error response bytes cannot be read in the current shell/runtime.
+- `check-deploy-guards.ps1` updates case `smoke-binary-error-detail-sanitized` to accept `binary`, `non-text`, or `body unavailable` placeholders while still requiring no control characters in smoke report details.
+
+How to validate:
+- Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
+- Expect case `smoke-binary-error-detail-sanitized` to pass in both Windows PowerShell and PowerShell 7 environments.

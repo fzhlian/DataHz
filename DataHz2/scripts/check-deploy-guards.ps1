@@ -1308,9 +1308,13 @@ try {
                     Assert-StringHasNoControlChars -Value $detail -Label "Smoke report detail"
                 }
 
-                $binaryHintRows = @($details | Where-Object { $_ -like "*binary response body omitted*" -or $_ -like "*non-text response body omitted*" })
+                $binaryHintRows = @($details | Where-Object {
+                    $_ -like "*binary response body omitted*" -or
+                    $_ -like "*non-text response body omitted*" -or
+                    $_ -like "*response body unavailable*"
+                })
                 if ($binaryHintRows.Count -eq 0) {
-                    throw "Expected at least one smoke detail with binary/non-text body placeholder."
+                    throw "Expected at least one smoke detail with binary/non-text/unavailable body placeholder."
                 }
             }
             finally {
