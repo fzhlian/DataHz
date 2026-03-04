@@ -279,6 +279,7 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             token = $apiKeyHeader
                             access_token = $authHeader
                             jwt = $authHeader
+                            target_url = "http://guard-url-user:guard-url-pass@127.0.0.1/internal"
                         }
                         $body = ($payload | ConvertTo-Json -Compress)
                     }
@@ -290,6 +291,7 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             token = $apiKeyHeader
                             access_token = $authHeader
                             jwt = $authHeader
+                            target_url = "http://guard-url-user:guard-url-pass@127.0.0.1/internal"
                         }
                         $body = ($payload | ConvertTo-Json -Compress)
                     }
@@ -1486,12 +1488,23 @@ try {
                 $stderrText = if (Test-Path $stderrPath) { Get-Content -Path $stderrPath -Raw } else { "" }
                 $combinedText = "$detailText`n$stdoutText`n$stderrText"
 
-                foreach ($forbidden in @($apiKeySecret, $jwtSecret, "Bearer $jwtSecret")) {
+                foreach ($forbidden in @(
+                    $apiKeySecret,
+                    $jwtSecret,
+                    "Bearer $jwtSecret",
+                    "guard-url-user",
+                    "guard-url-pass",
+                    "guard-url-user:guard-url-pass@"
+                )) {
                     Assert-StringDoesNotContain -Value $combinedText -Forbidden $forbidden -Label "Smoke outputs"
                 }
 
                 if ($detailText.IndexOf("[REDACTED]", [System.StringComparison]::Ordinal) -lt 0) {
                     throw "Expected smoke details to include [REDACTED] marker."
+                }
+
+                if ($detailText.IndexOf("http://[REDACTED]@", [System.StringComparison]::OrdinalIgnoreCase) -lt 0) {
+                    throw "Expected smoke details to redact URL userinfo as http://[REDACTED]@..."
                 }
             }
             finally {

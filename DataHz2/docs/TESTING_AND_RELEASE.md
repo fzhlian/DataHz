@@ -346,11 +346,12 @@ How to validate:
 What changed:
 - `check-deploy-guards.ps1` adds `smoke-detail-redacts-secrets`.
 - The case starts a local mock server that echoes `Authorization` / `X-Api-Key` values in JSON error bodies, then runs `smoke-test-api.ps1` with both `-ApiKey` and `-BearerToken`.
+- `smoke-test-api.ps1` now also redacts URL userinfo fragments (`http://user:pass@host`) to `http://[REDACTED]@host` in display/report text.
 - Guard assertions now require:
   - smoke report generation with expected failure path (`exit code 1`);
   - smoke stdout/stderr logs remain text-safe (no NUL bytes);
   - report/log outputs do not contain raw secret values;
-  - smoke details include `[REDACTED]` marker.
+  - smoke details include `[REDACTED]` marker and URL userinfo redaction marker.
 
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`

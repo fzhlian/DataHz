@@ -114,6 +114,13 @@ function Redact-SensitiveText([string]$Text) {
         '$1[REDACTED]'
     )
 
+    # Redact userinfo in URLs: http(s)://user[:pass]@host -> http(s)://[REDACTED]@host
+    $sanitized = [System.Text.RegularExpressions.Regex]::Replace(
+        $sanitized,
+        '(?i)\b(https?://)([^/\s@]+)@',
+        '$1[REDACTED]@'
+    )
+
     return $sanitized
 }
 
