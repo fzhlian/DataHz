@@ -515,6 +515,8 @@ if ($effectiveFailCheckDurationMilliseconds -gt 0) {
     $slowFailChecks = @($results | Where-Object { $_.DurationMs -gt $effectiveFailCheckDurationMilliseconds })
 }
 
+$resultItems = $results.ToArray()
+
 $reportPayload = [pscustomobject]@{
     startedUtc = $runStartedAtUtc.ToString("o")
     finishedUtc = $runFinishedAtUtc.ToString("o")
@@ -539,7 +541,7 @@ $reportPayload = [pscustomobject]@{
     failSlowCheckCount = $slowFailChecks.Count
     warnSlowChecks = @($slowWarnChecks | Select-Object Check, DurationMs, Attempts, Endpoint)
     failSlowChecks = @($slowFailChecks | Select-Object Check, DurationMs, Attempts, Endpoint)
-    results = @($results)
+    results = $resultItems
 }
 
 Write-SmokeReport -PathValue $OutputJsonPath -Payload $reportPayload

@@ -50,6 +50,7 @@ dotnet test .\DataHz2.sln -c Release
 - `deploy-api.ps1` 的主部署 smoke 与失败后自动回滚 smoke 现在使用同一组透传参数，减少两条路径的行为偏差。
 - `deploy-prod.ps1` 与 `rollback-api.ps1` 新增同名 `Smoke*` 参数，并继续向 `deploy-api.ps1` / `smoke-test-api.ps1` 透传，支持在生产发布与手工回滚时统一调参。
 - 修复 `check-ci-contracts.ps1` 对 `GITHUB_STEP_SUMMARY` 的匹配方式：改为匹配字面量 `'$env:GITHUB_STEP_SUMMARY'`，避免 CI 环境变量展开后出现误报失败（本地可能通过、CI 失败）。
+- 修复 `smoke-test-api.ps1` 构建结构化报告时的集合转换方式：将 `results` 从 `@($results)` 改为 `$results.ToArray()`，避免在 `check-deploy-guards.ps1` 在线冒烟路径触发 `Argument types do not match`。
 
 如何使用/验证：
 - 本地执行示例：
@@ -106,6 +107,19 @@ dotnet test .\DataHz2.sln -c Release
 预期结果：
 - `ci-smoke-summary-contract` 与 `release-smoke-summary-contract` 均为 `true`。
 - 不再出现“must write into GITHUB_STEP_SUMMARY”误报。
+
+- 部署守卫在线冒烟回归（建议在提交前执行）：
+
+```powershell
+.\scripts\check-deploy-guards.ps1 `
+  -PackageZip ".\artifacts\packages\datahz2-api-win-x64-fallback.zip" `
+  -IncludeOnlineSmokeCase `
+  -OnlineSmokeStartupSeconds 6
+```
+
+预期结果：
+- `prod-wrapper-smoke-success` 为 `true`。
+- 不再出现 `Deployment failed. Argument types do not match`。
 
 ## CI 工作流
 
