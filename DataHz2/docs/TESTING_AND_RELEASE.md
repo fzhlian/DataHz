@@ -120,6 +120,8 @@ dotnet test .\DataHz2.sln -c Release
 
 预期结果：
 - `prod-wrapper-smoke-success` 为 `true`。
+- `prod-auto-wrapper-fail-skip-rollback` 为 `true`。
+- `prod-auto-wrapper-smoke-success` 为 `true`（仅在 `-IncludeOnlineSmokeCase` 时执行）。
 - 不再出现 `Deployment failed. Argument types do not match`。
 
 ## CI 工作流
@@ -178,6 +180,9 @@ dotnet test .\DataHz2.sln -c Release
   - `status-before.json`、`status-after-deploy.json`、`status-after-rollback.json`（部署状态快照）
   - `run-summary.json`（本次运行汇总）
 - 每次运行会额外生成同名 zip 归档（`.\artifacts\deploy-runs\<runId>.zip`），便于离线传阅与追溯。
+- `check-deploy-guards.ps1` 新增自动回滚包装脚本守卫用例：
+  - `prod-auto-wrapper-fail-skip-rollback`（失败路径 + `-SkipRollback` + 归档落盘校验）
+  - `prod-auto-wrapper-smoke-success`（在线冒烟成功路径 + 报告与归档校验）
 
 如何使用/验证：
 - 直接发布（失败自动回滚）：
