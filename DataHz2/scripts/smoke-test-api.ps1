@@ -136,7 +136,17 @@ function Normalize-DisplayText([string]$Text) {
     return [System.Text.RegularExpressions.Regex]::Replace($normalized, "\s+", " ")
 }
 
-$safeDisplayBase = Redact-SensitiveText -Text $displayBase
+function Normalize-DisplayBaseUrl([string]$BaseValue) {
+    $normalized = Normalize-DisplayText -Text $BaseValue
+    if ([string]::IsNullOrWhiteSpace($normalized)) {
+        return $normalized
+    }
+
+    $parts = $normalized -split "\s+", 2
+    return [string]$parts[0]
+}
+
+$safeDisplayBase = Normalize-DisplayBaseUrl -BaseValue $displayBase
 Write-Host "Smoke context:"
 Write-Host "  BaseUrl: $safeDisplayBase"
 Write-Host "  TimeoutSeconds: $TimeoutSeconds"

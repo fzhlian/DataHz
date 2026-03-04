@@ -370,3 +370,18 @@ What changed:
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
 - Expect case `smoke-baseurl-userinfo-redacted` to pass.
+
+## 2026-03-04 smoke base URL whitespace-injection guard
+
+What changed:
+- `smoke-test-api.ps1` now normalizes display/report `baseUrl` to a single safe token after control-char cleanup.
+- `check-deploy-guards.ps1` adds `smoke-baseurl-whitespace-injection-sanitized`.
+- The case runs smoke with a CRLF-injected base URL string and asserts:
+  - expected failure path (`exit code 1`) with report generated;
+  - report `baseUrl` equals sanitized host URL;
+  - report/log outputs do not contain injected suffix text;
+  - smoke context prints sanitized `BaseUrl`.
+
+How to validate:
+- Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
+- Expect case `smoke-baseurl-whitespace-injection-sanitized` to pass.
