@@ -278,8 +278,12 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             x_api_key = $apiKeyHeader
                             token = $apiKeyHeader
                             access_token = $authHeader
+                            refresh_token = "guard-refresh-token-should-redact"
+                            client_secret = "guard-client-secret-should-redact"
+                            secret = "guard-plain-secret-should-redact"
+                            password = "guard-password-should-redact"
                             jwt = $authHeader
-                            target_url = "http://guard-url-user:guard-url-pass@127.0.0.1/internal"
+                            target_url = "http://guard-url-user:guard-url-pass@127.0.0.1/internal?access_token=guard-url-token-should-redact&api_key=guard-url-apikey-should-redact&client_secret=guard-client-secret-should-redact&password=guard-url-password-should-redact"
                         }
                         $body = ($payload | ConvertTo-Json -Compress)
                     }
@@ -290,8 +294,12 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             x_api_key = $apiKeyHeader
                             token = $apiKeyHeader
                             access_token = $authHeader
+                            refresh_token = "guard-refresh-token-should-redact"
+                            client_secret = "guard-client-secret-should-redact"
+                            secret = "guard-plain-secret-should-redact"
+                            password = "guard-password-should-redact"
                             jwt = $authHeader
-                            target_url = "http://guard-url-user:guard-url-pass@127.0.0.1/internal"
+                            target_url = "http://guard-url-user:guard-url-pass@127.0.0.1/internal?access_token=guard-url-token-should-redact&api_key=guard-url-apikey-should-redact&client_secret=guard-client-secret-should-redact&password=guard-url-password-should-redact"
                         }
                         $body = ($payload | ConvertTo-Json -Compress)
                     }
@@ -1455,7 +1463,7 @@ try {
                         "-CheckRetryCount", "1",
                         "-CheckRetryDelayMilliseconds", "25",
                         "-HealthPollDelayMilliseconds", "25",
-                        "-FailureContentSnippetLength", "240",
+                        "-FailureContentSnippetLength", "1200",
                         "-ApiKey", $apiKeySecret,
                         "-BearerToken", $jwtSecret,
                         "-RequireAuthenticatedApi",
@@ -1494,7 +1502,14 @@ try {
                     "Bearer $jwtSecret",
                     "guard-url-user",
                     "guard-url-pass",
-                    "guard-url-user:guard-url-pass@"
+                    "guard-url-user:guard-url-pass@",
+                    "guard-url-token-should-redact",
+                    "guard-url-apikey-should-redact",
+                    "guard-url-password-should-redact",
+                    "guard-client-secret-should-redact",
+                    "guard-refresh-token-should-redact",
+                    "guard-plain-secret-should-redact",
+                    "guard-password-should-redact"
                 )) {
                     Assert-StringDoesNotContain -Value $combinedText -Forbidden $forbidden -Label "Smoke outputs"
                 }

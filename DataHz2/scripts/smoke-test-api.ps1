@@ -110,7 +110,7 @@ function Redact-SensitiveText([string]$Text) {
 
     $sanitized = [System.Text.RegularExpressions.Regex]::Replace(
         $sanitized,
-        '(?i)("?(?:api[-_ ]?key|token|access_token|jwt)"?\s*[:=]\s*"?)[^",\s]+',
+        '(?i)("?(?:api[-_ ]?key|token|access[_-]?token|refresh[_-]?token|jwt|secret|client[_-]?secret|password)"?\s*[:=]\s*"?)[^",\s&#]+',
         '$1[REDACTED]'
     )
 
@@ -119,6 +119,13 @@ function Redact-SensitiveText([string]$Text) {
         $sanitized,
         '(?i)\b(https?://)([^/\s@]+)@',
         '$1[REDACTED]@'
+    )
+
+    # Redact sensitive URL query parameters while keeping keys visible.
+    $sanitized = [System.Text.RegularExpressions.Regex]::Replace(
+        $sanitized,
+        '(?i)([?&](?:api[-_]?key|token|access[_-]?token|refresh[_-]?token|jwt|secret|client[_-]?secret|password)=)[^&#\s]+',
+        '$1[REDACTED]'
     )
 
     return $sanitized
