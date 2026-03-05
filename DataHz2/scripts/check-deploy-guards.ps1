@@ -332,6 +332,7 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             note = "free-text bearer=Bearer guard-freeform-bearer-should-redact jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.guardpayload.guardsignature"
                             note_api_key = "X-Api-Key: guard-freeform-xapikey-should-redact"
                             note_basic = "free-text basic=Basic guard-freeform-basic-should-redact"
+                            single_quote_note = "single-quote pairs: 'api_key'='guard-single-quote-apikey-should-redact'; 'sessionIdBackup%5Bmeta%5D'='guard-single-quote-sessionid-encoded-meta-should-redact'; 'client_secret_stage': 'guard-single-quote-client-secret-stage-should-redact'"
                             x_api_key = $apiKeyHeader
                             "x.api.key.alt" = "guard-x-dot-api-key-alt-should-redact"
                             "api.key.alt" = "guard-api-dot-key-alt-should-redact"
@@ -415,6 +416,7 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             note = "free-text bearer=Bearer guard-freeform-bearer-should-redact jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.guardpayload.guardsignature"
                             note_api_key = "X-Api-Key: guard-freeform-xapikey-should-redact"
                             note_basic = "free-text basic=Basic guard-freeform-basic-should-redact"
+                            single_quote_note = "single-quote pairs: 'api_key'='guard-single-quote-apikey-should-redact'; 'sessionIdBackup%5Bmeta%5D'='guard-single-quote-sessionid-encoded-meta-should-redact'; 'client_secret_stage': 'guard-single-quote-client-secret-stage-should-redact'"
                             x_api_key = $apiKeyHeader
                             "x.api.key.alt" = "guard-x-dot-api-key-alt-should-redact"
                             "api.key.alt" = "guard-api-dot-key-alt-should-redact"
@@ -1770,6 +1772,9 @@ try {
                     "guard-nested-sessionid-double-encoded-bracket-nested-should-redact",
                     "guard-nested-password-temp-should-redact",
                     "guard-nested-cookie-alt-should-redact",
+                    "guard-single-quote-apikey-should-redact",
+                    "guard-single-quote-sessionid-encoded-meta-should-redact",
+                    "guard-single-quote-client-secret-stage-should-redact",
                     "guard-client-dot-secret-stage-should-redact",
                     "guard-freeform-bearer-should-redact",
                     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.guardpayload.guardsignature",

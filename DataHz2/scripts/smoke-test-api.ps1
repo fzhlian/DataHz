@@ -122,9 +122,13 @@ function Redact-SensitiveText([string]$Text) {
         '$1[REDACTED]'
     )
 
+    # Normalize JSON-escaped quote sequences so quote-aware key/value redaction can match.
+    $sanitized = [System.Text.RegularExpressions.Regex]::Replace($sanitized, '(?i)\\u0027', "'")
+    $sanitized = [System.Text.RegularExpressions.Regex]::Replace($sanitized, '(?i)\\u0022', '"')
+
     $sanitized = [System.Text.RegularExpressions.Regex]::Replace(
         $sanitized,
-        '(?i)("?(?:x[-_. ]?api[-_. ]?key(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*|api[-_. ]?key(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*|authorization(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*|proxy[-_. ]?authorization(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*|token(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*|id[._-]?token(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*|access[._-]?token(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*|refresh[._-]?token(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*|jwt(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*|secret(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*|client[._-]?secret(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*|password(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*|cookie(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*|set[-_. ]?cookie(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*|session(?:[._-]?id)?(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*)(?:(?:\[[a-z0-9_.-]*\])|(?:%(?:25)*5b[a-z0-9_.-]*%(?:25)*5d))*"?\s*[:=]\s*"?)[^",&#\r\n]+',
+        '(?i)(["'']?(?:x[-_. ]?api[-_. ]?key(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*|api[-_. ]?key(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*|authorization(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*|proxy[-_. ]?authorization(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*|token(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*|id[._-]?token(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*|access[._-]?token(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*|refresh[._-]?token(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*|jwt(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*|secret(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*|client[._-]?secret(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*|password(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*|cookie(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*|set[-_. ]?cookie(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*|session(?:[._-]?id)?(?:[._-][a-z0-9]+|(?-i:[A-Z][a-z0-9]*))*)(?:(?:\[[a-z0-9_.-]*\])|(?:%(?:25)*5b[a-z0-9_.-]*%(?:25)*5d))*["'']?\s*[:=]\s*["'']?)[^''",&#\r\n]+',
         '$1[REDACTED]'
     )
 
