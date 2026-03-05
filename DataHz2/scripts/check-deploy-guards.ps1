@@ -295,6 +295,7 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             x_api_key_alt_backup = "guard-x-api-key-backup-should-redact"
                             "api_key[0]" = "guard-apikey-bracket-index-should-redact"
                             "api_key%5B0%5D" = "guard-apikey-encoded-bracket-index-should-redact"
+                            "api_key%5B0%5D%5Bleaf%5D" = "guard-apikey-encoded-bracket-nested-should-redact"
                             access_token_alt_stage = "guard-access-token-alt-stage-should-redact"
                             "access.token.stage" = "guard-access-dot-token-stage-should-redact"
                             id_token_backup = "guard-id-token-backup-should-redact"
@@ -321,9 +322,10 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             sessionIdBackup = "guard-session-id-camel-backup-should-redact"
                             "sessionIdBackup[meta]" = "guard-sessionid-camel-bracket-meta-should-redact"
                             "sessionIdBackup%5Bmeta%5D" = "guard-sessionid-camel-encoded-bracket-meta-should-redact"
+                            "sessionIdBackup%5Bmeta%5D%5B0%5D" = "guard-sessionid-camel-encoded-bracket-nested-should-redact"
                             "set.cookie.alt" = "sessionid=guard-set-dot-cookie-alt-session-should-redact; Path=/; HttpOnly"
                             jwt = $authHeader
-                            target_url = "http://guard-url-user:guard-url-pass@127.0.0.1/internal?access_token=guard-url-token-should-redact&access_token_alt_stage=guard-url-access-token-alt-stage-should-redact&access.token.stage=guard-url-access-dot-token-stage-should-redact&id_token_backup=guard-url-id-token-backup-should-redact&id.token.backup=guard-url-id-dot-token-backup-should-redact&jwt_stage=guard-url-jwt-stage-should-redact&api_key=guard-url-apikey-should-redact&api.key.alt=guard-url-api-dot-key-alt-should-redact&apiKeyAlt=guard-url-api-key-camel-alt-should-redact&x_api_key=guard-url-xapikey-should-redact&x_api_key_alt_backup=guard-url-xapikey-backup-should-redact&x.api.key.alt=guard-url-x-dot-api-key-alt-should-redact&api_key[0]=guard-url-apikey-bracket-index-should-redact&api_key%5B0%5D=guard-url-apikey-encoded-bracket-index-should-redact&client_secret=guard-client-secret-should-redact&client_secret_stage=guard-url-client-secret-stage-should-redact&client_secret.stage=guard-url-client-secret-dot-stage-should-redact&client.secret.stage=guard-url-client-dot-secret-stage-should-redact&secret_backup=guard-url-secret-backup-should-redact&secret.backup=guard-url-secret-dot-backup-should-redact&password=guard-url-password-should-redact&password_temp=guard-url-password-temp-should-redact&password.temp=guard-url-password-dot-temp-should-redact&refresh.token.alt=guard-url-refresh-dot-token-alt-should-redact&authorization=guard-url-authorization-should-redact&authorization_alt_stage=guard-url-authorization-alt-stage-should-redact&proxy_authorization=Basic%20guard-url-basic-should-redact&proxy.authorization.alt=guard-url-proxy-dot-authorization-alt-should-redact&cookie=guard-url-cookie-should-redact&cookie_alt=guard-url-cookie-alt-should-redact&cookie.alt=guard-url-cookie-dot-alt-should-redact&set-cookie-alt=guard-url-set-cookie-alt-should-redact&set-cookie.alt=guard-url-set-cookie-dot-alt-should-redact&set.cookie.alt=guard-url-set-dot-cookie-alt-should-redact&sessionid=guard-url-session-should-redact&sessionid_backup=guard-url-sessionid-backup-should-redact&sessionid.backup=guard-url-sessionid-dot-backup-should-redact&session.id.backup=guard-url-session-dot-id-backup-should-redact&sessionIdBackup=guard-url-session-id-camel-backup-should-redact&sessionIdBackup[meta]=guard-url-sessionid-camel-bracket-meta-should-redact&sessionIdBackup%5Bmeta%5D=guard-url-sessionid-camel-encoded-bracket-meta-should-redact;access_token=guard-url-semicolon-token-should-redact;apiKeyAlt=guard-url-semicolon-apikey-camel-alt-should-redact#access_token=guard-url-fragment-token-should-redact&apiKeyAlt=guard-url-fragment-apikey-camel-alt-should-redact&sessionIdBackup=guard-url-fragment-sessionid-camel-backup-should-redact&api_key%5B0%5D=guard-url-fragment-apikey-encoded-bracket-index-should-redact&sessionIdBackup%5Bmeta%5D=guard-url-fragment-sessionid-encoded-bracket-meta-should-redact;access_token=guard-url-fragment-semicolon-token-should-redact;apiKeyAlt=guard-url-fragment-semicolon-apikey-camel-alt-should-redact"
+                            target_url = "http://guard-url-user:guard-url-pass@127.0.0.1/internal?access_token=guard-url-token-should-redact&access_token_alt_stage=guard-url-access-token-alt-stage-should-redact&access.token.stage=guard-url-access-dot-token-stage-should-redact&id_token_backup=guard-url-id-token-backup-should-redact&id.token.backup=guard-url-id-dot-token-backup-should-redact&jwt_stage=guard-url-jwt-stage-should-redact&api_key=guard-url-apikey-should-redact&api.key.alt=guard-url-api-dot-key-alt-should-redact&apiKeyAlt=guard-url-api-key-camel-alt-should-redact&x_api_key=guard-url-xapikey-should-redact&x_api_key_alt_backup=guard-url-xapikey-backup-should-redact&x.api.key.alt=guard-url-x-dot-api-key-alt-should-redact&api_key[0]=guard-url-apikey-bracket-index-should-redact&api_key%5B0%5D=guard-url-apikey-encoded-bracket-index-should-redact&api_key%5B0%5D%5Bleaf%5D=guard-url-apikey-encoded-bracket-nested-should-redact&client_secret=guard-client-secret-should-redact&client_secret_stage=guard-url-client-secret-stage-should-redact&client_secret.stage=guard-url-client-secret-dot-stage-should-redact&client.secret.stage=guard-url-client-dot-secret-stage-should-redact&secret_backup=guard-url-secret-backup-should-redact&secret.backup=guard-url-secret-dot-backup-should-redact&password=guard-url-password-should-redact&password_temp=guard-url-password-temp-should-redact&password.temp=guard-url-password-dot-temp-should-redact&refresh.token.alt=guard-url-refresh-dot-token-alt-should-redact&authorization=guard-url-authorization-should-redact&authorization_alt_stage=guard-url-authorization-alt-stage-should-redact&proxy_authorization=Basic%20guard-url-basic-should-redact&proxy.authorization.alt=guard-url-proxy-dot-authorization-alt-should-redact&cookie=guard-url-cookie-should-redact&cookie_alt=guard-url-cookie-alt-should-redact&cookie.alt=guard-url-cookie-dot-alt-should-redact&set-cookie-alt=guard-url-set-cookie-alt-should-redact&set-cookie.alt=guard-url-set-cookie-dot-alt-should-redact&set.cookie.alt=guard-url-set-dot-cookie-alt-should-redact&sessionid=guard-url-session-should-redact&sessionid_backup=guard-url-sessionid-backup-should-redact&sessionid.backup=guard-url-sessionid-dot-backup-should-redact&session.id.backup=guard-url-session-dot-id-backup-should-redact&sessionIdBackup=guard-url-session-id-camel-backup-should-redact&sessionIdBackup[meta]=guard-url-sessionid-camel-bracket-meta-should-redact&sessionIdBackup%5Bmeta%5D=guard-url-sessionid-camel-encoded-bracket-meta-should-redact&sessionIdBackup%5Bmeta%5D%5B0%5D=guard-url-sessionid-camel-encoded-bracket-nested-should-redact;access_token=guard-url-semicolon-token-should-redact;apiKeyAlt=guard-url-semicolon-apikey-camel-alt-should-redact#access_token=guard-url-fragment-token-should-redact&apiKeyAlt=guard-url-fragment-apikey-camel-alt-should-redact&sessionIdBackup=guard-url-fragment-sessionid-camel-backup-should-redact&api_key%5B0%5D=guard-url-fragment-apikey-encoded-bracket-index-should-redact&sessionIdBackup%5Bmeta%5D=guard-url-fragment-sessionid-encoded-bracket-meta-should-redact&api_key%5B0%5D%5Bleaf%5D=guard-url-fragment-apikey-encoded-bracket-nested-should-redact&sessionIdBackup%5Bmeta%5D%5B0%5D=guard-url-fragment-sessionid-encoded-bracket-nested-should-redact;access_token=guard-url-fragment-semicolon-token-should-redact;apiKeyAlt=guard-url-fragment-semicolon-apikey-camel-alt-should-redact"
                         }
                         $body = ($payload | ConvertTo-Json -Compress)
                     }
@@ -351,6 +353,7 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             x_api_key_alt_backup = "guard-x-api-key-backup-should-redact"
                             "api_key[0]" = "guard-apikey-bracket-index-should-redact"
                             "api_key%5B0%5D" = "guard-apikey-encoded-bracket-index-should-redact"
+                            "api_key%5B0%5D%5Bleaf%5D" = "guard-apikey-encoded-bracket-nested-should-redact"
                             access_token_alt_stage = "guard-access-token-alt-stage-should-redact"
                             "access.token.stage" = "guard-access-dot-token-stage-should-redact"
                             id_token_backup = "guard-id-token-backup-should-redact"
@@ -377,9 +380,10 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             sessionIdBackup = "guard-session-id-camel-backup-should-redact"
                             "sessionIdBackup[meta]" = "guard-sessionid-camel-bracket-meta-should-redact"
                             "sessionIdBackup%5Bmeta%5D" = "guard-sessionid-camel-encoded-bracket-meta-should-redact"
+                            "sessionIdBackup%5Bmeta%5D%5B0%5D" = "guard-sessionid-camel-encoded-bracket-nested-should-redact"
                             "set.cookie.alt" = "sessionid=guard-set-dot-cookie-alt-session-should-redact; Path=/; HttpOnly"
                             jwt = $authHeader
-                            target_url = "http://guard-url-user:guard-url-pass@127.0.0.1/internal?access_token=guard-url-token-should-redact&access_token_alt_stage=guard-url-access-token-alt-stage-should-redact&access.token.stage=guard-url-access-dot-token-stage-should-redact&id_token_backup=guard-url-id-token-backup-should-redact&id.token.backup=guard-url-id-dot-token-backup-should-redact&jwt_stage=guard-url-jwt-stage-should-redact&api_key=guard-url-apikey-should-redact&api.key.alt=guard-url-api-dot-key-alt-should-redact&apiKeyAlt=guard-url-api-key-camel-alt-should-redact&x_api_key=guard-url-xapikey-should-redact&x_api_key_alt_backup=guard-url-xapikey-backup-should-redact&x.api.key.alt=guard-url-x-dot-api-key-alt-should-redact&api_key[0]=guard-url-apikey-bracket-index-should-redact&api_key%5B0%5D=guard-url-apikey-encoded-bracket-index-should-redact&client_secret=guard-client-secret-should-redact&client_secret_stage=guard-url-client-secret-stage-should-redact&client_secret.stage=guard-url-client-secret-dot-stage-should-redact&client.secret.stage=guard-url-client-dot-secret-stage-should-redact&secret_backup=guard-url-secret-backup-should-redact&secret.backup=guard-url-secret-dot-backup-should-redact&password=guard-url-password-should-redact&password_temp=guard-url-password-temp-should-redact&password.temp=guard-url-password-dot-temp-should-redact&refresh.token.alt=guard-url-refresh-dot-token-alt-should-redact&authorization=guard-url-authorization-should-redact&authorization_alt_stage=guard-url-authorization-alt-stage-should-redact&proxy_authorization=Basic%20guard-url-basic-should-redact&proxy.authorization.alt=guard-url-proxy-dot-authorization-alt-should-redact&cookie=guard-url-cookie-should-redact&cookie_alt=guard-url-cookie-alt-should-redact&cookie.alt=guard-url-cookie-dot-alt-should-redact&set-cookie-alt=guard-url-set-cookie-alt-should-redact&set-cookie.alt=guard-url-set-cookie-dot-alt-should-redact&set.cookie.alt=guard-url-set-dot-cookie-alt-should-redact&sessionid=guard-url-session-should-redact&sessionid_backup=guard-url-sessionid-backup-should-redact&sessionid.backup=guard-url-sessionid-dot-backup-should-redact&session.id.backup=guard-url-session-dot-id-backup-should-redact&sessionIdBackup=guard-url-session-id-camel-backup-should-redact&sessionIdBackup[meta]=guard-url-sessionid-camel-bracket-meta-should-redact&sessionIdBackup%5Bmeta%5D=guard-url-sessionid-camel-encoded-bracket-meta-should-redact;access_token=guard-url-semicolon-token-should-redact;apiKeyAlt=guard-url-semicolon-apikey-camel-alt-should-redact#access_token=guard-url-fragment-token-should-redact&apiKeyAlt=guard-url-fragment-apikey-camel-alt-should-redact&sessionIdBackup=guard-url-fragment-sessionid-camel-backup-should-redact&api_key%5B0%5D=guard-url-fragment-apikey-encoded-bracket-index-should-redact&sessionIdBackup%5Bmeta%5D=guard-url-fragment-sessionid-encoded-bracket-meta-should-redact;access_token=guard-url-fragment-semicolon-token-should-redact;apiKeyAlt=guard-url-fragment-semicolon-apikey-camel-alt-should-redact"
+                            target_url = "http://guard-url-user:guard-url-pass@127.0.0.1/internal?access_token=guard-url-token-should-redact&access_token_alt_stage=guard-url-access-token-alt-stage-should-redact&access.token.stage=guard-url-access-dot-token-stage-should-redact&id_token_backup=guard-url-id-token-backup-should-redact&id.token.backup=guard-url-id-dot-token-backup-should-redact&jwt_stage=guard-url-jwt-stage-should-redact&api_key=guard-url-apikey-should-redact&api.key.alt=guard-url-api-dot-key-alt-should-redact&apiKeyAlt=guard-url-api-key-camel-alt-should-redact&x_api_key=guard-url-xapikey-should-redact&x_api_key_alt_backup=guard-url-xapikey-backup-should-redact&x.api.key.alt=guard-url-x-dot-api-key-alt-should-redact&api_key[0]=guard-url-apikey-bracket-index-should-redact&api_key%5B0%5D=guard-url-apikey-encoded-bracket-index-should-redact&api_key%5B0%5D%5Bleaf%5D=guard-url-apikey-encoded-bracket-nested-should-redact&client_secret=guard-client-secret-should-redact&client_secret_stage=guard-url-client-secret-stage-should-redact&client_secret.stage=guard-url-client-secret-dot-stage-should-redact&client.secret.stage=guard-url-client-dot-secret-stage-should-redact&secret_backup=guard-url-secret-backup-should-redact&secret.backup=guard-url-secret-dot-backup-should-redact&password=guard-url-password-should-redact&password_temp=guard-url-password-temp-should-redact&password.temp=guard-url-password-dot-temp-should-redact&refresh.token.alt=guard-url-refresh-dot-token-alt-should-redact&authorization=guard-url-authorization-should-redact&authorization_alt_stage=guard-url-authorization-alt-stage-should-redact&proxy_authorization=Basic%20guard-url-basic-should-redact&proxy.authorization.alt=guard-url-proxy-dot-authorization-alt-should-redact&cookie=guard-url-cookie-should-redact&cookie_alt=guard-url-cookie-alt-should-redact&cookie.alt=guard-url-cookie-dot-alt-should-redact&set-cookie-alt=guard-url-set-cookie-alt-should-redact&set-cookie.alt=guard-url-set-cookie-dot-alt-should-redact&set.cookie.alt=guard-url-set-dot-cookie-alt-should-redact&sessionid=guard-url-session-should-redact&sessionid_backup=guard-url-sessionid-backup-should-redact&sessionid.backup=guard-url-sessionid-dot-backup-should-redact&session.id.backup=guard-url-session-dot-id-backup-should-redact&sessionIdBackup=guard-url-session-id-camel-backup-should-redact&sessionIdBackup[meta]=guard-url-sessionid-camel-bracket-meta-should-redact&sessionIdBackup%5Bmeta%5D=guard-url-sessionid-camel-encoded-bracket-meta-should-redact&sessionIdBackup%5Bmeta%5D%5B0%5D=guard-url-sessionid-camel-encoded-bracket-nested-should-redact;access_token=guard-url-semicolon-token-should-redact;apiKeyAlt=guard-url-semicolon-apikey-camel-alt-should-redact#access_token=guard-url-fragment-token-should-redact&apiKeyAlt=guard-url-fragment-apikey-camel-alt-should-redact&sessionIdBackup=guard-url-fragment-sessionid-camel-backup-should-redact&api_key%5B0%5D=guard-url-fragment-apikey-encoded-bracket-index-should-redact&sessionIdBackup%5Bmeta%5D=guard-url-fragment-sessionid-encoded-bracket-meta-should-redact&api_key%5B0%5D%5Bleaf%5D=guard-url-fragment-apikey-encoded-bracket-nested-should-redact&sessionIdBackup%5Bmeta%5D%5B0%5D=guard-url-fragment-sessionid-encoded-bracket-nested-should-redact;access_token=guard-url-fragment-semicolon-token-should-redact;apiKeyAlt=guard-url-fragment-semicolon-apikey-camel-alt-should-redact"
                         }
                         $body = ($payload | ConvertTo-Json -Compress)
                     }
@@ -1591,6 +1595,7 @@ try {
                     "guard-api-key-camel-alt-should-redact",
                     "guard-apikey-bracket-index-should-redact",
                     "guard-apikey-encoded-bracket-index-should-redact",
+                    "guard-apikey-encoded-bracket-nested-should-redact",
                     "guard-access-token-alt-stage-should-redact",
                     "guard-access-dot-token-stage-should-redact",
                     "guard-id-token-backup-should-redact",
@@ -1611,6 +1616,7 @@ try {
                     "guard-session-dot-id-backup-should-redact",
                     "guard-sessionid-camel-bracket-meta-should-redact",
                     "guard-sessionid-camel-encoded-bracket-meta-should-redact",
+                    "guard-sessionid-camel-encoded-bracket-nested-should-redact",
                     "guard-client-dot-secret-stage-should-redact",
                     "guard-freeform-bearer-should-redact",
                     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.guardpayload.guardsignature",
@@ -1630,6 +1636,7 @@ try {
                     "guard-url-api-key-camel-alt-should-redact",
                     "guard-url-apikey-bracket-index-should-redact",
                     "guard-url-apikey-encoded-bracket-index-should-redact",
+                    "guard-url-apikey-encoded-bracket-nested-should-redact",
                     "guard-url-xapikey-should-redact",
                     "guard-url-xapikey-backup-should-redact",
                     "guard-url-x-dot-api-key-alt-should-redact",
@@ -1650,11 +1657,14 @@ try {
                     "guard-url-session-dot-id-backup-should-redact",
                     "guard-url-sessionid-camel-bracket-meta-should-redact",
                     "guard-url-sessionid-camel-encoded-bracket-meta-should-redact",
+                    "guard-url-sessionid-camel-encoded-bracket-nested-should-redact",
                     "guard-url-fragment-token-should-redact",
                     "guard-url-fragment-apikey-camel-alt-should-redact",
                     "guard-url-fragment-sessionid-camel-backup-should-redact",
                     "guard-url-fragment-apikey-encoded-bracket-index-should-redact",
                     "guard-url-fragment-sessionid-encoded-bracket-meta-should-redact",
+                    "guard-url-fragment-apikey-encoded-bracket-nested-should-redact",
+                    "guard-url-fragment-sessionid-encoded-bracket-nested-should-redact",
                     "guard-url-semicolon-token-should-redact",
                     "guard-url-semicolon-apikey-camel-alt-should-redact",
                     "guard-url-fragment-semicolon-token-should-redact",
@@ -1871,6 +1881,8 @@ try {
             $querySessionIdCamelBackupSecret = "guard-baseurl-session-id-camel-backup-secret"
             $queryApiKeyEncodedBracketIndexSecret = "guard-baseurl-apikey-encoded-bracket-index-secret"
             $querySessionIdEncodedBracketMetaSecret = "guard-baseurl-sessionid-encoded-bracket-meta-secret"
+            $queryApiKeyEncodedBracketNestedSecret = "guard-baseurl-apikey-encoded-bracket-nested-secret"
+            $querySessionIdEncodedBracketNestedSecret = "guard-baseurl-sessionid-encoded-bracket-nested-secret"
             $queryPasswordDotTempSecret = "guard-baseurl-password-dot-temp-secret"
             $queryClientSecretDotStageSecret = "guard-baseurl-client-secret-dot-stage-secret"
             $querySecretDotBackupSecret = "guard-baseurl-secret-dot-backup-secret"
@@ -1891,6 +1903,8 @@ try {
             $queryFragmentSessionIdCamelBackupSecret = "guard-baseurl-fragment-sessionid-camel-backup-secret"
             $queryFragmentApiKeyEncodedBracketIndexSecret = "guard-baseurl-fragment-apikey-encoded-bracket-index-secret"
             $queryFragmentSessionIdEncodedBracketMetaSecret = "guard-baseurl-fragment-sessionid-encoded-bracket-meta-secret"
+            $queryFragmentApiKeyEncodedBracketNestedSecret = "guard-baseurl-fragment-apikey-encoded-bracket-nested-secret"
+            $queryFragmentSessionIdEncodedBracketNestedSecret = "guard-baseurl-fragment-sessionid-encoded-bracket-nested-secret"
             $rawBaseUrl = ('http://127.0.0.1:{0}?api_key={1}&x_api_key={2}&x_api_key_alt_backup={3}&password={4}&password_temp={5}&client_secret={6}&client_secret_stage={7}&secret_backup={8}&refresh_token={9}&access_token_alt_stage={10}&cookie={11}&cookie_alt={12}&set-cookie-alt={13}&sessionid={14}&sessionid_backup={15}&authorization={16}&id_token={17}&id_token_backup={18}' -f `
                 $smokePort, `
                 $queryApiKeySecret, `
@@ -1918,11 +1932,13 @@ try {
                 $queryCookieDotAltSecret, `
                 $querySetCookieDotAltSecret, `
                 $querySessionDotBackupSecret)
-            $rawBaseUrl += ('&apiKeyAlt={0}&sessionIdBackup={1}&api_key%5B0%5D={2}&sessionIdBackup%5Bmeta%5D={3}' -f `
+            $rawBaseUrl += ('&apiKeyAlt={0}&sessionIdBackup={1}&api_key%5B0%5D={2}&sessionIdBackup%5Bmeta%5D={3}&api_key%5B0%5D%5Bleaf%5D={4}&sessionIdBackup%5Bmeta%5D%5B0%5D={5}' -f `
                 $queryApiKeyCamelAltSecret, `
                 $querySessionIdCamelBackupSecret, `
                 $queryApiKeyEncodedBracketIndexSecret, `
-                $querySessionIdEncodedBracketMetaSecret)
+                $querySessionIdEncodedBracketMetaSecret, `
+                $queryApiKeyEncodedBracketNestedSecret, `
+                $querySessionIdEncodedBracketNestedSecret)
             $rawBaseUrl += ('&api.key.alt={0}&x.api.key.alt={1}&access.token.stage={2}&id.token.backup={3}&refresh.token.alt={4}&proxy.authorization.alt={5}&client.secret.stage={6}&set.cookie.alt={7}&session.id.backup={8}' -f `
                 $queryApiDotKeyAltSecret, `
                 $queryXDotApiKeyAltSecret, `
@@ -1933,17 +1949,19 @@ try {
                 $queryClientDotSecretStageSecret, `
                 $querySetDotCookieAltSecret, `
                 $querySessionDotIdBackupSecret)
-            $rawBaseUrl += ('#access_token={0}&apiKeyAlt={1}&sessionIdBackup={2}&api_key%5B0%5D={3}&sessionIdBackup%5Bmeta%5D={4}' -f `
+            $rawBaseUrl += ('#access_token={0}&apiKeyAlt={1}&sessionIdBackup={2}&api_key%5B0%5D={3}&sessionIdBackup%5Bmeta%5D={4}&api_key%5B0%5D%5Bleaf%5D={5}&sessionIdBackup%5Bmeta%5D%5B0%5D={6}' -f `
                 $queryFragmentTokenSecret, `
                 $queryFragmentApiKeyCamelAltSecret, `
                 $queryFragmentSessionIdCamelBackupSecret, `
                 $queryFragmentApiKeyEncodedBracketIndexSecret, `
-                $queryFragmentSessionIdEncodedBracketMetaSecret)
+                $queryFragmentSessionIdEncodedBracketMetaSecret, `
+                $queryFragmentApiKeyEncodedBracketNestedSecret, `
+                $queryFragmentSessionIdEncodedBracketNestedSecret)
             $expectedBaseUrl = ('http://127.0.0.1:{0}?api_key=[REDACTED]&x_api_key=[REDACTED]&x_api_key_alt_backup=[REDACTED]&password=[REDACTED]&password_temp=[REDACTED]&client_secret=[REDACTED]&client_secret_stage=[REDACTED]&secret_backup=[REDACTED]&refresh_token=[REDACTED]&access_token_alt_stage=[REDACTED]&cookie=[REDACTED]&cookie_alt=[REDACTED]&set-cookie-alt=[REDACTED]&sessionid=[REDACTED]&sessionid_backup=[REDACTED]&authorization=[REDACTED]&id_token=[REDACTED]&id_token_backup=[REDACTED]' -f $smokePort)
             $expectedBaseUrl += '&password.temp=[REDACTED]&client_secret.stage=[REDACTED]&secret.backup=[REDACTED]&cookie.alt=[REDACTED]&set-cookie.alt=[REDACTED]&sessionid.backup=[REDACTED]'
-            $expectedBaseUrl += '&apiKeyAlt=[REDACTED]&sessionIdBackup=[REDACTED]&api_key%5B0%5D=[REDACTED]&sessionIdBackup%5Bmeta%5D=[REDACTED]'
+            $expectedBaseUrl += '&apiKeyAlt=[REDACTED]&sessionIdBackup=[REDACTED]&api_key%5B0%5D=[REDACTED]&sessionIdBackup%5Bmeta%5D=[REDACTED]&api_key%5B0%5D%5Bleaf%5D=[REDACTED]&sessionIdBackup%5Bmeta%5D%5B0%5D=[REDACTED]'
             $expectedBaseUrl += '&api.key.alt=[REDACTED]&x.api.key.alt=[REDACTED]&access.token.stage=[REDACTED]&id.token.backup=[REDACTED]&refresh.token.alt=[REDACTED]&proxy.authorization.alt=[REDACTED]&client.secret.stage=[REDACTED]&set.cookie.alt=[REDACTED]&session.id.backup=[REDACTED]'
-            $expectedBaseUrl += '#access_token=[REDACTED]&apiKeyAlt=[REDACTED]&sessionIdBackup=[REDACTED]&api_key%5B0%5D=[REDACTED]&sessionIdBackup%5Bmeta%5D=[REDACTED]'
+            $expectedBaseUrl += '#access_token=[REDACTED]&apiKeyAlt=[REDACTED]&sessionIdBackup=[REDACTED]&api_key%5B0%5D=[REDACTED]&sessionIdBackup%5Bmeta%5D=[REDACTED]&api_key%5B0%5D%5Bleaf%5D=[REDACTED]&sessionIdBackup%5Bmeta%5D%5B0%5D=[REDACTED]'
             $caseRoot = Join-Path $tempRoot "case-smoke-baseurl-query-secrets-redacted"
             New-Item -ItemType Directory -Force -Path $caseRoot | Out-Null
             $reportPath = Join-Path $caseRoot "smoke.report.json"
@@ -2008,6 +2026,8 @@ try {
                     $querySessionIdCamelBackupSecret,
                     $queryApiKeyEncodedBracketIndexSecret,
                     $querySessionIdEncodedBracketMetaSecret,
+                    $queryApiKeyEncodedBracketNestedSecret,
+                    $querySessionIdEncodedBracketNestedSecret,
                     $queryPasswordDotTempSecret,
                     $queryClientSecretDotStageSecret,
                     $querySecretDotBackupSecret,
@@ -2028,6 +2048,8 @@ try {
                     $queryFragmentSessionIdCamelBackupSecret,
                     $queryFragmentApiKeyEncodedBracketIndexSecret,
                     $queryFragmentSessionIdEncodedBracketMetaSecret,
+                    $queryFragmentApiKeyEncodedBracketNestedSecret,
+                    $queryFragmentSessionIdEncodedBracketNestedSecret,
                     $queryAuthorizationSecret,
                     $queryIdTokenSecret,
                     $queryIdTokenBackupSecret
