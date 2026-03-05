@@ -1931,6 +1931,12 @@ try {
             $querySessionIdTripleEncodedBracketMetaSecret = "guard-baseurl-sessionid-triple-encoded-bracket-meta-secret"
             $queryApiKeyTripleEncodedBracketNestedSecret = "guard-baseurl-apikey-triple-encoded-bracket-nested-secret"
             $querySessionIdTripleEncodedBracketNestedSecret = "guard-baseurl-sessionid-triple-encoded-bracket-nested-secret"
+            $queryApiKeyEncodedLowerHexBracketIndexSecret = "guard-baseurl-apikey-encoded-lowerhex-bracket-index-secret"
+            $querySessionIdEncodedLowerHexBracketMetaSecret = "guard-baseurl-sessionid-encoded-lowerhex-bracket-meta-secret"
+            $queryApiKeyDoubleEncodedLowerHexBracketIndexSecret = "guard-baseurl-apikey-double-encoded-lowerhex-bracket-index-secret"
+            $querySessionIdDoubleEncodedLowerHexBracketMetaSecret = "guard-baseurl-sessionid-double-encoded-lowerhex-bracket-meta-secret"
+            $queryApiKeyTripleEncodedLowerHexBracketIndexSecret = "guard-baseurl-apikey-triple-encoded-lowerhex-bracket-index-secret"
+            $querySessionIdTripleEncodedLowerHexBracketMetaSecret = "guard-baseurl-sessionid-triple-encoded-lowerhex-bracket-meta-secret"
             $queryPasswordDotTempSecret = "guard-baseurl-password-dot-temp-secret"
             $queryClientSecretDotStageSecret = "guard-baseurl-client-secret-dot-stage-secret"
             $querySecretDotBackupSecret = "guard-baseurl-secret-dot-backup-secret"
@@ -1961,6 +1967,12 @@ try {
             $queryFragmentSessionIdTripleEncodedBracketMetaSecret = "guard-baseurl-fragment-sessionid-triple-encoded-bracket-meta-secret"
             $queryFragmentApiKeyTripleEncodedBracketNestedSecret = "guard-baseurl-fragment-apikey-triple-encoded-bracket-nested-secret"
             $queryFragmentSessionIdTripleEncodedBracketNestedSecret = "guard-baseurl-fragment-sessionid-triple-encoded-bracket-nested-secret"
+            $queryFragmentApiKeyEncodedLowerHexBracketIndexSecret = "guard-baseurl-fragment-apikey-encoded-lowerhex-bracket-index-secret"
+            $queryFragmentSessionIdEncodedLowerHexBracketMetaSecret = "guard-baseurl-fragment-sessionid-encoded-lowerhex-bracket-meta-secret"
+            $queryFragmentApiKeyDoubleEncodedLowerHexBracketIndexSecret = "guard-baseurl-fragment-apikey-double-encoded-lowerhex-bracket-index-secret"
+            $queryFragmentSessionIdDoubleEncodedLowerHexBracketMetaSecret = "guard-baseurl-fragment-sessionid-double-encoded-lowerhex-bracket-meta-secret"
+            $queryFragmentApiKeyTripleEncodedLowerHexBracketIndexSecret = "guard-baseurl-fragment-apikey-triple-encoded-lowerhex-bracket-index-secret"
+            $queryFragmentSessionIdTripleEncodedLowerHexBracketMetaSecret = "guard-baseurl-fragment-sessionid-triple-encoded-lowerhex-bracket-meta-secret"
             $rawBaseUrl = ('http://127.0.0.1:{0}?api_key={1}&x_api_key={2}&x_api_key_alt_backup={3}&password={4}&password_temp={5}&client_secret={6}&client_secret_stage={7}&secret_backup={8}&refresh_token={9}&access_token_alt_stage={10}&cookie={11}&cookie_alt={12}&set-cookie-alt={13}&sessionid={14}&sessionid_backup={15}&authorization={16}&id_token={17}&id_token_backup={18}' -f `
                 $smokePort, `
                 $queryApiKeySecret, `
@@ -2003,6 +2015,13 @@ try {
                 $querySessionIdTripleEncodedBracketMetaSecret, `
                 $queryApiKeyTripleEncodedBracketNestedSecret, `
                 $querySessionIdTripleEncodedBracketNestedSecret)
+            $rawBaseUrl += ('&api_key%5b0%5d={0}&sessionIdBackup%5bmeta%5d={1}&api_key%255b0%255d={2}&sessionIdBackup%255bmeta%255d={3}&api_key%25255b0%25255d={4}&sessionIdBackup%25255bmeta%25255d={5}' -f `
+                $queryApiKeyEncodedLowerHexBracketIndexSecret, `
+                $querySessionIdEncodedLowerHexBracketMetaSecret, `
+                $queryApiKeyDoubleEncodedLowerHexBracketIndexSecret, `
+                $querySessionIdDoubleEncodedLowerHexBracketMetaSecret, `
+                $queryApiKeyTripleEncodedLowerHexBracketIndexSecret, `
+                $querySessionIdTripleEncodedLowerHexBracketMetaSecret)
             $rawBaseUrl += ('&api.key.alt={0}&x.api.key.alt={1}&access.token.stage={2}&id.token.backup={3}&refresh.token.alt={4}&proxy.authorization.alt={5}&client.secret.stage={6}&set.cookie.alt={7}&session.id.backup={8}' -f `
                 $queryApiDotKeyAltSecret, `
                 $queryXDotApiKeyAltSecret, `
@@ -2029,11 +2048,20 @@ try {
                 $queryFragmentSessionIdTripleEncodedBracketMetaSecret, `
                 $queryFragmentApiKeyTripleEncodedBracketNestedSecret, `
                 $queryFragmentSessionIdTripleEncodedBracketNestedSecret)
+            $rawBaseUrl += ('&api_key%5b0%5d={0}&sessionIdBackup%5bmeta%5d={1}&api_key%255b0%255d={2}&sessionIdBackup%255bmeta%255d={3}&api_key%25255b0%25255d={4}&sessionIdBackup%25255bmeta%25255d={5}' -f `
+                $queryFragmentApiKeyEncodedLowerHexBracketIndexSecret, `
+                $queryFragmentSessionIdEncodedLowerHexBracketMetaSecret, `
+                $queryFragmentApiKeyDoubleEncodedLowerHexBracketIndexSecret, `
+                $queryFragmentSessionIdDoubleEncodedLowerHexBracketMetaSecret, `
+                $queryFragmentApiKeyTripleEncodedLowerHexBracketIndexSecret, `
+                $queryFragmentSessionIdTripleEncodedLowerHexBracketMetaSecret)
             $expectedBaseUrl = ('http://127.0.0.1:{0}?api_key=[REDACTED]&x_api_key=[REDACTED]&x_api_key_alt_backup=[REDACTED]&password=[REDACTED]&password_temp=[REDACTED]&client_secret=[REDACTED]&client_secret_stage=[REDACTED]&secret_backup=[REDACTED]&refresh_token=[REDACTED]&access_token_alt_stage=[REDACTED]&cookie=[REDACTED]&cookie_alt=[REDACTED]&set-cookie-alt=[REDACTED]&sessionid=[REDACTED]&sessionid_backup=[REDACTED]&authorization=[REDACTED]&id_token=[REDACTED]&id_token_backup=[REDACTED]' -f $smokePort)
             $expectedBaseUrl += '&password.temp=[REDACTED]&client_secret.stage=[REDACTED]&secret.backup=[REDACTED]&cookie.alt=[REDACTED]&set-cookie.alt=[REDACTED]&sessionid.backup=[REDACTED]'
             $expectedBaseUrl += '&apiKeyAlt=[REDACTED]&sessionIdBackup=[REDACTED]&api_key%5B0%5D=[REDACTED]&sessionIdBackup%5Bmeta%5D=[REDACTED]&api_key%5B0%5D%5Bleaf%5D=[REDACTED]&sessionIdBackup%5Bmeta%5D%5B0%5D=[REDACTED]&api_key%255B0%255D=[REDACTED]&sessionIdBackup%255Bmeta%255D=[REDACTED]&api_key%255B0%255D%255Bleaf%255D=[REDACTED]&sessionIdBackup%255Bmeta%255D%255B0%255D=[REDACTED]&api_key%25255B0%25255D=[REDACTED]&sessionIdBackup%25255Bmeta%25255D=[REDACTED]&api_key%25255B0%25255D%25255Bleaf%25255D=[REDACTED]&sessionIdBackup%25255Bmeta%25255D%25255B0%25255D=[REDACTED]'
+            $expectedBaseUrl += '&api_key%5b0%5d=[REDACTED]&sessionIdBackup%5bmeta%5d=[REDACTED]&api_key%255b0%255d=[REDACTED]&sessionIdBackup%255bmeta%255d=[REDACTED]&api_key%25255b0%25255d=[REDACTED]&sessionIdBackup%25255bmeta%25255d=[REDACTED]'
             $expectedBaseUrl += '&api.key.alt=[REDACTED]&x.api.key.alt=[REDACTED]&access.token.stage=[REDACTED]&id.token.backup=[REDACTED]&refresh.token.alt=[REDACTED]&proxy.authorization.alt=[REDACTED]&client.secret.stage=[REDACTED]&set.cookie.alt=[REDACTED]&session.id.backup=[REDACTED]'
             $expectedBaseUrl += '#access_token=[REDACTED]&apiKeyAlt=[REDACTED]&sessionIdBackup=[REDACTED]&api_key%5B0%5D=[REDACTED]&sessionIdBackup%5Bmeta%5D=[REDACTED]&api_key%5B0%5D%5Bleaf%5D=[REDACTED]&sessionIdBackup%5Bmeta%5D%5B0%5D=[REDACTED]&api_key%255B0%255D=[REDACTED]&sessionIdBackup%255Bmeta%255D=[REDACTED]&api_key%255B0%255D%255Bleaf%255D=[REDACTED]&sessionIdBackup%255Bmeta%255D%255B0%255D=[REDACTED]&api_key%25255B0%25255D=[REDACTED]&sessionIdBackup%25255Bmeta%25255D=[REDACTED]&api_key%25255B0%25255D%25255Bleaf%25255D=[REDACTED]&sessionIdBackup%25255Bmeta%25255D%25255B0%25255D=[REDACTED]'
+            $expectedBaseUrl += '&api_key%5b0%5d=[REDACTED]&sessionIdBackup%5bmeta%5d=[REDACTED]&api_key%255b0%255d=[REDACTED]&sessionIdBackup%255bmeta%255d=[REDACTED]&api_key%25255b0%25255d=[REDACTED]&sessionIdBackup%25255bmeta%25255d=[REDACTED]'
             $caseRoot = Join-Path $tempRoot "case-smoke-baseurl-query-secrets-redacted"
             New-Item -ItemType Directory -Force -Path $caseRoot | Out-Null
             $reportPath = Join-Path $caseRoot "smoke.report.json"
@@ -2108,6 +2136,12 @@ try {
                     $querySessionIdTripleEncodedBracketMetaSecret,
                     $queryApiKeyTripleEncodedBracketNestedSecret,
                     $querySessionIdTripleEncodedBracketNestedSecret,
+                    $queryApiKeyEncodedLowerHexBracketIndexSecret,
+                    $querySessionIdEncodedLowerHexBracketMetaSecret,
+                    $queryApiKeyDoubleEncodedLowerHexBracketIndexSecret,
+                    $querySessionIdDoubleEncodedLowerHexBracketMetaSecret,
+                    $queryApiKeyTripleEncodedLowerHexBracketIndexSecret,
+                    $querySessionIdTripleEncodedLowerHexBracketMetaSecret,
                     $queryPasswordDotTempSecret,
                     $queryClientSecretDotStageSecret,
                     $querySecretDotBackupSecret,
@@ -2138,6 +2172,12 @@ try {
                     $queryFragmentSessionIdTripleEncodedBracketMetaSecret,
                     $queryFragmentApiKeyTripleEncodedBracketNestedSecret,
                     $queryFragmentSessionIdTripleEncodedBracketNestedSecret,
+                    $queryFragmentApiKeyEncodedLowerHexBracketIndexSecret,
+                    $queryFragmentSessionIdEncodedLowerHexBracketMetaSecret,
+                    $queryFragmentApiKeyDoubleEncodedLowerHexBracketIndexSecret,
+                    $queryFragmentSessionIdDoubleEncodedLowerHexBracketMetaSecret,
+                    $queryFragmentApiKeyTripleEncodedLowerHexBracketIndexSecret,
+                    $queryFragmentSessionIdTripleEncodedLowerHexBracketMetaSecret,
                     $queryAuthorizationSecret,
                     $queryIdTokenSecret,
                     $queryIdTokenBackupSecret

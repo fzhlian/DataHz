@@ -602,3 +602,13 @@ What changed:
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
 - Expect `smoke-baseurl-query-secrets-redacted` to fail if any triple-encoded bracket-suffix secret value appears in report/stdout/stderr.
+
+## 2026-03-05 lowercase hex bracket-encoding guard hardening
+
+What changed:
+- `check-deploy-guards.ps1` extends `smoke-baseurl-query-secrets-redacted` with lowercase URL-encoded bracket key variants (for example `%5b...%5d`, `%255b...%255d`, `%25255b...%25255d`) in both query and fragment `BaseUrl` sections.
+- The expected redacted `report.baseUrl` and forbidden-secret assertions now include these lowercase-hex bracket variants to prevent regression in case-insensitive encoded-key redaction.
+
+How to validate:
+- Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
+- Expect `smoke-baseurl-query-secrets-redacted` to pass with no raw lowercase-hex encoded bracket-suffix secret fragments.
