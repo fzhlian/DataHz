@@ -622,3 +622,14 @@ What changed:
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
 - Expect `smoke-detail-redacts-secrets` and `smoke-baseurl-query-secrets-redacted` to pass without any raw lowercase-hex encoded bracket-suffix secret values.
+
+## 2026-03-05 quadruple-encoded bracket coverage hardening
+
+What changed:
+- `check-deploy-guards.ps1` extends `smoke-detail-redacts-secrets` payload fixtures and echoed `target_url` (query + fragment, success + error branches) with quadruple-encoded bracket key variants such as `%2525255B...%2525255D`, including nested forms.
+- `smoke-baseurl-query-secrets-redacted` now injects the same quadruple-encoded bracket variants in both query and fragment sections and verifies `report.baseUrl` preserves keys while redacting values.
+- Forbidden-secret assertions now include the new `guard-*quadruple-encoded*` values so any raw leakage fails guard checks.
+
+How to validate:
+- Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
+- Expect `smoke-detail-redacts-secrets` and `smoke-baseurl-query-secrets-redacted` to pass with no raw quadruple-encoded bracket-suffix secret fragments in outputs.
