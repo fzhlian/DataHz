@@ -1,6 +1,6 @@
 # 测试与发布
 
-最后更新：2026-03-04
+最后更新：2026-03-05
 
 ## 测试命令
 
@@ -633,3 +633,15 @@ What changed:
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
 - Expect `smoke-detail-redacts-secrets` and `smoke-baseurl-query-secrets-redacted` to pass with no raw quadruple-encoded bracket-suffix secret fragments in outputs.
+
+## 2026-03-05 lowerhex quadruple-encoded bracket parity hardening
+
+What changed:
+- `check-deploy-guards.ps1` extends `smoke-detail-redacts-secrets` `target_url` fixtures (both success and error branches) with lowercase-hex quadruple-encoded bracket variants in query and fragment sections, including nested forms: `%2525255b...%2525255d`.
+- `smoke-detail-redacts-secrets` forbidden-secret assertions now include the matching lowercase-hex quadruple `guard-url-*` and `guard-url-fragment-*` values, so any raw leakage fails the guard case.
+- `smoke-baseurl-query-secrets-redacted` now also includes lowercase-hex quadruple-encoded bracket variants in both query and fragment `BaseUrl` fixtures and in expected redacted output assertions, keeping parity with detail-side coverage.
+- `check-deploy-guards.ps1` now shuts down local listener jobs through a dedicated `__shutdown` endpoint (`Stop-ListenerServer`) before `Stop-Job/Remove-Job`, reducing self-test hangs in long guard runs.
+
+How to validate:
+- Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
+- Expect `smoke-detail-redacts-secrets` and `smoke-baseurl-query-secrets-redacted` to pass with no raw lowercase-hex quadruple-encoded bracket-suffix secret fragments in outputs.

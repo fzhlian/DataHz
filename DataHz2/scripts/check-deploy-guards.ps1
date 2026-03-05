@@ -66,6 +66,18 @@ function Start-StaticFileServer([string]$RootPath, [int]$Port) {
                 $ctx = $listener.GetContext()
                 $resp = $ctx.Response
                 try {
+                    $path = [string]$ctx.Request.Url.AbsolutePath
+                    if ($path.Equals("/__shutdown", [System.StringComparison]::OrdinalIgnoreCase)) {
+                        $bytes = [System.Text.Encoding]::UTF8.GetBytes("shutdown")
+                        $resp.StatusCode = 200
+                        $resp.ContentType = "text/plain; charset=utf-8"
+                        $resp.ContentLength64 = $bytes.LongLength
+                        if (-not $ctx.Request.HttpMethod.Equals("HEAD", [System.StringComparison]::OrdinalIgnoreCase)) {
+                            $resp.OutputStream.Write($bytes, 0, $bytes.Length)
+                        }
+                        break
+                    }
+
                     $relative = [System.Uri]::UnescapeDataString($ctx.Request.Url.AbsolutePath.TrimStart('/'))
                     $relative = $relative.Replace("/", "\")
                     $fullPath = [System.IO.Path]::GetFullPath((Join-Path $rootResolved $relative))
@@ -119,6 +131,17 @@ function Start-SmokeMockServer([int]$Port) {
                 $resp = $ctx.Response
                 try {
                     $path = $ctx.Request.Url.AbsolutePath
+                    if ($path.Equals("/__shutdown", [System.StringComparison]::OrdinalIgnoreCase)) {
+                        $bytes = [System.Text.Encoding]::UTF8.GetBytes("{""status"":""shutdown""}")
+                        $resp.StatusCode = 200
+                        $resp.ContentType = "application/json; charset=utf-8"
+                        $resp.ContentLength64 = $bytes.LongLength
+                        if (-not $ctx.Request.HttpMethod.Equals("HEAD", [System.StringComparison]::OrdinalIgnoreCase)) {
+                            $resp.OutputStream.Write($bytes, 0, $bytes.Length)
+                        }
+                        break
+                    }
+
                     $statusCode = 200
                     $contentType = "application/json; charset=utf-8"
                     $body = "{""status"":""ok""}"
@@ -203,6 +226,17 @@ function Start-BinarySmokeServer([int]$Port) {
                 $resp = $ctx.Response
                 try {
                     $path = $ctx.Request.Url.AbsolutePath
+                    if ($path.Equals("/__shutdown", [System.StringComparison]::OrdinalIgnoreCase)) {
+                        $bytes = [System.Text.Encoding]::UTF8.GetBytes("{""status"":""shutdown""}")
+                        $resp.StatusCode = 200
+                        $resp.ContentType = "application/json; charset=utf-8"
+                        $resp.ContentLength64 = $bytes.LongLength
+                        if (-not $ctx.Request.HttpMethod.Equals("HEAD", [System.StringComparison]::OrdinalIgnoreCase)) {
+                            $resp.OutputStream.Write($bytes, 0, $bytes.Length)
+                        }
+                        break
+                    }
+
                     $statusCode = 500
                     $contentType = "application/octet-stream"
                     $bytes = [byte[]](0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 255, 254, 253)
@@ -258,6 +292,17 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                 $resp = $ctx.Response
                 try {
                     $path = $ctx.Request.Url.AbsolutePath
+                    if ($path.Equals("/__shutdown", [System.StringComparison]::OrdinalIgnoreCase)) {
+                        $bytes = [System.Text.Encoding]::UTF8.GetBytes("{""status"":""shutdown""}")
+                        $resp.StatusCode = 200
+                        $resp.ContentType = "application/json; charset=utf-8"
+                        $resp.ContentLength64 = $bytes.LongLength
+                        if (-not $ctx.Request.HttpMethod.Equals("HEAD", [System.StringComparison]::OrdinalIgnoreCase)) {
+                            $resp.OutputStream.Write($bytes, 0, $bytes.Length)
+                        }
+                        break
+                    }
+
                     $statusCode = 500
                     $contentType = "application/json; charset=utf-8"
                     $body = ""
@@ -337,7 +382,7 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             "sessionIdBackup%2525255Bmeta%2525255D%2525255B0%2525255D" = "guard-sessionid-camel-quadruple-encoded-bracket-nested-should-redact"
                             "set.cookie.alt" = "sessionid=guard-set-dot-cookie-alt-session-should-redact; Path=/; HttpOnly"
                             jwt = $authHeader
-                            target_url = "http://guard-url-user:guard-url-pass@127.0.0.1/internal?access_token=guard-url-token-should-redact&access_token_alt_stage=guard-url-access-token-alt-stage-should-redact&access.token.stage=guard-url-access-dot-token-stage-should-redact&id_token_backup=guard-url-id-token-backup-should-redact&id.token.backup=guard-url-id-dot-token-backup-should-redact&jwt_stage=guard-url-jwt-stage-should-redact&api_key=guard-url-apikey-should-redact&api.key.alt=guard-url-api-dot-key-alt-should-redact&apiKeyAlt=guard-url-api-key-camel-alt-should-redact&x_api_key=guard-url-xapikey-should-redact&x_api_key_alt_backup=guard-url-xapikey-backup-should-redact&x.api.key.alt=guard-url-x-dot-api-key-alt-should-redact&api_key[0]=guard-url-apikey-bracket-index-should-redact&api_key%5B0%5D=guard-url-apikey-encoded-bracket-index-should-redact&api_key%5B0%5D%5Bleaf%5D=guard-url-apikey-encoded-bracket-nested-should-redact&api_key%255B0%255D=guard-url-apikey-double-encoded-bracket-index-should-redact&api_key%255B0%255D%255Bleaf%255D=guard-url-apikey-double-encoded-bracket-nested-should-redact&api_key%25255B0%25255D=guard-url-apikey-triple-encoded-bracket-index-should-redact&api_key%25255B0%25255D%25255Bleaf%25255D=guard-url-apikey-triple-encoded-bracket-nested-should-redact&api_key%2525255B0%2525255D=guard-url-apikey-quadruple-encoded-bracket-index-should-redact&api_key%2525255B0%2525255D%2525255Bleaf%2525255D=guard-url-apikey-quadruple-encoded-bracket-nested-should-redact&api_key%25255b0%25255d=guard-url-apikey-triple-encoded-bracket-lowerhex-index-should-redact&api_key%25255b0%25255d%25255bleaf%25255d=guard-url-apikey-triple-encoded-bracket-lowerhex-nested-should-redact&api_key%255b0%255d=guard-url-apikey-double-encoded-bracket-lowerhex-index-should-redact&api_key%255b0%255d%255bleaf%255d=guard-url-apikey-double-encoded-bracket-lowerhex-nested-should-redact&api_key%5b0%5d=guard-url-apikey-encoded-bracket-lowerhex-index-should-redact&api_key%5b0%5d%5bleaf%5d=guard-url-apikey-encoded-bracket-lowerhex-nested-should-redact&client_secret=guard-client-secret-should-redact&client_secret_stage=guard-url-client-secret-stage-should-redact&client_secret.stage=guard-url-client-secret-dot-stage-should-redact&client.secret.stage=guard-url-client-dot-secret-stage-should-redact&secret_backup=guard-url-secret-backup-should-redact&secret.backup=guard-url-secret-dot-backup-should-redact&password=guard-url-password-should-redact&password_temp=guard-url-password-temp-should-redact&password.temp=guard-url-password-dot-temp-should-redact&refresh.token.alt=guard-url-refresh-dot-token-alt-should-redact&authorization=guard-url-authorization-should-redact&authorization_alt_stage=guard-url-authorization-alt-stage-should-redact&proxy_authorization=Basic%20guard-url-basic-should-redact&proxy.authorization.alt=guard-url-proxy-dot-authorization-alt-should-redact&cookie=guard-url-cookie-should-redact&cookie_alt=guard-url-cookie-alt-should-redact&cookie.alt=guard-url-cookie-dot-alt-should-redact&set-cookie-alt=guard-url-set-cookie-alt-should-redact&set-cookie.alt=guard-url-set-cookie-dot-alt-should-redact&set.cookie.alt=guard-url-set-dot-cookie-alt-should-redact&sessionid=guard-url-session-should-redact&sessionid_backup=guard-url-sessionid-backup-should-redact&sessionid.backup=guard-url-sessionid-dot-backup-should-redact&session.id.backup=guard-url-session-dot-id-backup-should-redact&sessionIdBackup=guard-url-session-id-camel-backup-should-redact&sessionIdBackup[meta]=guard-url-sessionid-camel-bracket-meta-should-redact&sessionIdBackup%5Bmeta%5D=guard-url-sessionid-camel-encoded-bracket-meta-should-redact&sessionIdBackup%5Bmeta%5D%5B0%5D=guard-url-sessionid-camel-encoded-bracket-nested-should-redact&sessionIdBackup%255Bmeta%255D=guard-url-sessionid-camel-double-encoded-bracket-meta-should-redact&sessionIdBackup%255Bmeta%255D%255B0%255D=guard-url-sessionid-camel-double-encoded-bracket-nested-should-redact&sessionIdBackup%25255Bmeta%25255D=guard-url-sessionid-camel-triple-encoded-bracket-meta-should-redact&sessionIdBackup%25255Bmeta%25255D%25255B0%25255D=guard-url-sessionid-camel-triple-encoded-bracket-nested-should-redact&sessionIdBackup%2525255Bmeta%2525255D=guard-url-sessionid-camel-quadruple-encoded-bracket-meta-should-redact&sessionIdBackup%2525255Bmeta%2525255D%2525255B0%2525255D=guard-url-sessionid-camel-quadruple-encoded-bracket-nested-should-redact&sessionIdBackup%25255bmeta%25255d=guard-url-sessionid-camel-triple-encoded-bracket-lowerhex-meta-should-redact&sessionIdBackup%25255bmeta%25255d%25255b0%25255d=guard-url-sessionid-camel-triple-encoded-bracket-lowerhex-nested-should-redact&sessionIdBackup%255bmeta%255d=guard-url-sessionid-camel-double-encoded-bracket-lowerhex-meta-should-redact&sessionIdBackup%255bmeta%255d%255b0%255d=guard-url-sessionid-camel-double-encoded-bracket-lowerhex-nested-should-redact&sessionIdBackup%5bmeta%5d=guard-url-sessionid-camel-encoded-bracket-lowerhex-meta-should-redact&sessionIdBackup%5bmeta%5d%5b0%5d=guard-url-sessionid-camel-encoded-bracket-lowerhex-nested-should-redact;access_token=guard-url-semicolon-token-should-redact;apiKeyAlt=guard-url-semicolon-apikey-camel-alt-should-redact#access_token=guard-url-fragment-token-should-redact&apiKeyAlt=guard-url-fragment-apikey-camel-alt-should-redact&sessionIdBackup=guard-url-fragment-sessionid-camel-backup-should-redact&api_key%5B0%5D=guard-url-fragment-apikey-encoded-bracket-index-should-redact&sessionIdBackup%5Bmeta%5D=guard-url-fragment-sessionid-encoded-bracket-meta-should-redact&api_key%5B0%5D%5Bleaf%5D=guard-url-fragment-apikey-encoded-bracket-nested-should-redact&sessionIdBackup%5Bmeta%5D%5B0%5D=guard-url-fragment-sessionid-encoded-bracket-nested-should-redact&api_key%255B0%255D=guard-url-fragment-apikey-double-encoded-bracket-index-should-redact&sessionIdBackup%255Bmeta%255D=guard-url-fragment-sessionid-double-encoded-bracket-meta-should-redact&api_key%255B0%255D%255Bleaf%255D=guard-url-fragment-apikey-double-encoded-bracket-nested-should-redact&sessionIdBackup%255Bmeta%255D%255B0%255D=guard-url-fragment-sessionid-double-encoded-bracket-nested-should-redact&api_key%25255B0%25255D=guard-url-fragment-apikey-triple-encoded-bracket-index-should-redact&sessionIdBackup%25255Bmeta%25255D=guard-url-fragment-sessionid-triple-encoded-bracket-meta-should-redact&api_key%25255B0%25255D%25255Bleaf%25255D=guard-url-fragment-apikey-triple-encoded-bracket-nested-should-redact&sessionIdBackup%25255Bmeta%25255D%25255B0%25255D=guard-url-fragment-sessionid-triple-encoded-bracket-nested-should-redact&api_key%2525255B0%2525255D=guard-url-fragment-apikey-quadruple-encoded-bracket-index-should-redact&sessionIdBackup%2525255Bmeta%2525255D=guard-url-fragment-sessionid-quadruple-encoded-bracket-meta-should-redact&api_key%2525255B0%2525255D%2525255Bleaf%2525255D=guard-url-fragment-apikey-quadruple-encoded-bracket-nested-should-redact&sessionIdBackup%2525255Bmeta%2525255D%2525255B0%2525255D=guard-url-fragment-sessionid-quadruple-encoded-bracket-nested-should-redact&api_key%25255b0%25255d=guard-url-fragment-apikey-triple-encoded-bracket-lowerhex-index-should-redact&sessionIdBackup%25255bmeta%25255d=guard-url-fragment-sessionid-triple-encoded-bracket-lowerhex-meta-should-redact&api_key%25255b0%25255d%25255bleaf%25255d=guard-url-fragment-apikey-triple-encoded-bracket-lowerhex-nested-should-redact&sessionIdBackup%25255bmeta%25255d%25255b0%25255d=guard-url-fragment-sessionid-triple-encoded-bracket-lowerhex-nested-should-redact&api_key%255b0%255d=guard-url-fragment-apikey-double-encoded-bracket-lowerhex-index-should-redact&sessionIdBackup%255bmeta%255d=guard-url-fragment-sessionid-double-encoded-bracket-lowerhex-meta-should-redact&api_key%255b0%255d%255bleaf%255d=guard-url-fragment-apikey-double-encoded-bracket-lowerhex-nested-should-redact&sessionIdBackup%255bmeta%255d%255b0%255d=guard-url-fragment-sessionid-double-encoded-bracket-lowerhex-nested-should-redact&api_key%5b0%5d=guard-url-fragment-apikey-encoded-bracket-lowerhex-index-should-redact&sessionIdBackup%5bmeta%5d=guard-url-fragment-sessionid-encoded-bracket-lowerhex-meta-should-redact&api_key%5b0%5d%5bleaf%5d=guard-url-fragment-apikey-encoded-bracket-lowerhex-nested-should-redact&sessionIdBackup%5bmeta%5d%5b0%5d=guard-url-fragment-sessionid-encoded-bracket-lowerhex-nested-should-redact;access_token=guard-url-fragment-semicolon-token-should-redact;apiKeyAlt=guard-url-fragment-semicolon-apikey-camel-alt-should-redact"
+                            target_url = "http://guard-url-user:guard-url-pass@127.0.0.1/internal?access_token=guard-url-token-should-redact&access_token_alt_stage=guard-url-access-token-alt-stage-should-redact&access.token.stage=guard-url-access-dot-token-stage-should-redact&id_token_backup=guard-url-id-token-backup-should-redact&id.token.backup=guard-url-id-dot-token-backup-should-redact&jwt_stage=guard-url-jwt-stage-should-redact&api_key=guard-url-apikey-should-redact&api.key.alt=guard-url-api-dot-key-alt-should-redact&apiKeyAlt=guard-url-api-key-camel-alt-should-redact&x_api_key=guard-url-xapikey-should-redact&x_api_key_alt_backup=guard-url-xapikey-backup-should-redact&x.api.key.alt=guard-url-x-dot-api-key-alt-should-redact&api_key[0]=guard-url-apikey-bracket-index-should-redact&api_key%5B0%5D=guard-url-apikey-encoded-bracket-index-should-redact&api_key%5B0%5D%5Bleaf%5D=guard-url-apikey-encoded-bracket-nested-should-redact&api_key%255B0%255D=guard-url-apikey-double-encoded-bracket-index-should-redact&api_key%255B0%255D%255Bleaf%255D=guard-url-apikey-double-encoded-bracket-nested-should-redact&api_key%25255B0%25255D=guard-url-apikey-triple-encoded-bracket-index-should-redact&api_key%25255B0%25255D%25255Bleaf%25255D=guard-url-apikey-triple-encoded-bracket-nested-should-redact&api_key%2525255B0%2525255D=guard-url-apikey-quadruple-encoded-bracket-index-should-redact&api_key%2525255B0%2525255D%2525255Bleaf%2525255D=guard-url-apikey-quadruple-encoded-bracket-nested-should-redact&api_key%2525255b0%2525255d=guard-url-apikey-quadruple-encoded-bracket-lowerhex-index-should-redact&api_key%2525255b0%2525255d%2525255bleaf%2525255d=guard-url-apikey-quadruple-encoded-bracket-lowerhex-nested-should-redact&api_key%25255b0%25255d=guard-url-apikey-triple-encoded-bracket-lowerhex-index-should-redact&api_key%25255b0%25255d%25255bleaf%25255d=guard-url-apikey-triple-encoded-bracket-lowerhex-nested-should-redact&api_key%255b0%255d=guard-url-apikey-double-encoded-bracket-lowerhex-index-should-redact&api_key%255b0%255d%255bleaf%255d=guard-url-apikey-double-encoded-bracket-lowerhex-nested-should-redact&api_key%5b0%5d=guard-url-apikey-encoded-bracket-lowerhex-index-should-redact&api_key%5b0%5d%5bleaf%5d=guard-url-apikey-encoded-bracket-lowerhex-nested-should-redact&client_secret=guard-client-secret-should-redact&client_secret_stage=guard-url-client-secret-stage-should-redact&client_secret.stage=guard-url-client-secret-dot-stage-should-redact&client.secret.stage=guard-url-client-dot-secret-stage-should-redact&secret_backup=guard-url-secret-backup-should-redact&secret.backup=guard-url-secret-dot-backup-should-redact&password=guard-url-password-should-redact&password_temp=guard-url-password-temp-should-redact&password.temp=guard-url-password-dot-temp-should-redact&refresh.token.alt=guard-url-refresh-dot-token-alt-should-redact&authorization=guard-url-authorization-should-redact&authorization_alt_stage=guard-url-authorization-alt-stage-should-redact&proxy_authorization=Basic%20guard-url-basic-should-redact&proxy.authorization.alt=guard-url-proxy-dot-authorization-alt-should-redact&cookie=guard-url-cookie-should-redact&cookie_alt=guard-url-cookie-alt-should-redact&cookie.alt=guard-url-cookie-dot-alt-should-redact&set-cookie-alt=guard-url-set-cookie-alt-should-redact&set-cookie.alt=guard-url-set-cookie-dot-alt-should-redact&set.cookie.alt=guard-url-set-dot-cookie-alt-should-redact&sessionid=guard-url-session-should-redact&sessionid_backup=guard-url-sessionid-backup-should-redact&sessionid.backup=guard-url-sessionid-dot-backup-should-redact&session.id.backup=guard-url-session-dot-id-backup-should-redact&sessionIdBackup=guard-url-session-id-camel-backup-should-redact&sessionIdBackup[meta]=guard-url-sessionid-camel-bracket-meta-should-redact&sessionIdBackup%5Bmeta%5D=guard-url-sessionid-camel-encoded-bracket-meta-should-redact&sessionIdBackup%5Bmeta%5D%5B0%5D=guard-url-sessionid-camel-encoded-bracket-nested-should-redact&sessionIdBackup%255Bmeta%255D=guard-url-sessionid-camel-double-encoded-bracket-meta-should-redact&sessionIdBackup%255Bmeta%255D%255B0%255D=guard-url-sessionid-camel-double-encoded-bracket-nested-should-redact&sessionIdBackup%25255Bmeta%25255D=guard-url-sessionid-camel-triple-encoded-bracket-meta-should-redact&sessionIdBackup%25255Bmeta%25255D%25255B0%25255D=guard-url-sessionid-camel-triple-encoded-bracket-nested-should-redact&sessionIdBackup%2525255Bmeta%2525255D=guard-url-sessionid-camel-quadruple-encoded-bracket-meta-should-redact&sessionIdBackup%2525255Bmeta%2525255D%2525255B0%2525255D=guard-url-sessionid-camel-quadruple-encoded-bracket-nested-should-redact&sessionIdBackup%2525255bmeta%2525255d=guard-url-sessionid-camel-quadruple-encoded-bracket-lowerhex-meta-should-redact&sessionIdBackup%2525255bmeta%2525255d%2525255b0%2525255d=guard-url-sessionid-camel-quadruple-encoded-bracket-lowerhex-nested-should-redact&sessionIdBackup%25255bmeta%25255d=guard-url-sessionid-camel-triple-encoded-bracket-lowerhex-meta-should-redact&sessionIdBackup%25255bmeta%25255d%25255b0%25255d=guard-url-sessionid-camel-triple-encoded-bracket-lowerhex-nested-should-redact&sessionIdBackup%255bmeta%255d=guard-url-sessionid-camel-double-encoded-bracket-lowerhex-meta-should-redact&sessionIdBackup%255bmeta%255d%255b0%255d=guard-url-sessionid-camel-double-encoded-bracket-lowerhex-nested-should-redact&sessionIdBackup%5bmeta%5d=guard-url-sessionid-camel-encoded-bracket-lowerhex-meta-should-redact&sessionIdBackup%5bmeta%5d%5b0%5d=guard-url-sessionid-camel-encoded-bracket-lowerhex-nested-should-redact;access_token=guard-url-semicolon-token-should-redact;apiKeyAlt=guard-url-semicolon-apikey-camel-alt-should-redact#access_token=guard-url-fragment-token-should-redact&apiKeyAlt=guard-url-fragment-apikey-camel-alt-should-redact&sessionIdBackup=guard-url-fragment-sessionid-camel-backup-should-redact&api_key%5B0%5D=guard-url-fragment-apikey-encoded-bracket-index-should-redact&sessionIdBackup%5Bmeta%5D=guard-url-fragment-sessionid-encoded-bracket-meta-should-redact&api_key%5B0%5D%5Bleaf%5D=guard-url-fragment-apikey-encoded-bracket-nested-should-redact&sessionIdBackup%5Bmeta%5D%5B0%5D=guard-url-fragment-sessionid-encoded-bracket-nested-should-redact&api_key%255B0%255D=guard-url-fragment-apikey-double-encoded-bracket-index-should-redact&sessionIdBackup%255Bmeta%255D=guard-url-fragment-sessionid-double-encoded-bracket-meta-should-redact&api_key%255B0%255D%255Bleaf%255D=guard-url-fragment-apikey-double-encoded-bracket-nested-should-redact&sessionIdBackup%255Bmeta%255D%255B0%255D=guard-url-fragment-sessionid-double-encoded-bracket-nested-should-redact&api_key%25255B0%25255D=guard-url-fragment-apikey-triple-encoded-bracket-index-should-redact&sessionIdBackup%25255Bmeta%25255D=guard-url-fragment-sessionid-triple-encoded-bracket-meta-should-redact&api_key%25255B0%25255D%25255Bleaf%25255D=guard-url-fragment-apikey-triple-encoded-bracket-nested-should-redact&sessionIdBackup%25255Bmeta%25255D%25255B0%25255D=guard-url-fragment-sessionid-triple-encoded-bracket-nested-should-redact&api_key%2525255B0%2525255D=guard-url-fragment-apikey-quadruple-encoded-bracket-index-should-redact&sessionIdBackup%2525255Bmeta%2525255D=guard-url-fragment-sessionid-quadruple-encoded-bracket-meta-should-redact&api_key%2525255B0%2525255D%2525255Bleaf%2525255D=guard-url-fragment-apikey-quadruple-encoded-bracket-nested-should-redact&sessionIdBackup%2525255Bmeta%2525255D%2525255B0%2525255D=guard-url-fragment-sessionid-quadruple-encoded-bracket-nested-should-redact&api_key%2525255b0%2525255d=guard-url-fragment-apikey-quadruple-encoded-bracket-lowerhex-index-should-redact&sessionIdBackup%2525255bmeta%2525255d=guard-url-fragment-sessionid-quadruple-encoded-bracket-lowerhex-meta-should-redact&api_key%2525255b0%2525255d%2525255bleaf%2525255d=guard-url-fragment-apikey-quadruple-encoded-bracket-lowerhex-nested-should-redact&sessionIdBackup%2525255bmeta%2525255d%2525255b0%2525255d=guard-url-fragment-sessionid-quadruple-encoded-bracket-lowerhex-nested-should-redact&api_key%25255b0%25255d=guard-url-fragment-apikey-triple-encoded-bracket-lowerhex-index-should-redact&sessionIdBackup%25255bmeta%25255d=guard-url-fragment-sessionid-triple-encoded-bracket-lowerhex-meta-should-redact&api_key%25255b0%25255d%25255bleaf%25255d=guard-url-fragment-apikey-triple-encoded-bracket-lowerhex-nested-should-redact&sessionIdBackup%25255bmeta%25255d%25255b0%25255d=guard-url-fragment-sessionid-triple-encoded-bracket-lowerhex-nested-should-redact&api_key%255b0%255d=guard-url-fragment-apikey-double-encoded-bracket-lowerhex-index-should-redact&sessionIdBackup%255bmeta%255d=guard-url-fragment-sessionid-double-encoded-bracket-lowerhex-meta-should-redact&api_key%255b0%255d%255bleaf%255d=guard-url-fragment-apikey-double-encoded-bracket-lowerhex-nested-should-redact&sessionIdBackup%255bmeta%255d%255b0%255d=guard-url-fragment-sessionid-double-encoded-bracket-lowerhex-nested-should-redact&api_key%5b0%5d=guard-url-fragment-apikey-encoded-bracket-lowerhex-index-should-redact&sessionIdBackup%5bmeta%5d=guard-url-fragment-sessionid-encoded-bracket-lowerhex-meta-should-redact&api_key%5b0%5d%5bleaf%5d=guard-url-fragment-apikey-encoded-bracket-lowerhex-nested-should-redact&sessionIdBackup%5bmeta%5d%5b0%5d=guard-url-fragment-sessionid-encoded-bracket-lowerhex-nested-should-redact;access_token=guard-url-fragment-semicolon-token-should-redact;apiKeyAlt=guard-url-fragment-semicolon-apikey-camel-alt-should-redact"
                         }
                         $body = ($payload | ConvertTo-Json -Compress)
                     }
@@ -407,7 +452,7 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             "sessionIdBackup%2525255Bmeta%2525255D%2525255B0%2525255D" = "guard-sessionid-camel-quadruple-encoded-bracket-nested-should-redact"
                             "set.cookie.alt" = "sessionid=guard-set-dot-cookie-alt-session-should-redact; Path=/; HttpOnly"
                             jwt = $authHeader
-                            target_url = "http://guard-url-user:guard-url-pass@127.0.0.1/internal?access_token=guard-url-token-should-redact&access_token_alt_stage=guard-url-access-token-alt-stage-should-redact&access.token.stage=guard-url-access-dot-token-stage-should-redact&id_token_backup=guard-url-id-token-backup-should-redact&id.token.backup=guard-url-id-dot-token-backup-should-redact&jwt_stage=guard-url-jwt-stage-should-redact&api_key=guard-url-apikey-should-redact&api.key.alt=guard-url-api-dot-key-alt-should-redact&apiKeyAlt=guard-url-api-key-camel-alt-should-redact&x_api_key=guard-url-xapikey-should-redact&x_api_key_alt_backup=guard-url-xapikey-backup-should-redact&x.api.key.alt=guard-url-x-dot-api-key-alt-should-redact&api_key[0]=guard-url-apikey-bracket-index-should-redact&api_key%5B0%5D=guard-url-apikey-encoded-bracket-index-should-redact&api_key%5B0%5D%5Bleaf%5D=guard-url-apikey-encoded-bracket-nested-should-redact&api_key%255B0%255D=guard-url-apikey-double-encoded-bracket-index-should-redact&api_key%255B0%255D%255Bleaf%255D=guard-url-apikey-double-encoded-bracket-nested-should-redact&api_key%25255B0%25255D=guard-url-apikey-triple-encoded-bracket-index-should-redact&api_key%25255B0%25255D%25255Bleaf%25255D=guard-url-apikey-triple-encoded-bracket-nested-should-redact&api_key%2525255B0%2525255D=guard-url-apikey-quadruple-encoded-bracket-index-should-redact&api_key%2525255B0%2525255D%2525255Bleaf%2525255D=guard-url-apikey-quadruple-encoded-bracket-nested-should-redact&api_key%25255b0%25255d=guard-url-apikey-triple-encoded-bracket-lowerhex-index-should-redact&api_key%25255b0%25255d%25255bleaf%25255d=guard-url-apikey-triple-encoded-bracket-lowerhex-nested-should-redact&api_key%255b0%255d=guard-url-apikey-double-encoded-bracket-lowerhex-index-should-redact&api_key%255b0%255d%255bleaf%255d=guard-url-apikey-double-encoded-bracket-lowerhex-nested-should-redact&api_key%5b0%5d=guard-url-apikey-encoded-bracket-lowerhex-index-should-redact&api_key%5b0%5d%5bleaf%5d=guard-url-apikey-encoded-bracket-lowerhex-nested-should-redact&client_secret=guard-client-secret-should-redact&client_secret_stage=guard-url-client-secret-stage-should-redact&client_secret.stage=guard-url-client-secret-dot-stage-should-redact&client.secret.stage=guard-url-client-dot-secret-stage-should-redact&secret_backup=guard-url-secret-backup-should-redact&secret.backup=guard-url-secret-dot-backup-should-redact&password=guard-url-password-should-redact&password_temp=guard-url-password-temp-should-redact&password.temp=guard-url-password-dot-temp-should-redact&refresh.token.alt=guard-url-refresh-dot-token-alt-should-redact&authorization=guard-url-authorization-should-redact&authorization_alt_stage=guard-url-authorization-alt-stage-should-redact&proxy_authorization=Basic%20guard-url-basic-should-redact&proxy.authorization.alt=guard-url-proxy-dot-authorization-alt-should-redact&cookie=guard-url-cookie-should-redact&cookie_alt=guard-url-cookie-alt-should-redact&cookie.alt=guard-url-cookie-dot-alt-should-redact&set-cookie-alt=guard-url-set-cookie-alt-should-redact&set-cookie.alt=guard-url-set-cookie-dot-alt-should-redact&set.cookie.alt=guard-url-set-dot-cookie-alt-should-redact&sessionid=guard-url-session-should-redact&sessionid_backup=guard-url-sessionid-backup-should-redact&sessionid.backup=guard-url-sessionid-dot-backup-should-redact&session.id.backup=guard-url-session-dot-id-backup-should-redact&sessionIdBackup=guard-url-session-id-camel-backup-should-redact&sessionIdBackup[meta]=guard-url-sessionid-camel-bracket-meta-should-redact&sessionIdBackup%5Bmeta%5D=guard-url-sessionid-camel-encoded-bracket-meta-should-redact&sessionIdBackup%5Bmeta%5D%5B0%5D=guard-url-sessionid-camel-encoded-bracket-nested-should-redact&sessionIdBackup%255Bmeta%255D=guard-url-sessionid-camel-double-encoded-bracket-meta-should-redact&sessionIdBackup%255Bmeta%255D%255B0%255D=guard-url-sessionid-camel-double-encoded-bracket-nested-should-redact&sessionIdBackup%25255Bmeta%25255D=guard-url-sessionid-camel-triple-encoded-bracket-meta-should-redact&sessionIdBackup%25255Bmeta%25255D%25255B0%25255D=guard-url-sessionid-camel-triple-encoded-bracket-nested-should-redact&sessionIdBackup%2525255Bmeta%2525255D=guard-url-sessionid-camel-quadruple-encoded-bracket-meta-should-redact&sessionIdBackup%2525255Bmeta%2525255D%2525255B0%2525255D=guard-url-sessionid-camel-quadruple-encoded-bracket-nested-should-redact&sessionIdBackup%25255bmeta%25255d=guard-url-sessionid-camel-triple-encoded-bracket-lowerhex-meta-should-redact&sessionIdBackup%25255bmeta%25255d%25255b0%25255d=guard-url-sessionid-camel-triple-encoded-bracket-lowerhex-nested-should-redact&sessionIdBackup%255bmeta%255d=guard-url-sessionid-camel-double-encoded-bracket-lowerhex-meta-should-redact&sessionIdBackup%255bmeta%255d%255b0%255d=guard-url-sessionid-camel-double-encoded-bracket-lowerhex-nested-should-redact&sessionIdBackup%5bmeta%5d=guard-url-sessionid-camel-encoded-bracket-lowerhex-meta-should-redact&sessionIdBackup%5bmeta%5d%5b0%5d=guard-url-sessionid-camel-encoded-bracket-lowerhex-nested-should-redact;access_token=guard-url-semicolon-token-should-redact;apiKeyAlt=guard-url-semicolon-apikey-camel-alt-should-redact#access_token=guard-url-fragment-token-should-redact&apiKeyAlt=guard-url-fragment-apikey-camel-alt-should-redact&sessionIdBackup=guard-url-fragment-sessionid-camel-backup-should-redact&api_key%5B0%5D=guard-url-fragment-apikey-encoded-bracket-index-should-redact&sessionIdBackup%5Bmeta%5D=guard-url-fragment-sessionid-encoded-bracket-meta-should-redact&api_key%5B0%5D%5Bleaf%5D=guard-url-fragment-apikey-encoded-bracket-nested-should-redact&sessionIdBackup%5Bmeta%5D%5B0%5D=guard-url-fragment-sessionid-encoded-bracket-nested-should-redact&api_key%255B0%255D=guard-url-fragment-apikey-double-encoded-bracket-index-should-redact&sessionIdBackup%255Bmeta%255D=guard-url-fragment-sessionid-double-encoded-bracket-meta-should-redact&api_key%255B0%255D%255Bleaf%255D=guard-url-fragment-apikey-double-encoded-bracket-nested-should-redact&sessionIdBackup%255Bmeta%255D%255B0%255D=guard-url-fragment-sessionid-double-encoded-bracket-nested-should-redact&api_key%25255B0%25255D=guard-url-fragment-apikey-triple-encoded-bracket-index-should-redact&sessionIdBackup%25255Bmeta%25255D=guard-url-fragment-sessionid-triple-encoded-bracket-meta-should-redact&api_key%25255B0%25255D%25255Bleaf%25255D=guard-url-fragment-apikey-triple-encoded-bracket-nested-should-redact&sessionIdBackup%25255Bmeta%25255D%25255B0%25255D=guard-url-fragment-sessionid-triple-encoded-bracket-nested-should-redact&api_key%2525255B0%2525255D=guard-url-fragment-apikey-quadruple-encoded-bracket-index-should-redact&sessionIdBackup%2525255Bmeta%2525255D=guard-url-fragment-sessionid-quadruple-encoded-bracket-meta-should-redact&api_key%2525255B0%2525255D%2525255Bleaf%2525255D=guard-url-fragment-apikey-quadruple-encoded-bracket-nested-should-redact&sessionIdBackup%2525255Bmeta%2525255D%2525255B0%2525255D=guard-url-fragment-sessionid-quadruple-encoded-bracket-nested-should-redact&api_key%25255b0%25255d=guard-url-fragment-apikey-triple-encoded-bracket-lowerhex-index-should-redact&sessionIdBackup%25255bmeta%25255d=guard-url-fragment-sessionid-triple-encoded-bracket-lowerhex-meta-should-redact&api_key%25255b0%25255d%25255bleaf%25255d=guard-url-fragment-apikey-triple-encoded-bracket-lowerhex-nested-should-redact&sessionIdBackup%25255bmeta%25255d%25255b0%25255d=guard-url-fragment-sessionid-triple-encoded-bracket-lowerhex-nested-should-redact&api_key%255b0%255d=guard-url-fragment-apikey-double-encoded-bracket-lowerhex-index-should-redact&sessionIdBackup%255bmeta%255d=guard-url-fragment-sessionid-double-encoded-bracket-lowerhex-meta-should-redact&api_key%255b0%255d%255bleaf%255d=guard-url-fragment-apikey-double-encoded-bracket-lowerhex-nested-should-redact&sessionIdBackup%255bmeta%255d%255b0%255d=guard-url-fragment-sessionid-double-encoded-bracket-lowerhex-nested-should-redact&api_key%5b0%5d=guard-url-fragment-apikey-encoded-bracket-lowerhex-index-should-redact&sessionIdBackup%5bmeta%5d=guard-url-fragment-sessionid-encoded-bracket-lowerhex-meta-should-redact&api_key%5b0%5d%5bleaf%5d=guard-url-fragment-apikey-encoded-bracket-lowerhex-nested-should-redact&sessionIdBackup%5bmeta%5d%5b0%5d=guard-url-fragment-sessionid-encoded-bracket-lowerhex-nested-should-redact;access_token=guard-url-fragment-semicolon-token-should-redact;apiKeyAlt=guard-url-fragment-semicolon-apikey-camel-alt-should-redact"
+                            target_url = "http://guard-url-user:guard-url-pass@127.0.0.1/internal?access_token=guard-url-token-should-redact&access_token_alt_stage=guard-url-access-token-alt-stage-should-redact&access.token.stage=guard-url-access-dot-token-stage-should-redact&id_token_backup=guard-url-id-token-backup-should-redact&id.token.backup=guard-url-id-dot-token-backup-should-redact&jwt_stage=guard-url-jwt-stage-should-redact&api_key=guard-url-apikey-should-redact&api.key.alt=guard-url-api-dot-key-alt-should-redact&apiKeyAlt=guard-url-api-key-camel-alt-should-redact&x_api_key=guard-url-xapikey-should-redact&x_api_key_alt_backup=guard-url-xapikey-backup-should-redact&x.api.key.alt=guard-url-x-dot-api-key-alt-should-redact&api_key[0]=guard-url-apikey-bracket-index-should-redact&api_key%5B0%5D=guard-url-apikey-encoded-bracket-index-should-redact&api_key%5B0%5D%5Bleaf%5D=guard-url-apikey-encoded-bracket-nested-should-redact&api_key%255B0%255D=guard-url-apikey-double-encoded-bracket-index-should-redact&api_key%255B0%255D%255Bleaf%255D=guard-url-apikey-double-encoded-bracket-nested-should-redact&api_key%25255B0%25255D=guard-url-apikey-triple-encoded-bracket-index-should-redact&api_key%25255B0%25255D%25255Bleaf%25255D=guard-url-apikey-triple-encoded-bracket-nested-should-redact&api_key%2525255B0%2525255D=guard-url-apikey-quadruple-encoded-bracket-index-should-redact&api_key%2525255B0%2525255D%2525255Bleaf%2525255D=guard-url-apikey-quadruple-encoded-bracket-nested-should-redact&api_key%2525255b0%2525255d=guard-url-apikey-quadruple-encoded-bracket-lowerhex-index-should-redact&api_key%2525255b0%2525255d%2525255bleaf%2525255d=guard-url-apikey-quadruple-encoded-bracket-lowerhex-nested-should-redact&api_key%25255b0%25255d=guard-url-apikey-triple-encoded-bracket-lowerhex-index-should-redact&api_key%25255b0%25255d%25255bleaf%25255d=guard-url-apikey-triple-encoded-bracket-lowerhex-nested-should-redact&api_key%255b0%255d=guard-url-apikey-double-encoded-bracket-lowerhex-index-should-redact&api_key%255b0%255d%255bleaf%255d=guard-url-apikey-double-encoded-bracket-lowerhex-nested-should-redact&api_key%5b0%5d=guard-url-apikey-encoded-bracket-lowerhex-index-should-redact&api_key%5b0%5d%5bleaf%5d=guard-url-apikey-encoded-bracket-lowerhex-nested-should-redact&client_secret=guard-client-secret-should-redact&client_secret_stage=guard-url-client-secret-stage-should-redact&client_secret.stage=guard-url-client-secret-dot-stage-should-redact&client.secret.stage=guard-url-client-dot-secret-stage-should-redact&secret_backup=guard-url-secret-backup-should-redact&secret.backup=guard-url-secret-dot-backup-should-redact&password=guard-url-password-should-redact&password_temp=guard-url-password-temp-should-redact&password.temp=guard-url-password-dot-temp-should-redact&refresh.token.alt=guard-url-refresh-dot-token-alt-should-redact&authorization=guard-url-authorization-should-redact&authorization_alt_stage=guard-url-authorization-alt-stage-should-redact&proxy_authorization=Basic%20guard-url-basic-should-redact&proxy.authorization.alt=guard-url-proxy-dot-authorization-alt-should-redact&cookie=guard-url-cookie-should-redact&cookie_alt=guard-url-cookie-alt-should-redact&cookie.alt=guard-url-cookie-dot-alt-should-redact&set-cookie-alt=guard-url-set-cookie-alt-should-redact&set-cookie.alt=guard-url-set-cookie-dot-alt-should-redact&set.cookie.alt=guard-url-set-dot-cookie-alt-should-redact&sessionid=guard-url-session-should-redact&sessionid_backup=guard-url-sessionid-backup-should-redact&sessionid.backup=guard-url-sessionid-dot-backup-should-redact&session.id.backup=guard-url-session-dot-id-backup-should-redact&sessionIdBackup=guard-url-session-id-camel-backup-should-redact&sessionIdBackup[meta]=guard-url-sessionid-camel-bracket-meta-should-redact&sessionIdBackup%5Bmeta%5D=guard-url-sessionid-camel-encoded-bracket-meta-should-redact&sessionIdBackup%5Bmeta%5D%5B0%5D=guard-url-sessionid-camel-encoded-bracket-nested-should-redact&sessionIdBackup%255Bmeta%255D=guard-url-sessionid-camel-double-encoded-bracket-meta-should-redact&sessionIdBackup%255Bmeta%255D%255B0%255D=guard-url-sessionid-camel-double-encoded-bracket-nested-should-redact&sessionIdBackup%25255Bmeta%25255D=guard-url-sessionid-camel-triple-encoded-bracket-meta-should-redact&sessionIdBackup%25255Bmeta%25255D%25255B0%25255D=guard-url-sessionid-camel-triple-encoded-bracket-nested-should-redact&sessionIdBackup%2525255Bmeta%2525255D=guard-url-sessionid-camel-quadruple-encoded-bracket-meta-should-redact&sessionIdBackup%2525255Bmeta%2525255D%2525255B0%2525255D=guard-url-sessionid-camel-quadruple-encoded-bracket-nested-should-redact&sessionIdBackup%2525255bmeta%2525255d=guard-url-sessionid-camel-quadruple-encoded-bracket-lowerhex-meta-should-redact&sessionIdBackup%2525255bmeta%2525255d%2525255b0%2525255d=guard-url-sessionid-camel-quadruple-encoded-bracket-lowerhex-nested-should-redact&sessionIdBackup%25255bmeta%25255d=guard-url-sessionid-camel-triple-encoded-bracket-lowerhex-meta-should-redact&sessionIdBackup%25255bmeta%25255d%25255b0%25255d=guard-url-sessionid-camel-triple-encoded-bracket-lowerhex-nested-should-redact&sessionIdBackup%255bmeta%255d=guard-url-sessionid-camel-double-encoded-bracket-lowerhex-meta-should-redact&sessionIdBackup%255bmeta%255d%255b0%255d=guard-url-sessionid-camel-double-encoded-bracket-lowerhex-nested-should-redact&sessionIdBackup%5bmeta%5d=guard-url-sessionid-camel-encoded-bracket-lowerhex-meta-should-redact&sessionIdBackup%5bmeta%5d%5b0%5d=guard-url-sessionid-camel-encoded-bracket-lowerhex-nested-should-redact;access_token=guard-url-semicolon-token-should-redact;apiKeyAlt=guard-url-semicolon-apikey-camel-alt-should-redact#access_token=guard-url-fragment-token-should-redact&apiKeyAlt=guard-url-fragment-apikey-camel-alt-should-redact&sessionIdBackup=guard-url-fragment-sessionid-camel-backup-should-redact&api_key%5B0%5D=guard-url-fragment-apikey-encoded-bracket-index-should-redact&sessionIdBackup%5Bmeta%5D=guard-url-fragment-sessionid-encoded-bracket-meta-should-redact&api_key%5B0%5D%5Bleaf%5D=guard-url-fragment-apikey-encoded-bracket-nested-should-redact&sessionIdBackup%5Bmeta%5D%5B0%5D=guard-url-fragment-sessionid-encoded-bracket-nested-should-redact&api_key%255B0%255D=guard-url-fragment-apikey-double-encoded-bracket-index-should-redact&sessionIdBackup%255Bmeta%255D=guard-url-fragment-sessionid-double-encoded-bracket-meta-should-redact&api_key%255B0%255D%255Bleaf%255D=guard-url-fragment-apikey-double-encoded-bracket-nested-should-redact&sessionIdBackup%255Bmeta%255D%255B0%255D=guard-url-fragment-sessionid-double-encoded-bracket-nested-should-redact&api_key%25255B0%25255D=guard-url-fragment-apikey-triple-encoded-bracket-index-should-redact&sessionIdBackup%25255Bmeta%25255D=guard-url-fragment-sessionid-triple-encoded-bracket-meta-should-redact&api_key%25255B0%25255D%25255Bleaf%25255D=guard-url-fragment-apikey-triple-encoded-bracket-nested-should-redact&sessionIdBackup%25255Bmeta%25255D%25255B0%25255D=guard-url-fragment-sessionid-triple-encoded-bracket-nested-should-redact&api_key%2525255B0%2525255D=guard-url-fragment-apikey-quadruple-encoded-bracket-index-should-redact&sessionIdBackup%2525255Bmeta%2525255D=guard-url-fragment-sessionid-quadruple-encoded-bracket-meta-should-redact&api_key%2525255B0%2525255D%2525255Bleaf%2525255D=guard-url-fragment-apikey-quadruple-encoded-bracket-nested-should-redact&sessionIdBackup%2525255Bmeta%2525255D%2525255B0%2525255D=guard-url-fragment-sessionid-quadruple-encoded-bracket-nested-should-redact&api_key%2525255b0%2525255d=guard-url-fragment-apikey-quadruple-encoded-bracket-lowerhex-index-should-redact&sessionIdBackup%2525255bmeta%2525255d=guard-url-fragment-sessionid-quadruple-encoded-bracket-lowerhex-meta-should-redact&api_key%2525255b0%2525255d%2525255bleaf%2525255d=guard-url-fragment-apikey-quadruple-encoded-bracket-lowerhex-nested-should-redact&sessionIdBackup%2525255bmeta%2525255d%2525255b0%2525255d=guard-url-fragment-sessionid-quadruple-encoded-bracket-lowerhex-nested-should-redact&api_key%25255b0%25255d=guard-url-fragment-apikey-triple-encoded-bracket-lowerhex-index-should-redact&sessionIdBackup%25255bmeta%25255d=guard-url-fragment-sessionid-triple-encoded-bracket-lowerhex-meta-should-redact&api_key%25255b0%25255d%25255bleaf%25255d=guard-url-fragment-apikey-triple-encoded-bracket-lowerhex-nested-should-redact&sessionIdBackup%25255bmeta%25255d%25255b0%25255d=guard-url-fragment-sessionid-triple-encoded-bracket-lowerhex-nested-should-redact&api_key%255b0%255d=guard-url-fragment-apikey-double-encoded-bracket-lowerhex-index-should-redact&sessionIdBackup%255bmeta%255d=guard-url-fragment-sessionid-double-encoded-bracket-lowerhex-meta-should-redact&api_key%255b0%255d%255bleaf%255d=guard-url-fragment-apikey-double-encoded-bracket-lowerhex-nested-should-redact&sessionIdBackup%255bmeta%255d%255b0%255d=guard-url-fragment-sessionid-double-encoded-bracket-lowerhex-nested-should-redact&api_key%5b0%5d=guard-url-fragment-apikey-encoded-bracket-lowerhex-index-should-redact&sessionIdBackup%5bmeta%5d=guard-url-fragment-sessionid-encoded-bracket-lowerhex-meta-should-redact&api_key%5b0%5d%5bleaf%5d=guard-url-fragment-apikey-encoded-bracket-lowerhex-nested-should-redact&sessionIdBackup%5bmeta%5d%5b0%5d=guard-url-fragment-sessionid-encoded-bracket-lowerhex-nested-should-redact;access_token=guard-url-fragment-semicolon-token-should-redact;apiKeyAlt=guard-url-fragment-semicolon-apikey-camel-alt-should-redact"
                         }
                         $body = ($payload | ConvertTo-Json -Compress)
                     }
@@ -455,6 +500,35 @@ function Test-IsValidPublishDir([string]$Path) {
     $exe = Join-Path $Path "DataHz.Api.exe"
     $dll = Join-Path $Path "DataHz.Api.dll"
     return (Test-Path $exe) -or (Test-Path $dll)
+}
+
+function Stop-ListenerServer([psobject]$Server) {
+    if ($null -eq $Server) {
+        return
+    }
+
+    $baseUrl = ""
+    if ($Server.PSObject.Properties.Match("BaseUrl").Count -gt 0) {
+        $baseUrl = [string]$Server.BaseUrl
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($baseUrl)) {
+        $shutdownUrl = $baseUrl
+        if (-not $shutdownUrl.EndsWith("/")) {
+            $shutdownUrl += "/"
+        }
+        $shutdownUrl += "__shutdown"
+        try {
+            Invoke-WebRequest -Uri $shutdownUrl -Method Get -UseBasicParsing -TimeoutSec 2 | Out-Null
+        }
+        catch {
+        }
+    }
+
+    if ($Server.PSObject.Properties.Match("Job").Count -gt 0 -and $Server.Job) {
+        Stop-Job -Job $Server.Job -ErrorAction SilentlyContinue
+        Remove-Job -Job $Server.Job -Force -ErrorAction SilentlyContinue
+    }
 }
 
 function Resolve-PublishDirForAutoPackage([string]$Root, [string]$PackageName) {
@@ -1427,10 +1501,7 @@ try {
                     -StdErrPath $wrapperErrLog
             }
             finally {
-                if ($smokeServer -and $smokeServer.Job) {
-                    Stop-Job -Job $smokeServer.Job -ErrorAction SilentlyContinue
-                    Remove-Job -Job $smokeServer.Job -Force -ErrorAction SilentlyContinue
-                }
+                Stop-ListenerServer -Server $smokeServer
             }
 
             if ($invoke.ExitCode -ne 0) {
@@ -1540,10 +1611,7 @@ try {
                 }
             }
             finally {
-                if ($binaryServer -and $binaryServer.Job) {
-                    Stop-Job -Job $binaryServer.Job -ErrorAction SilentlyContinue
-                    Remove-Job -Job $binaryServer.Job -Force -ErrorAction SilentlyContinue
-                }
+                Stop-ListenerServer -Server $binaryServer
             }
         }))
 
@@ -1685,6 +1753,8 @@ try {
                     "guard-url-apikey-double-encoded-bracket-lowerhex-nested-should-redact",
                     "guard-url-apikey-triple-encoded-bracket-lowerhex-index-should-redact",
                     "guard-url-apikey-triple-encoded-bracket-lowerhex-nested-should-redact",
+                    "guard-url-apikey-quadruple-encoded-bracket-lowerhex-index-should-redact",
+                    "guard-url-apikey-quadruple-encoded-bracket-lowerhex-nested-should-redact",
                     "guard-url-xapikey-should-redact",
                     "guard-url-xapikey-backup-should-redact",
                     "guard-url-x-dot-api-key-alt-should-redact",
@@ -1718,6 +1788,8 @@ try {
                     "guard-url-sessionid-camel-double-encoded-bracket-lowerhex-nested-should-redact",
                     "guard-url-sessionid-camel-triple-encoded-bracket-lowerhex-meta-should-redact",
                     "guard-url-sessionid-camel-triple-encoded-bracket-lowerhex-nested-should-redact",
+                    "guard-url-sessionid-camel-quadruple-encoded-bracket-lowerhex-meta-should-redact",
+                    "guard-url-sessionid-camel-quadruple-encoded-bracket-lowerhex-nested-should-redact",
                     "guard-url-fragment-token-should-redact",
                     "guard-url-fragment-apikey-camel-alt-should-redact",
                     "guard-url-fragment-sessionid-camel-backup-should-redact",
@@ -1743,12 +1815,16 @@ try {
                     "guard-url-fragment-apikey-double-encoded-bracket-lowerhex-nested-should-redact",
                     "guard-url-fragment-apikey-triple-encoded-bracket-lowerhex-index-should-redact",
                     "guard-url-fragment-apikey-triple-encoded-bracket-lowerhex-nested-should-redact",
+                    "guard-url-fragment-apikey-quadruple-encoded-bracket-lowerhex-index-should-redact",
+                    "guard-url-fragment-apikey-quadruple-encoded-bracket-lowerhex-nested-should-redact",
                     "guard-url-fragment-sessionid-encoded-bracket-lowerhex-meta-should-redact",
                     "guard-url-fragment-sessionid-encoded-bracket-lowerhex-nested-should-redact",
                     "guard-url-fragment-sessionid-double-encoded-bracket-lowerhex-meta-should-redact",
                     "guard-url-fragment-sessionid-double-encoded-bracket-lowerhex-nested-should-redact",
                     "guard-url-fragment-sessionid-triple-encoded-bracket-lowerhex-meta-should-redact",
                     "guard-url-fragment-sessionid-triple-encoded-bracket-lowerhex-nested-should-redact",
+                    "guard-url-fragment-sessionid-quadruple-encoded-bracket-lowerhex-meta-should-redact",
+                    "guard-url-fragment-sessionid-quadruple-encoded-bracket-lowerhex-nested-should-redact",
                     "guard-url-semicolon-token-should-redact",
                     "guard-url-semicolon-apikey-camel-alt-should-redact",
                     "guard-url-fragment-semicolon-token-should-redact",
@@ -1789,10 +1865,7 @@ try {
                 }
             }
             finally {
-                if ($secretServer -and $secretServer.Job) {
-                    Stop-Job -Job $secretServer.Job -ErrorAction SilentlyContinue
-                    Remove-Job -Job $secretServer.Job -Force -ErrorAction SilentlyContinue
-                }
+                Stop-ListenerServer -Server $secretServer
             }
         }))
 
@@ -1862,10 +1935,7 @@ try {
                 }
             }
             finally {
-                if ($smokeServer -and $smokeServer.Job) {
-                    Stop-Job -Job $smokeServer.Job -ErrorAction SilentlyContinue
-                    Remove-Job -Job $smokeServer.Job -Force -ErrorAction SilentlyContinue
-                }
+                Stop-ListenerServer -Server $smokeServer
             }
         }))
 
@@ -1929,10 +1999,7 @@ try {
                 }
             }
             finally {
-                if ($smokeServer -and $smokeServer.Job) {
-                    Stop-Job -Job $smokeServer.Job -ErrorAction SilentlyContinue
-                    Remove-Job -Job $smokeServer.Job -Force -ErrorAction SilentlyContinue
-                }
+                Stop-ListenerServer -Server $smokeServer
             }
         }))
 
@@ -1985,6 +2052,8 @@ try {
             $querySessionIdDoubleEncodedLowerHexBracketMetaSecret = "guard-baseurl-sessionid-double-encoded-lowerhex-bracket-meta-secret"
             $queryApiKeyTripleEncodedLowerHexBracketIndexSecret = "guard-baseurl-apikey-triple-encoded-lowerhex-bracket-index-secret"
             $querySessionIdTripleEncodedLowerHexBracketMetaSecret = "guard-baseurl-sessionid-triple-encoded-lowerhex-bracket-meta-secret"
+            $queryApiKeyQuadrupleEncodedLowerHexBracketIndexSecret = "guard-baseurl-apikey-quadruple-encoded-lowerhex-bracket-index-secret"
+            $querySessionIdQuadrupleEncodedLowerHexBracketMetaSecret = "guard-baseurl-sessionid-quadruple-encoded-lowerhex-bracket-meta-secret"
             $queryPasswordDotTempSecret = "guard-baseurl-password-dot-temp-secret"
             $queryClientSecretDotStageSecret = "guard-baseurl-client-secret-dot-stage-secret"
             $querySecretDotBackupSecret = "guard-baseurl-secret-dot-backup-secret"
@@ -2025,6 +2094,8 @@ try {
             $queryFragmentSessionIdDoubleEncodedLowerHexBracketMetaSecret = "guard-baseurl-fragment-sessionid-double-encoded-lowerhex-bracket-meta-secret"
             $queryFragmentApiKeyTripleEncodedLowerHexBracketIndexSecret = "guard-baseurl-fragment-apikey-triple-encoded-lowerhex-bracket-index-secret"
             $queryFragmentSessionIdTripleEncodedLowerHexBracketMetaSecret = "guard-baseurl-fragment-sessionid-triple-encoded-lowerhex-bracket-meta-secret"
+            $queryFragmentApiKeyQuadrupleEncodedLowerHexBracketIndexSecret = "guard-baseurl-fragment-apikey-quadruple-encoded-lowerhex-bracket-index-secret"
+            $queryFragmentSessionIdQuadrupleEncodedLowerHexBracketMetaSecret = "guard-baseurl-fragment-sessionid-quadruple-encoded-lowerhex-bracket-meta-secret"
             $rawBaseUrl = ('http://127.0.0.1:{0}?api_key={1}&x_api_key={2}&x_api_key_alt_backup={3}&password={4}&password_temp={5}&client_secret={6}&client_secret_stage={7}&secret_backup={8}&refresh_token={9}&access_token_alt_stage={10}&cookie={11}&cookie_alt={12}&set-cookie-alt={13}&sessionid={14}&sessionid_backup={15}&authorization={16}&id_token={17}&id_token_backup={18}' -f `
                 $smokePort, `
                 $queryApiKeySecret, `
@@ -2071,13 +2142,15 @@ try {
                 $querySessionIdQuadrupleEncodedBracketMetaSecret, `
                 $queryApiKeyQuadrupleEncodedBracketNestedSecret, `
                 $querySessionIdQuadrupleEncodedBracketNestedSecret)
-            $rawBaseUrl += ('&api_key%5b0%5d={0}&sessionIdBackup%5bmeta%5d={1}&api_key%255b0%255d={2}&sessionIdBackup%255bmeta%255d={3}&api_key%25255b0%25255d={4}&sessionIdBackup%25255bmeta%25255d={5}' -f `
+            $rawBaseUrl += ('&api_key%5b0%5d={0}&sessionIdBackup%5bmeta%5d={1}&api_key%255b0%255d={2}&sessionIdBackup%255bmeta%255d={3}&api_key%25255b0%25255d={4}&sessionIdBackup%25255bmeta%25255d={5}&api_key%2525255b0%2525255d={6}&sessionIdBackup%2525255bmeta%2525255d={7}' -f `
                 $queryApiKeyEncodedLowerHexBracketIndexSecret, `
                 $querySessionIdEncodedLowerHexBracketMetaSecret, `
                 $queryApiKeyDoubleEncodedLowerHexBracketIndexSecret, `
                 $querySessionIdDoubleEncodedLowerHexBracketMetaSecret, `
                 $queryApiKeyTripleEncodedLowerHexBracketIndexSecret, `
-                $querySessionIdTripleEncodedLowerHexBracketMetaSecret)
+                $querySessionIdTripleEncodedLowerHexBracketMetaSecret, `
+                $queryApiKeyQuadrupleEncodedLowerHexBracketIndexSecret, `
+                $querySessionIdQuadrupleEncodedLowerHexBracketMetaSecret)
             $rawBaseUrl += ('&api.key.alt={0}&x.api.key.alt={1}&access.token.stage={2}&id.token.backup={3}&refresh.token.alt={4}&proxy.authorization.alt={5}&client.secret.stage={6}&set.cookie.alt={7}&session.id.backup={8}' -f `
                 $queryApiDotKeyAltSecret, `
                 $queryXDotApiKeyAltSecret, `
@@ -2108,20 +2181,22 @@ try {
                 $queryFragmentSessionIdQuadrupleEncodedBracketMetaSecret, `
                 $queryFragmentApiKeyQuadrupleEncodedBracketNestedSecret, `
                 $queryFragmentSessionIdQuadrupleEncodedBracketNestedSecret)
-            $rawBaseUrl += ('&api_key%5b0%5d={0}&sessionIdBackup%5bmeta%5d={1}&api_key%255b0%255d={2}&sessionIdBackup%255bmeta%255d={3}&api_key%25255b0%25255d={4}&sessionIdBackup%25255bmeta%25255d={5}' -f `
+            $rawBaseUrl += ('&api_key%5b0%5d={0}&sessionIdBackup%5bmeta%5d={1}&api_key%255b0%255d={2}&sessionIdBackup%255bmeta%255d={3}&api_key%25255b0%25255d={4}&sessionIdBackup%25255bmeta%25255d={5}&api_key%2525255b0%2525255d={6}&sessionIdBackup%2525255bmeta%2525255d={7}' -f `
                 $queryFragmentApiKeyEncodedLowerHexBracketIndexSecret, `
                 $queryFragmentSessionIdEncodedLowerHexBracketMetaSecret, `
                 $queryFragmentApiKeyDoubleEncodedLowerHexBracketIndexSecret, `
                 $queryFragmentSessionIdDoubleEncodedLowerHexBracketMetaSecret, `
                 $queryFragmentApiKeyTripleEncodedLowerHexBracketIndexSecret, `
-                $queryFragmentSessionIdTripleEncodedLowerHexBracketMetaSecret)
+                $queryFragmentSessionIdTripleEncodedLowerHexBracketMetaSecret, `
+                $queryFragmentApiKeyQuadrupleEncodedLowerHexBracketIndexSecret, `
+                $queryFragmentSessionIdQuadrupleEncodedLowerHexBracketMetaSecret)
             $expectedBaseUrl = ('http://127.0.0.1:{0}?api_key=[REDACTED]&x_api_key=[REDACTED]&x_api_key_alt_backup=[REDACTED]&password=[REDACTED]&password_temp=[REDACTED]&client_secret=[REDACTED]&client_secret_stage=[REDACTED]&secret_backup=[REDACTED]&refresh_token=[REDACTED]&access_token_alt_stage=[REDACTED]&cookie=[REDACTED]&cookie_alt=[REDACTED]&set-cookie-alt=[REDACTED]&sessionid=[REDACTED]&sessionid_backup=[REDACTED]&authorization=[REDACTED]&id_token=[REDACTED]&id_token_backup=[REDACTED]' -f $smokePort)
             $expectedBaseUrl += '&password.temp=[REDACTED]&client_secret.stage=[REDACTED]&secret.backup=[REDACTED]&cookie.alt=[REDACTED]&set-cookie.alt=[REDACTED]&sessionid.backup=[REDACTED]'
             $expectedBaseUrl += '&apiKeyAlt=[REDACTED]&sessionIdBackup=[REDACTED]&api_key%5B0%5D=[REDACTED]&sessionIdBackup%5Bmeta%5D=[REDACTED]&api_key%5B0%5D%5Bleaf%5D=[REDACTED]&sessionIdBackup%5Bmeta%5D%5B0%5D=[REDACTED]&api_key%255B0%255D=[REDACTED]&sessionIdBackup%255Bmeta%255D=[REDACTED]&api_key%255B0%255D%255Bleaf%255D=[REDACTED]&sessionIdBackup%255Bmeta%255D%255B0%255D=[REDACTED]&api_key%25255B0%25255D=[REDACTED]&sessionIdBackup%25255Bmeta%25255D=[REDACTED]&api_key%25255B0%25255D%25255Bleaf%25255D=[REDACTED]&sessionIdBackup%25255Bmeta%25255D%25255B0%25255D=[REDACTED]&api_key%2525255B0%2525255D=[REDACTED]&sessionIdBackup%2525255Bmeta%2525255D=[REDACTED]&api_key%2525255B0%2525255D%2525255Bleaf%2525255D=[REDACTED]&sessionIdBackup%2525255Bmeta%2525255D%2525255B0%2525255D=[REDACTED]'
-            $expectedBaseUrl += '&api_key%5b0%5d=[REDACTED]&sessionIdBackup%5bmeta%5d=[REDACTED]&api_key%255b0%255d=[REDACTED]&sessionIdBackup%255bmeta%255d=[REDACTED]&api_key%25255b0%25255d=[REDACTED]&sessionIdBackup%25255bmeta%25255d=[REDACTED]'
+            $expectedBaseUrl += '&api_key%5b0%5d=[REDACTED]&sessionIdBackup%5bmeta%5d=[REDACTED]&api_key%255b0%255d=[REDACTED]&sessionIdBackup%255bmeta%255d=[REDACTED]&api_key%25255b0%25255d=[REDACTED]&sessionIdBackup%25255bmeta%25255d=[REDACTED]&api_key%2525255b0%2525255d=[REDACTED]&sessionIdBackup%2525255bmeta%2525255d=[REDACTED]'
             $expectedBaseUrl += '&api.key.alt=[REDACTED]&x.api.key.alt=[REDACTED]&access.token.stage=[REDACTED]&id.token.backup=[REDACTED]&refresh.token.alt=[REDACTED]&proxy.authorization.alt=[REDACTED]&client.secret.stage=[REDACTED]&set.cookie.alt=[REDACTED]&session.id.backup=[REDACTED]'
             $expectedBaseUrl += '#access_token=[REDACTED]&apiKeyAlt=[REDACTED]&sessionIdBackup=[REDACTED]&api_key%5B0%5D=[REDACTED]&sessionIdBackup%5Bmeta%5D=[REDACTED]&api_key%5B0%5D%5Bleaf%5D=[REDACTED]&sessionIdBackup%5Bmeta%5D%5B0%5D=[REDACTED]&api_key%255B0%255D=[REDACTED]&sessionIdBackup%255Bmeta%255D=[REDACTED]&api_key%255B0%255D%255Bleaf%255D=[REDACTED]&sessionIdBackup%255Bmeta%255D%255B0%255D=[REDACTED]&api_key%25255B0%25255D=[REDACTED]&sessionIdBackup%25255Bmeta%25255D=[REDACTED]&api_key%25255B0%25255D%25255Bleaf%25255D=[REDACTED]&sessionIdBackup%25255Bmeta%25255D%25255B0%25255D=[REDACTED]&api_key%2525255B0%2525255D=[REDACTED]&sessionIdBackup%2525255Bmeta%2525255D=[REDACTED]&api_key%2525255B0%2525255D%2525255Bleaf%2525255D=[REDACTED]&sessionIdBackup%2525255Bmeta%2525255D%2525255B0%2525255D=[REDACTED]'
-            $expectedBaseUrl += '&api_key%5b0%5d=[REDACTED]&sessionIdBackup%5bmeta%5d=[REDACTED]&api_key%255b0%255d=[REDACTED]&sessionIdBackup%255bmeta%255d=[REDACTED]&api_key%25255b0%25255d=[REDACTED]&sessionIdBackup%25255bmeta%25255d=[REDACTED]'
+            $expectedBaseUrl += '&api_key%5b0%5d=[REDACTED]&sessionIdBackup%5bmeta%5d=[REDACTED]&api_key%255b0%255d=[REDACTED]&sessionIdBackup%255bmeta%255d=[REDACTED]&api_key%25255b0%25255d=[REDACTED]&sessionIdBackup%25255bmeta%25255d=[REDACTED]&api_key%2525255b0%2525255d=[REDACTED]&sessionIdBackup%2525255bmeta%2525255d=[REDACTED]'
             $caseRoot = Join-Path $tempRoot "case-smoke-baseurl-query-secrets-redacted"
             New-Item -ItemType Directory -Force -Path $caseRoot | Out-Null
             $reportPath = Join-Path $caseRoot "smoke.report.json"
@@ -2206,6 +2281,8 @@ try {
                     $querySessionIdDoubleEncodedLowerHexBracketMetaSecret,
                     $queryApiKeyTripleEncodedLowerHexBracketIndexSecret,
                     $querySessionIdTripleEncodedLowerHexBracketMetaSecret,
+                    $queryApiKeyQuadrupleEncodedLowerHexBracketIndexSecret,
+                    $querySessionIdQuadrupleEncodedLowerHexBracketMetaSecret,
                     $queryPasswordDotTempSecret,
                     $queryClientSecretDotStageSecret,
                     $querySecretDotBackupSecret,
@@ -2246,6 +2323,8 @@ try {
                     $queryFragmentSessionIdDoubleEncodedLowerHexBracketMetaSecret,
                     $queryFragmentApiKeyTripleEncodedLowerHexBracketIndexSecret,
                     $queryFragmentSessionIdTripleEncodedLowerHexBracketMetaSecret,
+                    $queryFragmentApiKeyQuadrupleEncodedLowerHexBracketIndexSecret,
+                    $queryFragmentSessionIdQuadrupleEncodedLowerHexBracketMetaSecret,
                     $queryAuthorizationSecret,
                     $queryIdTokenSecret,
                     $queryIdTokenBackupSecret
@@ -2259,10 +2338,7 @@ try {
                 }
             }
             finally {
-                if ($smokeServer -and $smokeServer.Job) {
-                    Stop-Job -Job $smokeServer.Job -ErrorAction SilentlyContinue
-                    Remove-Job -Job $smokeServer.Job -Force -ErrorAction SilentlyContinue
-                }
+                Stop-ListenerServer -Server $smokeServer
             }
         }))
 
@@ -2556,10 +2632,7 @@ try {
     }
 }
 finally {
-    if ($urlServer -and $urlServer.Job) {
-        Stop-Job -Job $urlServer.Job -ErrorAction SilentlyContinue
-        Remove-Job -Job $urlServer.Job -Force -ErrorAction SilentlyContinue
-    }
+    Stop-ListenerServer -Server $urlServer
 
     if (-not $KeepArtifacts) {
         Remove-Item -Path $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
