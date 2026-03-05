@@ -645,3 +645,13 @@ What changed:
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
 - Expect `smoke-detail-redacts-secrets` and `smoke-baseurl-query-secrets-redacted` to pass with no raw lowercase-hex quadruple-encoded bracket-suffix secret fragments in outputs.
+
+## 2026-03-05 smoke-detail payload lowercase-hex bracket parity hardening
+
+What changed:
+- `check-deploy-guards.ps1` extends `smoke-detail-redacts-secrets` payload fixtures (both health and error branches) with lowercase-hex encoded bracket key variants for `api_key` and `sessionIdBackup` families across single/double/triple/quadruple encodings, including nested forms.
+- `smoke-detail-redacts-secrets` forbidden-secret assertions now include the corresponding lowercase-hex payload values (`guard-apikey-*lowerhex*` and `guard-sessionid-camel-*lowerhex*`) so any leakage in report/stdout/stderr fails the guard case.
+
+How to validate:
+- Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
+- Expect `smoke-detail-redacts-secrets` and `smoke-baseurl-query-secrets-redacted` to pass with no raw lowercase-hex payload/query/fragment encoded bracket secret fragments in outputs.
