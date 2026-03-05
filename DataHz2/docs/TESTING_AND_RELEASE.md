@@ -530,3 +530,13 @@ What changed:
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
 - Expect `smoke-detail-redacts-secrets` to pass with no raw semicolon-delimited secret fragments in outputs.
+
+## 2026-03-05 bracket-suffix key redaction hardening
+
+What changed:
+- `smoke-test-api.ps1` now redacts sensitive keys with bracket suffix forms (for example `api_key[0]`, `sessionIdBackup[meta]`) in both key-value diagnostics and URL query text.
+- `check-deploy-guards.ps1` extends `smoke-detail-redacts-secrets` with bracket-suffix fields in mock payload and echoed `target_url`, and asserts these raw values never appear in stdout/stderr/report.
+
+How to validate:
+- Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
+- Expect `smoke-detail-redacts-secrets` to pass with no raw bracket-suffix secret fragments in outputs.
