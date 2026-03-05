@@ -655,3 +655,14 @@ What changed:
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
 - Expect `smoke-detail-redacts-secrets` and `smoke-baseurl-query-secrets-redacted` to pass with no raw lowercase-hex payload/query/fragment encoded bracket secret fragments in outputs.
+
+## 2026-03-05 smoke-detail nested JSON secret coverage hardening
+
+What changed:
+- `check-deploy-guards.ps1` extends `smoke-detail-redacts-secrets` response fixtures (both health and error branches) with nested JSON secret samples in both object and array-of-object forms (`nested_secret_fields`, `nested_secret_items`), covering `api_key`, `client_secret_stage`, `sessionIdBackup%5Bmeta%5D`, and `password_temp`/`cookie_alt`.
+- JSON serialization for these fixtures is now explicit with `ConvertTo-Json -Depth 12`, ensuring nested values are emitted and validated instead of being truncated by default depth.
+- Forbidden-secret assertions now include the new `guard-nested-*` values, so any nested secret leakage in report/stdout/stderr fails the guard case.
+
+How to validate:
+- Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
+- Expect `smoke-detail-redacts-secrets` to pass with no raw `guard-nested-*` secrets visible in outputs.
