@@ -678,9 +678,11 @@ What changed:
 - `check-deploy-guards.ps1` now also adds explicit double-escaped unicode quote fixtures (`\\\\u0027...\\\\u0027`) and matching forbidden assertions (`guard-double-escaped-unicode-quote-*`) to verify multi-backslash handling end-to-end in smoke detail outputs.
 - `smoke-test-api.ps1` now normalizes JSON-escaped slash sequences (`\/`, `\\/`) before URL redaction, so escaped URL userinfo/query/fragment secrets are sanitized the same way as plain URLs.
 - `check-deploy-guards.ps1` adds `escaped_target_url` fixtures and matching forbidden assertions (`guard-escaped-url-*`) to lock this behavior.
+- `smoke-test-api.ps1` now also normalizes unicode-escaped URL delimiters (`\\u002f`, `\\u003f`, `\\u003d`, `\\u0026`, `\\u003b`, `\\u0023`, `\\u0040`) before URL redaction, including multi-backslash forms.
+- `check-deploy-guards.ps1` adds `escaped_delimiter_target_url` fixtures and matching forbidden assertions (`guard-escaped-delim-url-*`) to verify escaped delimiter paths are redacted.
 - `check-deploy-guards.ps1` extends `Run-Case` with optional transient retry controls (`MaxAttempts`, `RetryDelayMilliseconds`, `RetryOnMessageParts`) and now applies a bounded default retry to non-expected-failure cases when the transient PowerShell host error contains `already been disposed`.
 
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
-- Expect `smoke-detail-redacts-secrets` to pass with no raw `guard-single-quote-*`, `guard-escaped-unicode-quote-*`, `guard-double-escaped-unicode-quote-*`, or `guard-escaped-url-*` values in report/stdout/stderr outputs.
+- Expect `smoke-detail-redacts-secrets` to pass with no raw `guard-single-quote-*`, `guard-escaped-unicode-quote-*`, `guard-double-escaped-unicode-quote-*`, `guard-escaped-url-*`, or `guard-escaped-delim-url-*` values in report/stdout/stderr outputs.
 - Expect occasional transient `Pipeline ... already been disposed` failures in positive smoke guard cases to be retried once automatically; persistent failures still fail the guard run.
