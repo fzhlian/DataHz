@@ -246,11 +246,26 @@ app.UseSwaggerUI(options =>
     options.InjectJavascript("/swagger-zh.js");
     options.DisplayRequestDuration();
 });
+
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.Equals("/dashboard", StringComparison.OrdinalIgnoreCase))
+    {
+        context.Response.Redirect("/dashboard/");
+        return;
+    }
+
+    if (context.Request.Path.Equals("/workbench", StringComparison.OrdinalIgnoreCase))
+    {
+        context.Response.Redirect("/workbench/");
+        return;
+    }
+
+    await next();
+});
+
 app.UseDefaultFiles();
 app.UseStaticFiles();
-
-app.MapGet("/dashboard", () => Results.Redirect("/dashboard/"))
-    .ExcludeFromDescription();
 
 app.MapGet("/health", () => Results.Ok(new
 {

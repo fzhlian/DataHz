@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DataHz Console</title>
+  <style>
+    :root {
+      --bg-a: #0a1823;
+      --bg-b: #163f52;
+      --bg-c: #405d42;
+      --ink: #ebf7fb;
+      --ink-dim: #a8c2cc;
+      --panel: rgba(10, 24, 35, 0.72);
+      --line: rgba(168, 194, 204, 0.28);
+      --shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "Bahnschrift", "Microsoft YaHei UI", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 12% 18%, rgba(86, 214, 211, 0.2), transparent 45%),
+        radial-gradient(circle at 88% 0%, rgba(240, 182, 85, 0.2), transparent 40%),
+        linear-gradient(135deg, var(--bg-a), var(--bg-b), var(--bg-c));
+      display: grid;
+      place-items: center;
+      padding: 22px;
+      animation: fade 420ms ease-out;
+    }
+
+    .shell {
+      width: min(980px, 95vw);
+      display: grid;
+      gap: 14px;
+    }
+
+    .hero,
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+
+    .hero {
+      padding: 22px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(26px, 4vw, 42px);
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .sub {
+      margin-top: 8px;
+      color: var(--ink-dim);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(2, minmax(220px, 1fr));
+    }
+
+    .card {
+      padding: 16px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .card h2 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 0.03em;
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--ink-dim);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .card a {
+      text-decoration: none;
+      color: #f2fcff;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 9px 13px;
+      width: fit-content;
+      font-size: 13px;
+      background: rgba(18, 63, 82, 0.7);
+      transition: transform 120ms ease, filter 120ms ease;
+    }
+
+    .card a:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.12);
+    }
+
+    .footer {
+      color: var(--ink-dim);
+      font-size: 12px;
+      text-align: center;
+      font-family: "Cascadia Mono", "Consolas", monospace;
+    }
+
+    @media (max-width: 760px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @keyframes fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <h1>DataHz Console</h1>
+      <div class="sub">统一图形入口：任务执行工作台 + 实时监控面板。建议先在 Workbench 配置参数并发起任务，再回到 Monitor 观察运行态。</div>
+    </section>
+    <section class="grid">
+      <article class="card">
+        <h2>Task Workbench</h2>
+        <p>面向操作人员：模板解析、计划生成、同步执行、异步提交、作业详情与取消。</p>
+        <a href="/workbench/">打开 Workbench</a>
+      </article>
+      <article class="card">
+        <h2>Monitor Dashboard</h2>
+        <p>面向监控与运维：队列概览、安全态势、外部密钥提供方健康、审计导出。</p>
+        <a href="/dashboard/">打开 Monitor</a>
+      </article>
+      <article class="card">
+        <h2>Swagger API</h2>
+        <p>面向开发与联调：查看接口分组、鉴权要求、请求/响应结构。</p>
+        <a href="/swagger">打开 Swagger</a>
+      </article>
+      <article class="card">
+        <h2>Health</h2>
+        <p>轻量健康检查端点，便于部署后快速确认服务可用性。</p>
+        <a href="/health" target="_blank" rel="noreferrer">打开 Health</a>
+      </article>
+    </section>
+    <div class="footer">DataHz.Api static console entry</div>
+  </main>
+</body>
+</html>

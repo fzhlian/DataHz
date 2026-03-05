@@ -1,0 +1,4234 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DataHz Workbench</title>
+  <style>
+    :root {
+      --bg-0: #081218;
+      --bg-1: #123042;
+      --bg-2: #2b4e59;
+      --panel: rgba(8, 18, 24, 0.72);
+      --line: rgba(145, 181, 195, 0.34);
+      --ink: #e6f3f8;
+      --ink-dim: #9bb5c2;
+      --ok: #3bcf8b;
+      --warn: #f0b655;
+      --err: #ef6666;
+      --accent: #56d6d3;
+      --shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+      --radius: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "Bahnschrift", "Microsoft YaHei UI", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(86, 214, 211, 0.18), transparent 40%),
+        radial-gradient(circle at 85% 0%, rgba(240, 182, 85, 0.2), transparent 38%),
+        linear-gradient(140deg, var(--bg-0), var(--bg-1) 48%, var(--bg-2));
+      animation: fade-in 420ms ease-out;
+    }
+
+    .page {
+      width: min(1320px, 95vw);
+      margin: 20px auto 28px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+      overflow: hidden;
+    }
+
+    .card h2 {
+      margin: 0;
+      padding: 13px 16px;
+      font-size: 14px;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: #d4ebf4;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .card .body {
+      padding: 14px;
+    }
+
+    .hero {
+      padding: 18px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .title-wrap {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: start;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(22px, 3.3vw, 34px);
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .sub {
+      color: var(--ink-dim);
+      font-size: 13px;
+    }
+
+    .quick-nav {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .quick-nav a {
+      color: #ecfbff;
+      text-decoration: none;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 12px;
+      background: rgba(18, 48, 66, 0.7);
+      transition: transform 120ms ease, filter 120ms ease;
+    }
+
+    .quick-nav a:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.1);
+    }
+
+    .banner {
+      border: 1px solid rgba(86, 214, 211, 0.45);
+      border-radius: 10px;
+      background: rgba(18, 48, 66, 0.65);
+      color: #d5fbfa;
+      padding: 10px 12px;
+      font-size: 12px;
+      font-family: "Cascadia Mono", "Consolas", monospace;
+      white-space: pre-wrap;
+    }
+
+    .banner.ok {
+      border-color: rgba(59, 207, 139, 0.55);
+      color: #d6ffea;
+    }
+
+    .banner.warn {
+      border-color: rgba(240, 182, 85, 0.6);
+      color: #ffe8c4;
+    }
+
+    .banner.err {
+      border-color: rgba(239, 102, 102, 0.6);
+      color: #ffd9d9;
+    }
+
+    .identity {
+      font-size: 12px;
+      color: var(--ink-dim);
+      font-family: "Cascadia Mono", "Consolas", monospace;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.35fr 1fr;
+      gap: 14px;
+    }
+
+    .fields {
+      display: grid;
+      gap: 10px;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+
+    label {
+      color: var(--ink-dim);
+      font-size: 12px;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    input[type="number"],
+    textarea {
+      width: 100%;
+      padding: 9px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      color: var(--ink);
+      background: rgba(18, 48, 66, 0.75);
+      font-family: "Cascadia Mono", "Consolas", monospace;
+      font-size: 12px;
+    }
+
+    input.invalid,
+    textarea.invalid {
+      border-color: rgba(239, 102, 102, 0.85);
+      box-shadow: 0 0 0 2px rgba(239, 102, 102, 0.2);
+    }
+
+    textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    .inline-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(120px, 1fr));
+      gap: 10px;
+    }
+
+    .checks {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      color: var(--ink-dim);
+      font-size: 12px;
+    }
+
+    .checks label {
+      text-transform: none;
+      letter-spacing: normal;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 2px;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 9px 12px;
+      color: #edf8ff;
+      font-size: 12px;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      font-family: "Bahnschrift", "Microsoft YaHei UI", "Segoe UI", sans-serif;
+      transition: transform 120ms ease, filter 120ms ease, opacity 120ms ease;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      filter: brightness(1.08);
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .btn-neutral {
+      background: linear-gradient(135deg, #2d4c63, #2b566b);
+    }
+
+    .btn-parse {
+      background: linear-gradient(135deg, #176272, #197386);
+    }
+
+    .btn-plan {
+      background: linear-gradient(135deg, #2f5a86, #2e7295);
+    }
+
+    .btn-run {
+      background: linear-gradient(135deg, #286642, #2f8855);
+    }
+
+    .btn-submit {
+      background: linear-gradient(135deg, #83572f, #a7723f);
+    }
+
+    .btn-flow {
+      background: linear-gradient(135deg, #6a4fa4, #7b62ba);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #7a2f2f, #984040);
+    }
+
+    .tiny {
+      font-size: 11px;
+      color: var(--ink-dim);
+    }
+
+    .result-box {
+      border: 1px solid rgba(145, 181, 195, 0.3);
+      border-radius: 12px;
+      background: rgba(18, 48, 66, 0.48);
+      max-height: 520px;
+      overflow: auto;
+      padding: 12px;
+      font-size: 12px;
+      white-space: pre-wrap;
+      font-family: "Cascadia Mono", "Consolas", monospace;
+      line-height: 1.45;
+    }
+
+    .result-title {
+      color: var(--ink-dim);
+      font-size: 12px;
+      margin-bottom: 8px;
+      font-family: "Cascadia Mono", "Consolas", monospace;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      font-family: "Cascadia Mono", "Consolas", monospace;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid rgba(145, 181, 195, 0.2);
+      text-align: left;
+      padding: 7px 6px;
+    }
+
+    th {
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--ink-dim);
+      font-weight: 500;
+      font-size: 11px;
+    }
+
+    .job-row {
+      cursor: pointer;
+      transition: background-color 110ms ease;
+    }
+
+    .job-row:hover {
+      background: rgba(86, 214, 211, 0.1);
+    }
+
+    .job-row.selected {
+      background: rgba(86, 214, 211, 0.18);
+    }
+
+    .status {
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .status-ok {
+      color: var(--ok);
+    }
+
+    .status-warn {
+      color: var(--warn);
+    }
+
+    .status-err {
+      color: var(--err);
+    }
+
+    .jobs-layout {
+      display: grid;
+      grid-template-columns: 1.15fr 1fr;
+      gap: 12px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    .hidden-file {
+      display: none;
+    }
+
+    .plan-preset-board {
+      border: 1px solid rgba(145, 181, 195, 0.28);
+      border-radius: 10px;
+      background: rgba(18, 48, 66, 0.35);
+      padding: 8px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .plan-preset-order-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 6px;
+      max-height: 210px;
+      overflow: auto;
+    }
+
+    .plan-preset-order-item {
+      border: 1px solid rgba(145, 181, 195, 0.28);
+      border-radius: 8px;
+      background: rgba(18, 48, 66, 0.68);
+      padding: 6px 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: grab;
+      user-select: none;
+      transition: border-color 120ms ease, background-color 120ms ease, transform 120ms ease;
+    }
+
+    .plan-preset-order-item:hover {
+      border-color: rgba(86, 214, 211, 0.62);
+    }
+
+    .plan-preset-order-item.active {
+      border-color: rgba(240, 182, 85, 0.75);
+      background: rgba(120, 84, 36, 0.46);
+    }
+
+    .plan-preset-order-item.dragging {
+      opacity: 0.58;
+      cursor: grabbing;
+    }
+
+    .plan-preset-order-item.drag-over-before {
+      border-top: 2px solid rgba(86, 214, 211, 0.95);
+    }
+
+    .plan-preset-order-item.drag-over-after {
+      border-bottom: 2px solid rgba(86, 214, 211, 0.95);
+    }
+
+    .plan-preset-order-handle {
+      font-family: "Cascadia Mono", "Consolas", monospace;
+      font-size: 11px;
+      color: var(--ink-dim);
+      opacity: 0.85;
+      flex: 0 0 auto;
+    }
+
+    .plan-preset-order-name {
+      font-family: "Cascadia Mono", "Consolas", monospace;
+      font-size: 12px;
+      color: #ebf8ff;
+      flex: 1 1 auto;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .plan-preset-order-badges {
+      display: inline-flex;
+      gap: 6px;
+      flex: 0 0 auto;
+    }
+
+    .plan-preset-order-badge {
+      border: 1px solid rgba(145, 181, 195, 0.45);
+      border-radius: 999px;
+      padding: 2px 6px;
+      font-size: 10px;
+      color: #d9effa;
+      font-family: "Bahnschrift", "Microsoft YaHei UI", "Segoe UI", sans-serif;
+      background: rgba(18, 48, 66, 0.86);
+    }
+
+    .plan-preset-order-badge.default {
+      border-color: rgba(240, 182, 85, 0.8);
+      color: #ffe4b8;
+      background: rgba(120, 84, 36, 0.58);
+    }
+
+    .plan-preset-order-badge.pinned {
+      border-color: rgba(86, 214, 211, 0.76);
+      color: #d8fbfa;
+      background: rgba(26, 95, 94, 0.58);
+    }
+
+    .plan-preset-empty {
+      color: var(--ink-dim);
+      font-size: 11px;
+      font-family: "Cascadia Mono", "Consolas", monospace;
+      border: 1px dashed rgba(145, 181, 195, 0.25);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+
+    .plan-preset-history-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 6px;
+      max-height: 180px;
+      overflow: auto;
+    }
+
+    .plan-preset-history-item {
+      margin: 0;
+      padding: 0;
+    }
+
+    .plan-preset-history-btn {
+      width: 100%;
+      text-align: left;
+      border-radius: 8px;
+      border: 1px solid rgba(145, 181, 195, 0.32);
+      background: rgba(18, 48, 66, 0.55);
+      color: #e6f6ff;
+      padding: 7px 9px;
+      font-size: 11px;
+      font-family: "Cascadia Mono", "Consolas", monospace;
+    }
+
+    .plan-preset-history-btn.undo {
+      border-left: 3px solid rgba(240, 182, 85, 0.9);
+    }
+
+    .plan-preset-history-btn.redo {
+      border-left: 3px solid rgba(86, 214, 211, 0.9);
+    }
+
+    .actions input[type="text"],
+    .actions input[type="number"],
+    .actions select {
+      width: auto;
+      min-width: 130px;
+      padding: 7px 9px;
+    }
+
+    .reason-chip {
+      border: 1px solid rgba(145, 181, 195, 0.42);
+      background: rgba(18, 48, 66, 0.62);
+      color: #e7f7ff;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 11px;
+      cursor: pointer;
+      font-family: "Cascadia Mono", "Consolas", monospace;
+    }
+
+    .reason-chip.active {
+      border-color: rgba(240, 182, 85, 0.8);
+      background: rgba(120, 84, 36, 0.72);
+    }
+
+    .fade {
+      animation: rise 280ms ease both;
+    }
+
+    @media (max-width: 1080px) {
+      .layout,
+      .jobs-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .field-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+
+      .page {
+        width: min(1320px, 97vw);
+      }
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fade-in {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="card fade">
+      <div class="hero">
+        <div class="title-wrap">
+          <div>
+            <h1>DataHz Task Workbench</h1>
+            <div class="sub">图形化任务工作台：模板解析、计划生成、同步执行、异步作业全流程。</div>
+          </div>
+          <nav class="quick-nav">
+            <a href="/">Home</a>
+            <a href="/dashboard/">Monitor</a>
+            <a href="/swagger">Swagger</a>
+            <a href="/health" target="_blank" rel="noreferrer">Health</a>
+          </nav>
+        </div>
+        <div id="banner" class="banner">准备就绪。请填写凭据与任务参数。</div>
+        <div id="identity" class="identity">Principal: - | Role: -</div>
+      </div>
+    </section>
+
+    <section class="layout">
+      <article class="card fade" style="animation-delay: 60ms;">
+        <h2>Credentials & Plan</h2>
+        <div class="body">
+          <div class="fields">
+            <div class="field-row">
+              <label for="apiKey">X-Api-Key</label>
+              <input id="apiKey" type="password" placeholder="可选：API Key">
+            </div>
+            <div class="field-row">
+              <label for="bearerToken">Bearer Token</label>
+              <textarea id="bearerToken" placeholder="可选：JWT（不含 Bearer 前缀）"></textarea>
+            </div>
+            <div class="actions">
+              <button id="saveCredentialBtn" class="btn-neutral" type="button">保存凭据</button>
+              <button id="clearCredentialBtn" class="btn-neutral" type="button">清空凭据</button>
+              <button id="whoamiBtn" class="btn-neutral" type="button">刷新身份</button>
+              <button id="fillExampleBtn" class="btn-neutral" type="button">填充示例参数</button>
+            </div>
+            <div class="field-row">
+              <label for="templatePath">Template Path</label>
+              <input id="templatePath" type="text" placeholder="例如 D:\DataHz2\temp\sd_test.ini">
+            </div>
+            <div class="field-row">
+              <label for="sourceDirectory">Source Directory</label>
+              <input id="sourceDirectory" type="text" placeholder="例如 D:\DataHz2\temp">
+            </div>
+            <div class="field-row">
+              <label for="targetDirectory">Target Directory</label>
+              <input id="targetDirectory" type="text" placeholder="例如 D:\DataHz2\temp">
+            </div>
+            <div class="field-row">
+              <label for="areaCodePath">Area Code Path</label>
+              <input id="areaCodePath" type="text" placeholder="例如 D:\DataHz2\temp\codes.txt">
+            </div>
+            <div class="inline-grid">
+              <div class="field-row">
+                <label for="startIndex">Start Index</label>
+                <input id="startIndex" type="number" value="23">
+              </div>
+              <div class="field-row">
+                <label for="endIndex">End Index</label>
+                <input id="endIndex" type="number" value="148">
+              </div>
+            </div>
+            <div class="field-row">
+              <label for="idempotencyKey">Idempotency Key</label>
+              <input id="idempotencyKey" type="text" placeholder="异步作业幂等键，可留空自动生成">
+            </div>
+            <div class="field-row">
+              <label for="planPresetName">Plan Preset</label>
+              <input id="planPresetName" type="text" placeholder="计划预设名">
+            </div>
+            <div class="actions">
+              <select id="planPresetSelect">
+                <option value="">计划预设: 无</option>
+              </select>
+              <button id="savePlanPresetBtn" class="btn-neutral" type="button">保存计划预设</button>
+              <button id="loadPlanPresetBtn" class="btn-neutral" type="button">加载计划预设</button>
+              <button id="renamePlanPresetBtn" class="btn-neutral" type="button">重命名计划预设</button>
+              <button id="deletePlanPresetBtn" class="btn-neutral" type="button">删除计划预设</button>
+              <button id="pinPlanPresetBtn" class="btn-neutral" type="button">置顶常用</button>
+              <button id="unpinPlanPresetBtn" class="btn-neutral" type="button">取消置顶</button>
+              <button id="movePlanPresetUpBtn" class="btn-neutral" type="button">上移计划预设</button>
+              <button id="movePlanPresetDownBtn" class="btn-neutral" type="button">下移计划预设</button>
+              <button id="undoPlanPresetOrderBtn" class="btn-neutral" type="button" disabled>撤销排序</button>
+              <button id="redoPlanPresetOrderBtn" class="btn-neutral" type="button" disabled>重做排序</button>
+              <button id="setDefaultPlanPresetBtn" class="btn-neutral" type="button">设为默认计划预设</button>
+              <button id="clearDefaultPlanPresetBtn" class="btn-neutral" type="button">清除默认计划预设</button>
+              <button id="exportPlanPresetsBtn" class="btn-neutral" type="button">导出计划预设</button>
+              <button id="importPlanPresetsBtn" class="btn-neutral" type="button">导入计划预设</button>
+              <button id="clearPlanPresetsBtn" class="btn-neutral" type="button">清空计划预设</button>
+              <input id="importPlanPresetsInput" class="hidden-file" type="file" accept=".json,application/json">
+            </div>
+            <div class="plan-preset-board">
+              <div class="tiny">提示：可在下方拖拽排序；快捷键 `Alt+↑ / Alt+↓` 上移或下移，`Alt+Z` 撤销，`Alt+Shift+Z` 或 `Alt+Y` 重做（最多保留最近 30 步）。</div>
+              <div id="planPresetOrderEmpty" class="plan-preset-empty">暂无计划预设可排序。</div>
+              <ul id="planPresetOrderList" class="plan-preset-order-list" tabindex="0"></ul>
+              <div class="actions">
+                <button id="clearPlanPresetHistoryBtn" class="btn-neutral" type="button">清空排序历史</button>
+                <button id="exportPlanPresetHistoryBtn" class="btn-neutral" type="button">导出排序历史</button>
+                <button id="importPlanPresetHistoryBtn" class="btn-neutral" type="button">导入排序历史</button>
+                <input id="importPlanPresetHistoryInput" class="hidden-file" type="file" accept=".json,application/json">
+              </div>
+              <div id="planPresetHistoryEmpty" class="plan-preset-empty">暂无排序历史。</div>
+              <ul id="planPresetHistoryList" class="plan-preset-history-list"></ul>
+            </div>
+            <div class="checks">
+              <label><input id="dryRun" type="checkbox" checked> Dry Run</label>
+              <label><input id="incremental" type="checkbox" checked> Incremental</label>
+            </div>
+            <div class="actions">
+              <button id="validateBtn" class="btn-neutral" type="button">校验参数</button>
+              <button id="parseBtn" class="btn-parse" type="button">解析模板</button>
+              <button id="planBtn" class="btn-plan" type="button">生成计划</button>
+              <button id="executeBtn" class="btn-run" type="button">同步执行</button>
+              <button id="submitBtn" class="btn-submit" type="button">提交异步作业</button>
+              <button id="flowBtn" class="btn-flow" type="button">一键流程</button>
+              <button id="exportPlanBtn" class="btn-neutral" type="button">导出参数</button>
+              <button id="importPlanBtn" class="btn-neutral" type="button">导入参数</button>
+              <input id="importPlanInput" class="hidden-file" type="file" accept=".json,application/json">
+            </div>
+            <div class="tiny">提示：`/api/tasks/*` 与 `/api/jobs/submit` 需要 `Operator` 或更高角色。</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card fade" style="animation-delay: 110ms;">
+        <h2>Response Console</h2>
+        <div class="body">
+          <div id="resultTitle" class="result-title">尚未发起请求。</div>
+          <div id="resultBox" class="result-box">准备接收请求与响应内容...</div>
+        </div>
+      </article>
+    </section>
+
+    <section class="card fade" style="animation-delay: 160ms;">
+      <h2>Async Jobs</h2>
+      <div class="body">
+        <div class="actions" style="margin-bottom: 10px;">
+          <input id="jobSearch" type="text" placeholder="搜索 job/status/key/error">
+          <select id="jobStatusFilter">
+            <option value="">状态: 全部</option>
+            <option value="queued">queued</option>
+            <option value="running">running</option>
+            <option value="succeeded">succeeded</option>
+            <option value="failed">failed</option>
+            <option value="canceled">canceled</option>
+            <option value="cancellationrequested">cancellationrequested</option>
+          </select>
+          <select id="jobSortBy">
+            <option value="createdAt">排序: createdAt</option>
+            <option value="status">排序: status</option>
+            <option value="id">排序: id</option>
+          </select>
+          <select id="jobSortDirection">
+            <option value="desc">方向: desc</option>
+            <option value="asc">方向: asc</option>
+          </select>
+          <input id="jobPresetName" type="text" placeholder="预设名">
+          <select id="jobPresetSelect">
+            <option value="">预设: 无</option>
+          </select>
+          <button id="savePresetBtn" class="btn-neutral" type="button">保存预设</button>
+          <button id="loadPresetBtn" class="btn-neutral" type="button">加载预设</button>
+          <button id="deletePresetBtn" class="btn-neutral" type="button">删除预设</button>
+          <button id="exportPresetsBtn" class="btn-neutral" type="button">导出预设</button>
+          <button id="importPresetsBtn" class="btn-neutral" type="button">导入预设</button>
+          <button id="clearPresetsBtn" class="btn-neutral" type="button">清空全部预设</button>
+          <input id="importPresetsInput" class="hidden-file" type="file" accept=".json,application/json">
+          <input id="jobTake" type="number" min="1" max="200" value="50" placeholder="take">
+          <button id="applyFilterBtn" class="btn-neutral" type="button">应用筛选</button>
+          <button id="clearFilterBtn" class="btn-neutral" type="button">清空筛选</button>
+          <button id="refreshJobsBtn" class="btn-neutral" type="button">刷新作业列表</button>
+          <button id="focusLatestFailedBtn" class="btn-neutral" type="button">定位最新失败</button>
+          <button id="reloadSelectedBtn" class="btn-neutral" type="button">刷新选中作业</button>
+          <button id="selectVisibleBtn" class="btn-neutral" type="button">全选可见</button>
+          <select id="batchSelectStatus">
+            <option value="">勾选: 全部可见</option>
+            <option value="queued">勾选 queued</option>
+            <option value="running">勾选 running</option>
+            <option value="failed">勾选 failed</option>
+            <option value="cancellationrequested">勾选 cancellationrequested</option>
+          </select>
+          <button id="selectByStatusBtn" class="btn-neutral" type="button">按状态勾选</button>
+          <button id="invertSelectedBtn" class="btn-neutral" type="button">反选可见</button>
+          <button id="clearSelectedBtn" class="btn-neutral" type="button">清空勾选</button>
+          <input id="batchCancelConcurrency" type="number" min="1" max="20" value="4" placeholder="并发">
+          <button id="batchCancelBtn" class="btn-danger" type="button" disabled>批量取消勾选作业</button>
+          <button id="retryFailedCancelBtn" class="btn-danger" type="button" disabled>重试上次失败取消</button>
+          <button id="copyFailedIdsBtn" class="btn-neutral" type="button" disabled>复制失败作业ID</button>
+          <button id="downloadFailedTxtBtn" class="btn-neutral" type="button" disabled>下载失败TXT</button>
+          <button id="downloadFailedJsonBtn" class="btn-neutral" type="button" disabled>下载失败JSON</button>
+          <button id="clearFailedHistoryBtn" class="btn-neutral" type="button" disabled>清空失败历史</button>
+          <label class="tiny" style="display: inline-flex; align-items: center; gap: 6px;">
+            <input id="skipTerminalOnBatchCancel" type="checkbox" checked>
+            批量取消时跳过已终态
+          </label>
+          <button id="exportFilteredCsvBtn" class="btn-neutral" type="button">导出筛选 CSV</button>
+          <button id="exportFilteredJsonlBtn" class="btn-neutral" type="button">导出筛选 JSONL</button>
+          <label class="tiny" style="display: inline-flex; align-items: center; gap: 6px;">
+            <input id="autoRefreshJobs" type="checkbox" checked>
+            自动刷新作业（5s）
+          </label>
+        </div>
+        <div id="jobStats" class="tiny" style="margin-bottom: 10px;">队列统计：-</div>
+        <div id="jobSelectionInfo" class="tiny" style="margin-bottom: 10px;">勾选作业：0</div>
+        <div id="failureReasonFilterInfo" class="tiny" style="margin-bottom: 10px;">失败原因筛选：未启用</div>
+        <div id="failureSummaryBox" class="actions" style="margin-bottom: 10px;">
+          <span class="tiny">失败原因摘要：无</span>
+        </div>
+        <div class="jobs-layout">
+          <div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Sel</th>
+                  <th>Job</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th>Dry</th>
+                  <th>Incremental</th>
+                </tr>
+              </thead>
+              <tbody id="jobsBody">
+                <tr><td colspan="6">暂无作业数据。</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="stack">
+            <div>
+              <div class="actions" style="margin-bottom: 8px;">
+                <input id="cancelReason" type="text" placeholder="取消原因（可选）">
+                <button id="cancelBtn" class="btn-danger" type="button" disabled>取消选中作业</button>
+                <button id="fillFromSelectedBtn" class="btn-neutral" type="button" disabled>回填选中作业参数</button>
+                <button id="cloneSubmitSelectedBtn" class="btn-submit" type="button" disabled>克隆提交选中作业</button>
+                <button id="copyTemplatePathBtn" class="btn-neutral" type="button" disabled>复制模板路径</button>
+                <button id="copyPathBundleBtn" class="btn-neutral" type="button" disabled>复制路径集</button>
+                <button id="copySelectedJobJsonBtn" class="btn-neutral" type="button" disabled>复制选中作业JSON</button>
+                <button id="downloadSelectedJobJsonBtn" class="btn-neutral" type="button" disabled>下载选中作业JSON</button>
+              </div>
+              <div id="jobDetail" class="result-box" style="max-height: 350px;">请选择作业查看详情。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const PLAN_STORAGE_KEY = "datahz.workbench.plan.v1";
+    const PLAN_PRESETS_STORAGE_KEY = "datahz.workbench.plan-presets.v1";
+    const PLAN_PRESETS_META_STORAGE_KEY = "datahz.workbench.plan-presets.meta.v1";
+    const PLAN_PRESET_HISTORY_STORAGE_KEY = "datahz.workbench.plan-presets.history.v1";
+    const PLAN_PRESETS_DEFAULT_STORAGE_KEY = "datahz.workbench.plan-presets.default.v1";
+    const JOB_VIEW_STORAGE_KEY = "datahz.workbench.jobs.v1";
+    const JOB_PRESETS_STORAGE_KEY = "datahz.workbench.job-presets.v1";
+    const API_KEY_STORAGE_KEY = "datahz.workbench.apikey";
+    const TOKEN_STORAGE_KEY = "datahz.workbench.token";
+    const JOB_TAKE = 50;
+    const JOB_REFRESH_MS = 5000;
+    const JOB_FILTER_INPUT_DEBOUNCE_MS = 260;
+    const BATCH_CANCEL_CONCURRENCY_DEFAULT = 4;
+    const PLAN_PRESET_HISTORY_LIMIT = 30;
+    const EXAMPLE_PLAN = {
+      templatePath: "D:\\DataHz2\\temp\\sd_test.ini",
+      sourceDirectory: "D:\\DataHz2\\temp",
+      targetDirectory: "D:\\DataHz2\\temp",
+      areaCodePath: "D:\\DataHz2\\temp\\codes.txt",
+      startIndex: 23,
+      endIndex: 148
+    };
+    const $ = (id) => document.getElementById(id);
+
+    const state = {
+      selectedJobId: null,
+      selectedJobRecord: null,
+      jobs: new Map(),
+      allJobs: [],
+      filteredJobs: [],
+      selectedJobIds: new Set(),
+      lastBatchCancelFailedJobIds: [],
+      lastBatchCancelFailureDetails: [],
+      lastBatchCancelFailureSummary: [],
+      lastBatchCancelFailureReasonIndex: new Map(),
+      failureReasonFilter: "",
+      planPresets: {},
+      planPresetOrder: [],
+      planPresetPinned: [],
+      planPresetDraggingName: "",
+      planPresetUndoStack: [],
+      planPresetRedoStack: [],
+      activePlanPresetName: "",
+      defaultPlanPresetName: "",
+      jobViewPresets: {},
+      activeJobPresetName: "",
+      filterTimer: null,
+      jobsTimer: null
+    };
+
+    function getAuthHeaders() {
+      const headers = {};
+      const apiKey = $("apiKey").value.trim();
+      const token = $("bearerToken").value.trim();
+      if (apiKey) {
+        headers["X-Api-Key"] = apiKey;
+      }
+      if (token) {
+        headers["Authorization"] = "Bearer " + token;
+      }
+      return headers;
+    }
+
+    function setBanner(text, tone) {
+      const box = $("banner");
+      box.className = "banner";
+      if (tone) {
+        box.classList.add(tone);
+      }
+      box.textContent = text || "";
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;");
+    }
+
+    function formatDate(value) {
+      if (!value) {
+        return "-";
+      }
+      const d = new Date(value);
+      return d.toLocaleString("zh-CN", { hour12: false });
+    }
+
+    function statusClass(status) {
+      const normalized = String(status || "").toLowerCase();
+      if (normalized === "succeeded") {
+        return "status-ok";
+      }
+      if (normalized === "queued" || normalized === "running" || normalized === "cancellationrequested") {
+        return "status-warn";
+      }
+      if (normalized === "failed" || normalized === "canceled") {
+        return "status-err";
+      }
+      return "";
+    }
+
+    function normalizeNumber(value, fallback) {
+      const parsed = Number.parseInt(value, 10);
+      return Number.isFinite(parsed) ? parsed : fallback;
+    }
+
+    function markFieldInvalid(id, invalid) {
+      const element = $(id);
+      if (!element) {
+        return;
+      }
+      element.classList.toggle("invalid", Boolean(invalid));
+    }
+
+    function clearValidationState() {
+      [
+        "templatePath",
+        "sourceDirectory",
+        "targetDirectory",
+        "areaCodePath",
+        "startIndex",
+        "endIndex"
+      ].forEach((id) => markFieldInvalid(id, false));
+    }
+
+    function validateTemplateOnly(showBanner) {
+      clearValidationState();
+      const errors = [];
+      if (!$("templatePath").value.trim()) {
+        errors.push("Template Path 不能为空。");
+        markFieldInvalid("templatePath", true);
+      }
+
+      if (errors.length && showBanner) {
+        setBanner("参数校验失败:\n- " + errors.join("\n- "), "err");
+      }
+
+      if (!errors.length && showBanner) {
+        setBanner("参数校验通过（模板解析所需字段完整）。", "ok");
+      }
+
+      return errors.length === 0;
+    }
+
+    function validatePlanInputs(showBanner) {
+      clearValidationState();
+      const errors = [];
+      const requiredFields = [
+        ["templatePath", "Template Path"],
+        ["sourceDirectory", "Source Directory"],
+        ["targetDirectory", "Target Directory"],
+        ["areaCodePath", "Area Code Path"]
+      ];
+
+      requiredFields.forEach(([id, label]) => {
+        if (!$(id).value.trim()) {
+          errors.push(label + " 不能为空。");
+          markFieldInvalid(id, true);
+        }
+      });
+
+      const startRaw = $("startIndex").value.trim();
+      const endRaw = $("endIndex").value.trim();
+      const start = Number.parseInt(startRaw, 10);
+      const end = Number.parseInt(endRaw, 10);
+
+      if (!Number.isFinite(start)) {
+        errors.push("Start Index 必须是整数。");
+        markFieldInvalid("startIndex", true);
+      }
+      if (!Number.isFinite(end)) {
+        errors.push("End Index 必须是整数。");
+        markFieldInvalid("endIndex", true);
+      }
+      if (Number.isFinite(start) && Number.isFinite(end) && start > end) {
+        errors.push("Start Index 不能大于 End Index。");
+        markFieldInvalid("startIndex", true);
+        markFieldInvalid("endIndex", true);
+      }
+
+      if (errors.length && showBanner) {
+        setBanner("参数校验失败:\n- " + errors.join("\n- "), "err");
+      }
+
+      if (!errors.length && showBanner) {
+        setBanner("参数校验通过。", "ok");
+      }
+
+      return errors.length === 0;
+    }
+
+    function buildPlanPayload() {
+      return {
+        templatePath: $("templatePath").value.trim(),
+        sourceDirectory: $("sourceDirectory").value.trim(),
+        targetDirectory: $("targetDirectory").value.trim(),
+        areaCodePath: $("areaCodePath").value.trim(),
+        startIndex: normalizeNumber($("startIndex").value, 23),
+        endIndex: normalizeNumber($("endIndex").value, 148)
+      };
+    }
+
+    function buildExecutePayload() {
+      return {
+        plan: buildPlanPayload(),
+        dryRun: $("dryRun").checked,
+        incremental: $("incremental").checked
+      };
+    }
+
+    function buildSubmitPayload() {
+      const payload = buildExecutePayload();
+      payload.idempotencyKey = $("idempotencyKey").value.trim() || ("job-" + Date.now());
+      return payload;
+    }
+
+    function serializeForOutput(value) {
+      if (value === null || value === undefined) {
+        return "null";
+      }
+      if (typeof value === "string") {
+        return value;
+      }
+      return JSON.stringify(value, null, 2);
+    }
+
+    function showOutput(title, requestInfo, responseInfo) {
+      $("resultTitle").textContent = title + " | " + new Date().toLocaleString("zh-CN", { hour12: false });
+      const lines = [
+        "== Request ==",
+        serializeForOutput(requestInfo),
+        "",
+        "== Response ==",
+        serializeForOutput(responseInfo)
+      ];
+      $("resultBox").textContent = lines.join("\n");
+    }
+
+    async function requestApi(url, method, body) {
+      const headers = {
+        ...getAuthHeaders()
+      };
+      const options = { method, headers };
+
+      if (body !== undefined) {
+        headers["Content-Type"] = "application/json";
+        options.body = JSON.stringify(body);
+      }
+
+      const response = await fetch(url, options);
+      const text = await response.text();
+      let parsed;
+      if (!text) {
+        parsed = null;
+      } else {
+        try {
+          parsed = JSON.parse(text);
+        } catch {
+          parsed = text;
+        }
+      }
+
+      return {
+        ok: response.ok,
+        status: response.status,
+        body: parsed
+      };
+    }
+
+    function extractErrorMessage(payload, status) {
+      if (!payload) {
+        return "HTTP " + status;
+      }
+      if (typeof payload === "string") {
+        return payload;
+      }
+      if (payload.message) {
+        return payload.message;
+      }
+      return "HTTP " + status;
+    }
+
+    async function invokeEndpoint(title, url, method, body, onSuccess) {
+      setBanner("执行中: " + title, "warn");
+      try {
+        const response = await requestApi(url, method, body);
+        showOutput(title, { url, method, body }, { status: response.status, body: response.body });
+
+        if (!response.ok) {
+          setBanner(title + "失败: " + extractErrorMessage(response.body, response.status), "err");
+          return;
+        }
+
+        if (onSuccess) {
+          await onSuccess(response.body);
+        }
+        setBanner(title + "成功。", "ok");
+      } catch (error) {
+        showOutput(title, { url, method, body }, String(error));
+        setBanner(title + "失败: " + error, "err");
+      }
+    }
+
+    function saveCredentials() {
+      const apiKey = $("apiKey").value.trim();
+      const token = $("bearerToken").value.trim();
+      if (apiKey) {
+        localStorage.setItem(API_KEY_STORAGE_KEY, apiKey);
+      } else {
+        localStorage.removeItem(API_KEY_STORAGE_KEY);
+      }
+      if (token) {
+        localStorage.setItem(TOKEN_STORAGE_KEY, token);
+      } else {
+        localStorage.removeItem(TOKEN_STORAGE_KEY);
+      }
+      setBanner("凭据已保存到浏览器 localStorage。", "ok");
+    }
+
+    function clearCredentials() {
+      localStorage.removeItem(API_KEY_STORAGE_KEY);
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      $("apiKey").value = "";
+      $("bearerToken").value = "";
+      setBanner("凭据已清空。", "warn");
+    }
+
+    function normalizePlanPresetName(value) {
+      const raw = String(value || "").trim();
+      return raw.slice(0, 64);
+    }
+
+    function normalizePlanSnapshot(snapshot) {
+      const raw = snapshot || {};
+      const plan = raw.plan || {};
+      const startIndex = Number.parseInt(String(plan.startIndex ?? ""), 10);
+      const endIndex = Number.parseInt(String(plan.endIndex ?? ""), 10);
+      return {
+        plan: {
+          templatePath: String(plan.templatePath || ""),
+          sourceDirectory: String(plan.sourceDirectory || ""),
+          targetDirectory: String(plan.targetDirectory || ""),
+          areaCodePath: String(plan.areaCodePath || ""),
+          startIndex: Number.isFinite(startIndex) ? startIndex : 23,
+          endIndex: Number.isFinite(endIndex) ? endIndex : 148
+        },
+        dryRun: raw.dryRun !== false,
+        incremental: raw.incremental !== false,
+        idempotencyKey: String(raw.idempotencyKey || ""),
+        activePlanPresetName: normalizePlanPresetName(raw.activePlanPresetName || "")
+      };
+    }
+
+    function buildCurrentPlanSnapshot() {
+      return normalizePlanSnapshot({
+        plan: buildPlanPayload(),
+        dryRun: $("dryRun").checked,
+        incremental: $("incremental").checked,
+        idempotencyKey: $("idempotencyKey").value.trim(),
+        activePlanPresetName: state.activePlanPresetName || ""
+      });
+    }
+
+    function applyPlanSnapshot(snapshot) {
+      const normalized = normalizePlanSnapshot(snapshot);
+      applyPlanToInputs(normalized.plan);
+      $("dryRun").checked = normalized.dryRun;
+      $("incremental").checked = normalized.incremental;
+      $("idempotencyKey").value = normalized.idempotencyKey;
+      state.activePlanPresetName = normalized.activePlanPresetName;
+      if ($("planPresetName")) {
+        $("planPresetName").value = state.activePlanPresetName;
+      }
+      if ($("planPresetSelect")) {
+        $("planPresetSelect").value = state.activePlanPresetName;
+      }
+    }
+
+    function savePlanState() {
+      localStorage.setItem(PLAN_STORAGE_KEY, JSON.stringify(buildCurrentPlanSnapshot()));
+    }
+
+    function loadPlanState() {
+      const raw = localStorage.getItem(PLAN_STORAGE_KEY);
+      if (!raw) {
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(raw);
+        applyPlanSnapshot(parsed);
+      } catch {
+        localStorage.removeItem(PLAN_STORAGE_KEY);
+      }
+    }
+
+    function savePlanPresets() {
+      localStorage.setItem(PLAN_PRESETS_STORAGE_KEY, JSON.stringify(state.planPresets));
+    }
+
+    function normalizePlanPresetNameList(values) {
+      const rawList = Array.isArray(values) ? values : [];
+      const seen = new Set();
+      const next = [];
+      rawList.forEach((value) => {
+        const name = normalizePlanPresetName(value);
+        if (!name || seen.has(name)) {
+          return;
+        }
+        seen.add(name);
+        next.push(name);
+      });
+      return next;
+    }
+
+    function savePlanPresetMeta() {
+      const payload = {
+        order: normalizePlanPresetNameList(state.planPresetOrder),
+        pinned: normalizePlanPresetNameList(state.planPresetPinned)
+      };
+      localStorage.setItem(PLAN_PRESETS_META_STORAGE_KEY, JSON.stringify(payload));
+    }
+
+    function loadPlanPresetMeta() {
+      const raw = localStorage.getItem(PLAN_PRESETS_META_STORAGE_KEY);
+      if (!raw) {
+        state.planPresetOrder = [];
+        state.planPresetPinned = [];
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(raw);
+        state.planPresetOrder = normalizePlanPresetNameList(parsed?.order);
+        state.planPresetPinned = normalizePlanPresetNameList(parsed?.pinned);
+      } catch {
+        state.planPresetOrder = [];
+        state.planPresetPinned = [];
+        localStorage.removeItem(PLAN_PRESETS_META_STORAGE_KEY);
+      }
+    }
+
+    function reconcilePlanPresetMeta() {
+      const currentOrder = Array.isArray(state.planPresetOrder) ? state.planPresetOrder : [];
+      const currentPinned = Array.isArray(state.planPresetPinned) ? state.planPresetPinned : [];
+
+      const names = Object.keys(state.planPresets || {});
+      const nameSet = new Set(names);
+
+      const normalizedOrder = normalizePlanPresetNameList(currentOrder).filter((name) => nameSet.has(name));
+      const normalizedOrderSet = new Set(normalizedOrder);
+      const extras = names
+        .filter((name) => !normalizedOrderSet.has(name))
+        .sort((a, b) => a.localeCompare(b, "zh-CN"));
+      const nextOrder = normalizedOrder.concat(extras);
+
+      const normalizedPinnedSet = new Set(
+        normalizePlanPresetNameList(currentPinned).filter((name) => nameSet.has(name)));
+      const nextPinned = nextOrder.filter((name) => normalizedPinnedSet.has(name));
+
+      const orderChanged = nextOrder.length !== currentOrder.length
+        || nextOrder.some((name, index) => name !== currentOrder[index]);
+      const pinnedChanged = nextPinned.length !== currentPinned.length
+        || nextPinned.some((name, index) => name !== currentPinned[index]);
+
+      state.planPresetOrder = nextOrder;
+      state.planPresetPinned = nextPinned;
+
+      return orderChanged || pinnedChanged;
+    }
+
+    function getOrderedPlanPresetNames() {
+      if (reconcilePlanPresetMeta()) {
+        savePlanPresetMeta();
+      }
+      const pinnedSet = new Set(state.planPresetPinned);
+      const pinned = state.planPresetOrder.filter((name) => pinnedSet.has(name));
+      const normal = state.planPresetOrder.filter((name) => !pinnedSet.has(name));
+      return pinned.concat(normal);
+    }
+
+    function updatePlanPresetHistoryButtonState() {
+      const undoBtn = $("undoPlanPresetOrderBtn");
+      if (undoBtn) {
+        const undoCount = Array.isArray(state.planPresetUndoStack) ? state.planPresetUndoStack.length : 0;
+        undoBtn.disabled = undoCount === 0;
+        undoBtn.title = undoCount > 0 ? ("可撤销 " + undoCount + " 步") : "当前没有可撤销的排序操作";
+      }
+      const redoBtn = $("redoPlanPresetOrderBtn");
+      if (redoBtn) {
+        const redoCount = Array.isArray(state.planPresetRedoStack) ? state.planPresetRedoStack.length : 0;
+        redoBtn.disabled = redoCount === 0;
+        redoBtn.title = redoCount > 0 ? ("可重做 " + redoCount + " 步") : "当前没有可重做的排序操作";
+      }
+      renderPlanPresetHistoryView();
+    }
+
+    function pushPlanPresetHistoryEntry(stack, entry) {
+      if (!Array.isArray(stack) || !entry) {
+        return;
+      }
+      stack.push(entry);
+      while (stack.length > PLAN_PRESET_HISTORY_LIMIT) {
+        stack.shift();
+      }
+    }
+
+    function normalizePlanPresetHistoryEntry(raw) {
+      const entry = raw || {};
+      const changedAtRaw = String(entry.changedAt || "").trim();
+      const parsedTime = changedAtRaw ? new Date(changedAtRaw) : new Date(NaN);
+      const changedAt = Number.isFinite(parsedTime.getTime())
+        ? parsedTime.toISOString()
+        : new Date().toISOString();
+      return {
+        actionName: String(entry.actionName || "排序调整").trim().slice(0, 64),
+        actionTarget: normalizePlanPresetName(entry.actionTarget || ""),
+        actionNote: String(entry.actionNote || "").trim().slice(0, 96),
+        changedAt,
+        order: normalizePlanPresetNameList(entry.order),
+        pinned: normalizePlanPresetNameList(entry.pinned),
+        activeName: normalizePlanPresetName(entry.activeName || "")
+      };
+    }
+
+    function normalizePlanPresetHistoryStack(values) {
+      const rawList = Array.isArray(values) ? values : [];
+      const list = rawList.map((entry) => normalizePlanPresetHistoryEntry(entry));
+      if (list.length <= PLAN_PRESET_HISTORY_LIMIT) {
+        return list;
+      }
+      return list.slice(list.length - PLAN_PRESET_HISTORY_LIMIT);
+    }
+
+    function savePlanPresetHistory() {
+      const payload = {
+        version: 1,
+        undo: normalizePlanPresetHistoryStack(state.planPresetUndoStack),
+        redo: normalizePlanPresetHistoryStack(state.planPresetRedoStack)
+      };
+      localStorage.setItem(PLAN_PRESET_HISTORY_STORAGE_KEY, JSON.stringify(payload));
+    }
+
+    function loadPlanPresetHistory() {
+      const raw = localStorage.getItem(PLAN_PRESET_HISTORY_STORAGE_KEY);
+      if (!raw) {
+        state.planPresetUndoStack = [];
+        state.planPresetRedoStack = [];
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(raw);
+        state.planPresetUndoStack = normalizePlanPresetHistoryStack(parsed?.undo);
+        state.planPresetRedoStack = normalizePlanPresetHistoryStack(parsed?.redo);
+      } catch {
+        state.planPresetUndoStack = [];
+        state.planPresetRedoStack = [];
+        localStorage.removeItem(PLAN_PRESET_HISTORY_STORAGE_KEY);
+      }
+    }
+
+    function reconcilePlanPresetHistoryWithCurrentPresets() {
+      const nameSet = new Set(Object.keys(state.planPresets || {}));
+      const before = JSON.stringify({
+        undo: state.planPresetUndoStack,
+        redo: state.planPresetRedoStack
+      });
+      const sanitizeEntry = (entry) => {
+        const next = normalizePlanPresetHistoryEntry(entry);
+        next.order = next.order.filter((name) => nameSet.has(name));
+        next.pinned = next.pinned.filter((name) => nameSet.has(name));
+        next.activeName = nameSet.has(next.activeName) ? next.activeName : "";
+        return next;
+      };
+      const keepEntry = (entry) => entry.order.length > 0 || entry.pinned.length > 0 || Boolean(entry.activeName);
+      state.planPresetUndoStack = normalizePlanPresetHistoryStack(state.planPresetUndoStack.map(sanitizeEntry).filter(keepEntry));
+      state.planPresetRedoStack = normalizePlanPresetHistoryStack(state.planPresetRedoStack.map(sanitizeEntry).filter(keepEntry));
+      const after = JSON.stringify({
+        undo: state.planPresetUndoStack,
+        redo: state.planPresetRedoStack
+      });
+      if (before !== after) {
+        savePlanPresetHistory();
+      }
+    }
+
+    function clearPlanPresetOrderHistory() {
+      state.planPresetUndoStack = [];
+      state.planPresetRedoStack = [];
+      savePlanPresetHistory();
+      updatePlanPresetHistoryButtonState();
+    }
+
+    function clearPlanPresetOrderHistoryAction() {
+      const undoCount = Array.isArray(state.planPresetUndoStack) ? state.planPresetUndoStack.length : 0;
+      const redoCount = Array.isArray(state.planPresetRedoStack) ? state.planPresetRedoStack.length : 0;
+      if (undoCount + redoCount === 0) {
+        setBanner("当前没有可清空的排序历史。", "warn");
+        return;
+      }
+
+      clearPlanPresetOrderHistory();
+      setBanner("已清空计划预设排序历史。", "ok");
+    }
+
+    function exportPlanPresetHistory() {
+      const undoStack = normalizePlanPresetHistoryStack(state.planPresetUndoStack);
+      const redoStack = normalizePlanPresetHistoryStack(state.planPresetRedoStack);
+      const total = undoStack.length + redoStack.length;
+      if (total === 0) {
+        setBanner("当前没有可导出的排序历史。", "warn");
+        return;
+      }
+
+      const payload = {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        undo: undoStack,
+        redo: redoStack
+      };
+      const fileName = "datahz-plan-preset-history-" + new Date().toISOString().replace(/[:.]/g, "-") + ".json";
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setBanner("计划预设排序历史已导出：" + fileName + "（" + total + " 条）", "ok");
+    }
+
+    async function importPlanPresetHistory(file) {
+      if (!file) {
+        return;
+      }
+
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        let undoValues = parsed?.undo;
+        let redoValues = parsed?.redo;
+
+        if (Array.isArray(parsed)) {
+          undoValues = parsed;
+          redoValues = [];
+        }
+
+        if (!Array.isArray(undoValues) && !Array.isArray(redoValues)) {
+          setBanner("排序历史导入失败：文件结构无效。", "err");
+          return;
+        }
+
+        state.planPresetUndoStack = normalizePlanPresetHistoryStack(undoValues);
+        state.planPresetRedoStack = normalizePlanPresetHistoryStack(redoValues);
+        reconcilePlanPresetHistoryWithCurrentPresets();
+        savePlanPresetHistory();
+        updatePlanPresetHistoryButtonState();
+        setBanner(
+          "计划预设排序历史已导入：撤销 " + state.planPresetUndoStack.length
+          + " 条，重做 " + state.planPresetRedoStack.length + " 条。",
+          "ok");
+      } catch (error) {
+        setBanner("排序历史导入失败: " + error, "err");
+      } finally {
+        $("importPlanPresetHistoryInput").value = "";
+      }
+    }
+
+    function captureCurrentPlanPresetArrangement(actionName, metadata) {
+      const rawMeta = metadata || {};
+      const targetName = normalizePlanPresetName(rawMeta.presetName || "");
+      const noteText = String(rawMeta.note || "").trim().slice(0, 96);
+      reconcilePlanPresetMeta();
+      return {
+        actionName: String(actionName || "排序调整"),
+        actionTarget: targetName,
+        actionNote: noteText,
+        changedAt: new Date().toISOString(),
+        order: normalizePlanPresetNameList(state.planPresetOrder),
+        pinned: normalizePlanPresetNameList(state.planPresetPinned),
+        activeName: normalizePlanPresetName(state.activePlanPresetName || "")
+      };
+    }
+
+    function formatPlanPresetHistorySummary(entry) {
+      const action = String(entry?.actionName || "排序调整");
+      const target = normalizePlanPresetName(entry?.actionTarget || "");
+      const note = String(entry?.actionNote || "").trim();
+      const parts = [action];
+      if (target) {
+        parts.push(target);
+      }
+      if (note) {
+        parts.push(note);
+      }
+      return parts.join(" · ");
+    }
+
+    function formatPlanPresetHistoryTime(entry) {
+      const iso = String(entry?.changedAt || "").trim();
+      if (!iso) {
+        return "-";
+      }
+      const dt = new Date(iso);
+      if (!Number.isFinite(dt.getTime())) {
+        return "-";
+      }
+      return dt.toLocaleString("zh-CN", { hour12: false });
+    }
+
+    function renderPlanPresetHistoryView() {
+      const list = $("planPresetHistoryList");
+      const empty = $("planPresetHistoryEmpty");
+      if (!list || !empty) {
+        return;
+      }
+
+      const undoStack = Array.isArray(state.planPresetUndoStack) ? state.planPresetUndoStack : [];
+      const redoStack = Array.isArray(state.planPresetRedoStack) ? state.planPresetRedoStack : [];
+      const rows = [];
+
+      for (let i = undoStack.length - 1; i >= 0; i -= 1) {
+        const steps = undoStack.length - i;
+        const summary = escapeHtml(formatPlanPresetHistorySummary(undoStack[i]));
+        const timeText = escapeHtml(formatPlanPresetHistoryTime(undoStack[i]));
+        const title = escapeHtml(String(undoStack[i]?.changedAt || ""));
+        rows.push(
+          "<li class=\"plan-preset-history-item\">" +
+          "<button type=\"button\" class=\"plan-preset-history-btn undo\" title=\"" + title + "\" data-plan-preset-history=\"1\" data-kind=\"undo\" data-steps=\"" + steps + "\">" +
+          "撤销 " + steps + " 步 · " + timeText + " · " + summary +
+          "</button>" +
+          "</li>");
+      }
+
+      for (let i = redoStack.length - 1; i >= 0; i -= 1) {
+        const steps = redoStack.length - i;
+        const summary = escapeHtml(formatPlanPresetHistorySummary(redoStack[i]));
+        const timeText = escapeHtml(formatPlanPresetHistoryTime(redoStack[i]));
+        const title = escapeHtml(String(redoStack[i]?.changedAt || ""));
+        rows.push(
+          "<li class=\"plan-preset-history-item\">" +
+          "<button type=\"button\" class=\"plan-preset-history-btn redo\" title=\"" + title + "\" data-plan-preset-history=\"1\" data-kind=\"redo\" data-steps=\"" + steps + "\">" +
+          "重做 " + steps + " 步 · " + timeText + " · " + summary +
+          "</button>" +
+          "</li>");
+      }
+
+      if (rows.length === 0) {
+        list.innerHTML = "";
+        empty.style.display = "block";
+        return;
+      }
+
+      list.innerHTML = rows.join("");
+      empty.style.display = "none";
+    }
+
+    function applyPlanPresetArrangement(snapshot) {
+      if (!snapshot) {
+        return;
+      }
+      state.planPresetOrder = normalizePlanPresetNameList(snapshot.order);
+      state.planPresetPinned = normalizePlanPresetNameList(snapshot.pinned);
+      state.activePlanPresetName = snapshot.activeName && state.planPresets[snapshot.activeName]
+        ? snapshot.activeName
+        : "";
+      reconcilePlanPresetMeta();
+      savePlanPresetMeta();
+      savePlanState();
+      renderPlanPresetOptions();
+      if (state.activePlanPresetName) {
+        $("planPresetSelect").value = state.activePlanPresetName;
+        $("planPresetName").value = state.activePlanPresetName;
+      }
+    }
+
+    function rememberPlanPresetOrderUndo(actionName, metadata) {
+      pushPlanPresetHistoryEntry(
+        state.planPresetUndoStack,
+        captureCurrentPlanPresetArrangement(actionName, metadata));
+      state.planPresetRedoStack = [];
+      savePlanPresetHistory();
+      updatePlanPresetHistoryButtonState();
+    }
+
+    function undoPlanPresetOrderChange() {
+      const changed = undoPlanPresetOrderSteps(1, false);
+      if (changed === 0) {
+        setBanner("当前没有可撤销的排序操作。", "warn");
+      }
+    }
+
+    function redoPlanPresetOrderChange() {
+      const changed = redoPlanPresetOrderSteps(1, false);
+      if (changed === 0) {
+        setBanner("当前没有可重做的排序操作。", "warn");
+      }
+    }
+
+    function undoPlanPresetOrderSteps(steps, silent) {
+      const targetSteps = Math.max(1, Number.parseInt(String(steps || "1"), 10) || 1);
+      let applied = 0;
+      let lastAction = "排序调整";
+      while (applied < targetSteps) {
+        const snapshot = Array.isArray(state.planPresetUndoStack) ? state.planPresetUndoStack.pop() : null;
+        if (!snapshot) {
+          break;
+        }
+        const action = snapshot.actionName || "排序调整";
+        pushPlanPresetHistoryEntry(
+          state.planPresetRedoStack,
+          captureCurrentPlanPresetArrangement(action, {
+            presetName: snapshot.actionTarget || "",
+            note: snapshot.actionNote || ""
+          }));
+        applyPlanPresetArrangement(snapshot);
+        lastAction = action;
+        applied += 1;
+      }
+
+      updatePlanPresetHistoryButtonState();
+      savePlanPresetHistory();
+      if (!silent && applied > 0) {
+        const suffix = applied > 1 ? "（共 " + applied + " 步）" : "";
+        setBanner("已撤销计划预设操作：" + lastAction + suffix, "ok");
+      }
+      return applied;
+    }
+
+    function redoPlanPresetOrderSteps(steps, silent) {
+      const targetSteps = Math.max(1, Number.parseInt(String(steps || "1"), 10) || 1);
+      let applied = 0;
+      let lastAction = "排序调整";
+      while (applied < targetSteps) {
+        const snapshot = Array.isArray(state.planPresetRedoStack) ? state.planPresetRedoStack.pop() : null;
+        if (!snapshot) {
+          break;
+        }
+        const action = snapshot.actionName || "排序调整";
+        pushPlanPresetHistoryEntry(
+          state.planPresetUndoStack,
+          captureCurrentPlanPresetArrangement(action, {
+            presetName: snapshot.actionTarget || "",
+            note: snapshot.actionNote || ""
+          }));
+        applyPlanPresetArrangement(snapshot);
+        lastAction = action;
+        applied += 1;
+      }
+
+      updatePlanPresetHistoryButtonState();
+      savePlanPresetHistory();
+      if (!silent && applied > 0) {
+        const suffix = applied > 1 ? "（共 " + applied + " 步）" : "";
+        setBanner("已重做计划预设操作：" + lastAction + suffix, "ok");
+      }
+      return applied;
+    }
+
+    function handlePlanPresetHistoryListClick(event) {
+      const button = event.target.closest("[data-plan-preset-history]");
+      if (!button) {
+        return;
+      }
+
+      const kind = String(button.getAttribute("data-kind") || "");
+      const steps = Number.parseInt(String(button.getAttribute("data-steps") || "1"), 10);
+      if (kind === "undo") {
+        const changed = undoPlanPresetOrderSteps(steps, false);
+        if (changed === 0) {
+          setBanner("当前没有可撤销的排序操作。", "warn");
+        }
+        return;
+      }
+      if (kind === "redo") {
+        const changed = redoPlanPresetOrderSteps(steps, false);
+        if (changed === 0) {
+          setBanner("当前没有可重做的排序操作。", "warn");
+        }
+      }
+    }
+
+    function handlePlanPresetUndoHotkey(event) {
+      if (!event.altKey) {
+        return false;
+      }
+      const key = String(event.key || "").toLowerCase();
+      if (key === "z" && event.shiftKey) {
+        event.preventDefault();
+        redoPlanPresetOrderChange();
+        return true;
+      }
+      if (key === "y") {
+        event.preventDefault();
+        redoPlanPresetOrderChange();
+        return true;
+      }
+      if (key === "z") {
+        event.preventDefault();
+        undoPlanPresetOrderChange();
+        return true;
+      }
+      return false;
+    }
+
+    function saveDefaultPlanPresetName() {
+      const name = normalizePlanPresetName(state.defaultPlanPresetName || "");
+      if (name) {
+        localStorage.setItem(PLAN_PRESETS_DEFAULT_STORAGE_KEY, name);
+      } else {
+        localStorage.removeItem(PLAN_PRESETS_DEFAULT_STORAGE_KEY);
+      }
+    }
+
+    function loadDefaultPlanPresetName() {
+      state.defaultPlanPresetName = normalizePlanPresetName(localStorage.getItem(PLAN_PRESETS_DEFAULT_STORAGE_KEY) || "");
+      reconcileDefaultPlanPresetName();
+    }
+
+    function reconcileDefaultPlanPresetName() {
+      const name = normalizePlanPresetName(state.defaultPlanPresetName || "");
+      if (name && state.planPresets[name]) {
+        state.defaultPlanPresetName = name;
+        return;
+      }
+      if (state.defaultPlanPresetName) {
+        state.defaultPlanPresetName = "";
+        saveDefaultPlanPresetName();
+      }
+    }
+
+    function applyDefaultPlanPresetIfNeeded() {
+      const activeName = normalizePlanPresetName(state.activePlanPresetName || "");
+      if (activeName && state.planPresets[activeName]) {
+        return false;
+      }
+
+      const defaultName = normalizePlanPresetName(state.defaultPlanPresetName || "");
+      if (!defaultName || !state.planPresets[defaultName]) {
+        return false;
+      }
+
+      applyPlanSnapshot(state.planPresets[defaultName]);
+      state.activePlanPresetName = defaultName;
+      $("planPresetName").value = defaultName;
+      savePlanState();
+      return true;
+    }
+
+    function loadPlanPresets() {
+      const raw = localStorage.getItem(PLAN_PRESETS_STORAGE_KEY);
+      if (!raw) {
+        state.planPresets = {};
+        clearPlanPresetOrderHistory();
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== "object") {
+          state.planPresets = {};
+          clearPlanPresetOrderHistory();
+          return;
+        }
+        const next = {};
+        Object.entries(parsed).forEach(([name, value]) => {
+          const normalizedName = normalizePlanPresetName(name);
+          if (!normalizedName) {
+            return;
+          }
+          const normalizedSnapshot = normalizePlanSnapshot(value);
+          normalizedSnapshot.activePlanPresetName = normalizedName;
+          next[normalizedName] = normalizedSnapshot;
+        });
+        state.planPresets = next;
+        reconcilePlanPresetMeta();
+        clearPlanPresetOrderHistory();
+      } catch {
+        state.planPresets = {};
+        localStorage.removeItem(PLAN_PRESETS_STORAGE_KEY);
+        state.planPresetOrder = [];
+        state.planPresetPinned = [];
+        localStorage.removeItem(PLAN_PRESETS_META_STORAGE_KEY);
+        clearPlanPresetOrderHistory();
+      }
+    }
+
+    function clearPlanPresetDragIndicators() {
+      const list = $("planPresetOrderList");
+      if (!list) {
+        return;
+      }
+      list.querySelectorAll(".drag-over-before, .drag-over-after").forEach((node) => {
+        node.classList.remove("drag-over-before", "drag-over-after");
+      });
+    }
+
+    function clearPlanPresetDragState() {
+      const list = $("planPresetOrderList");
+      if (!list) {
+        return;
+      }
+      clearPlanPresetDragIndicators();
+      list.querySelectorAll(".dragging").forEach((node) => {
+        node.classList.remove("dragging");
+      });
+    }
+
+    function getPlanPresetOrderItem(target) {
+      if (!target || typeof target.closest !== "function") {
+        return null;
+      }
+      return target.closest("[data-plan-preset-item]");
+    }
+
+    function renderPlanPresetOrderList(names) {
+      const list = $("planPresetOrderList");
+      const empty = $("planPresetOrderEmpty");
+      if (!list || !empty) {
+        return;
+      }
+
+      if (!Array.isArray(names) || names.length === 0) {
+        list.innerHTML = "";
+        empty.style.display = "block";
+        return;
+      }
+
+      empty.style.display = "none";
+      const pinnedSet = new Set(state.planPresetPinned);
+      const rows = names.map((name) => {
+        const escaped = escapeHtml(name);
+        const activeClass = name === state.activePlanPresetName ? " active" : "";
+        const badges = [];
+        if (state.defaultPlanPresetName === name) {
+          badges.push("<span class=\"plan-preset-order-badge default\">默认</span>");
+        }
+        if (pinnedSet.has(name)) {
+          badges.push("<span class=\"plan-preset-order-badge pinned\">常用</span>");
+        }
+        return [
+          "<li class=\"plan-preset-order-item" + activeClass + "\" draggable=\"true\" data-plan-preset-item=\"1\" data-name=\"",
+          escaped,
+          "\">",
+          "<span class=\"plan-preset-order-handle\">drag</span>",
+          "<span class=\"plan-preset-order-name\">",
+          escaped,
+          "</span>",
+          "<span class=\"plan-preset-order-badges\">",
+          badges.join(""),
+          "</span>",
+          "</li>"
+        ].join("");
+      });
+      list.innerHTML = rows.join("");
+    }
+
+    function reorderPlanPresetWithinGroup(sourceName, targetName, insertAfter) {
+      const source = normalizePlanPresetName(sourceName);
+      if (!source || !state.planPresets[source]) {
+        return false;
+      }
+
+      const ordered = getOrderedPlanPresetNames();
+      const pinnedSet = new Set(state.planPresetPinned);
+      const sourcePinned = pinnedSet.has(source);
+      const group = ordered.filter((name) => pinnedSet.has(name) === sourcePinned);
+      const fromIndex = group.indexOf(source);
+      if (fromIndex < 0) {
+        return false;
+      }
+
+      const normalizedTarget = normalizePlanPresetName(targetName || "");
+      let toIndex = group.length;
+      if (normalizedTarget) {
+        const targetPinned = pinnedSet.has(normalizedTarget);
+        if (targetPinned !== sourcePinned) {
+          setBanner("常用与非常用分区不能直接跨越，请先调整置顶状态。", "warn");
+          return false;
+        }
+        toIndex = group.indexOf(normalizedTarget);
+        if (toIndex < 0) {
+          return false;
+        }
+        if (insertAfter) {
+          toIndex += 1;
+        }
+      }
+
+      if (fromIndex < toIndex) {
+        toIndex -= 1;
+      }
+      if (toIndex === fromIndex) {
+        return false;
+      }
+
+      rememberPlanPresetOrderUndo("拖拽排序", { presetName: source });
+      const nextGroup = group.slice();
+      nextGroup.splice(fromIndex, 1);
+      nextGroup.splice(toIndex, 0, source);
+
+      const other = ordered.filter((name) => pinnedSet.has(name) !== sourcePinned);
+      state.planPresetOrder = sourcePinned ? nextGroup.concat(other) : other.concat(nextGroup);
+      reconcilePlanPresetMeta();
+      savePlanPresetMeta();
+      state.activePlanPresetName = source;
+      savePlanState();
+      renderPlanPresetOptions();
+      $("planPresetSelect").value = source;
+      $("planPresetName").value = source;
+      return true;
+    }
+
+    function handlePlanPresetOrderDragStart(event) {
+      const item = getPlanPresetOrderItem(event.target);
+      if (!item) {
+        return;
+      }
+
+      const name = normalizePlanPresetName(item.getAttribute("data-name") || "");
+      if (!name || !state.planPresets[name]) {
+        return;
+      }
+
+      state.planPresetDraggingName = name;
+      clearPlanPresetDragState();
+      item.classList.add("dragging");
+      if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", name);
+      }
+    }
+
+    function handlePlanPresetOrderDragOver(event) {
+      if (!state.planPresetDraggingName) {
+        return;
+      }
+
+      event.preventDefault();
+      const item = getPlanPresetOrderItem(event.target);
+      clearPlanPresetDragIndicators();
+      if (!item) {
+        return;
+      }
+
+      const targetName = normalizePlanPresetName(item.getAttribute("data-name") || "");
+      if (!targetName || targetName === state.planPresetDraggingName) {
+        return;
+      }
+
+      const rect = item.getBoundingClientRect();
+      const after = (event.clientY - rect.top) > rect.height / 2;
+      item.classList.add(after ? "drag-over-after" : "drag-over-before");
+    }
+
+    function handlePlanPresetOrderDrop(event) {
+      const sourceName = normalizePlanPresetName(
+        state.planPresetDraggingName || (event.dataTransfer ? event.dataTransfer.getData("text/plain") : ""));
+      if (!sourceName) {
+        return;
+      }
+
+      event.preventDefault();
+      const item = getPlanPresetOrderItem(event.target);
+      let targetName = "";
+      let insertAfter = false;
+      if (item) {
+        targetName = normalizePlanPresetName(item.getAttribute("data-name") || "");
+        const rect = item.getBoundingClientRect();
+        insertAfter = (event.clientY - rect.top) > rect.height / 2;
+      }
+
+      const moved = reorderPlanPresetWithinGroup(sourceName, targetName, insertAfter);
+      clearPlanPresetDragState();
+      state.planPresetDraggingName = "";
+      if (moved) {
+        setBanner("计划预设顺序已更新（拖拽）：" + sourceName, "ok");
+      }
+    }
+
+    function handlePlanPresetOrderDragEnd() {
+      clearPlanPresetDragState();
+      state.planPresetDraggingName = "";
+    }
+
+    function handlePlanPresetOrderListClick(event) {
+      const item = getPlanPresetOrderItem(event.target);
+      if (!item) {
+        return;
+      }
+      const name = normalizePlanPresetName(item.getAttribute("data-name") || "");
+      if (!name || !state.planPresets[name]) {
+        return;
+      }
+      state.activePlanPresetName = name;
+      $("planPresetSelect").value = name;
+      $("planPresetName").value = name;
+      savePlanState();
+      renderPlanPresetOptions();
+    }
+
+    function renderPlanPresetOptions() {
+      const select = $("planPresetSelect");
+      if (!select) {
+        return;
+      }
+
+      const names = getOrderedPlanPresetNames();
+      const pinnedSet = new Set(state.planPresetPinned);
+      const options = ["<option value=\"\">计划预设: 无</option>"];
+      names.forEach((name) => {
+        const escaped = escapeHtml(name);
+        const tags = [];
+        if (state.defaultPlanPresetName === name) {
+          tags.push("默认");
+        }
+        if (pinnedSet.has(name)) {
+          tags.push("常用");
+        }
+        const text = tags.length ? escaped + "（" + tags.join("·") + "）" : escaped;
+        options.push("<option value=\"" + escaped + "\">" + text + "</option>");
+      });
+      select.innerHTML = options.join("");
+      renderPlanPresetOrderList(names);
+      updatePlanPresetHistoryButtonState();
+
+      if (state.activePlanPresetName && names.includes(state.activePlanPresetName)) {
+        select.value = state.activePlanPresetName;
+        $("planPresetName").value = state.activePlanPresetName;
+      } else {
+        state.activePlanPresetName = "";
+        select.value = "";
+        $("planPresetName").value = "";
+      }
+    }
+
+    function saveCurrentAsPlanPreset() {
+      const name = normalizePlanPresetName($("planPresetName").value);
+      if (!name) {
+        setBanner("请输入计划预设名。", "warn");
+        return;
+      }
+
+      const existed = Boolean(state.planPresets[name]);
+      const snapshot = buildCurrentPlanSnapshot();
+      snapshot.activePlanPresetName = name;
+      state.planPresets[name] = snapshot;
+      if (!existed) {
+        state.planPresetOrder.push(name);
+      }
+      state.activePlanPresetName = name;
+      reconcilePlanPresetMeta();
+      clearPlanPresetOrderHistory();
+      savePlanPresets();
+      savePlanPresetMeta();
+      savePlanState();
+      renderPlanPresetOptions();
+      $("planPresetSelect").value = name;
+      setBanner("计划预设已保存：" + name, "ok");
+    }
+
+    function renameSelectedPlanPreset() {
+      const sourceName = normalizePlanPresetName($("planPresetSelect").value);
+      if (!sourceName || !state.planPresets[sourceName]) {
+        setBanner("请选择要重命名的计划预设。", "warn");
+        return;
+      }
+
+      const targetName = normalizePlanPresetName($("planPresetName").value);
+      if (!targetName) {
+        setBanner("请输入新的计划预设名。", "warn");
+        return;
+      }
+      if (sourceName === targetName) {
+        setBanner("计划预设名称未变化。", "warn");
+        return;
+      }
+
+      if (state.planPresets[targetName]) {
+        const confirmedOverwrite = window.confirm("目标计划预设已存在，确认覆盖：" + targetName + "？");
+        if (!confirmedOverwrite) {
+          return;
+        }
+      }
+
+      const snapshot = normalizePlanSnapshot(state.planPresets[sourceName]);
+      snapshot.activePlanPresetName = targetName;
+      state.planPresets[targetName] = snapshot;
+      delete state.planPresets[sourceName];
+
+      if (state.activePlanPresetName === sourceName) {
+        state.activePlanPresetName = targetName;
+      }
+      if (state.defaultPlanPresetName === sourceName) {
+        state.defaultPlanPresetName = targetName;
+        saveDefaultPlanPresetName();
+      }
+
+      state.planPresetOrder = normalizePlanPresetNameList(
+        state.planPresetOrder.map((name) => (name === sourceName ? targetName : name)));
+      state.planPresetPinned = normalizePlanPresetNameList(
+        state.planPresetPinned.map((name) => (name === sourceName ? targetName : name)));
+      reconcilePlanPresetMeta();
+      clearPlanPresetOrderHistory();
+      savePlanPresets();
+      savePlanPresetMeta();
+      savePlanState();
+      renderPlanPresetOptions();
+      $("planPresetSelect").value = targetName;
+      $("planPresetName").value = targetName;
+      setBanner("计划预设已重命名：" + sourceName + " -> " + targetName, "ok");
+    }
+
+    function loadSelectedPlanPreset() {
+      const name = normalizePlanPresetName($("planPresetSelect").value);
+      if (!name || !state.planPresets[name]) {
+        setBanner("请选择有效计划预设。", "warn");
+        return;
+      }
+
+      applyPlanSnapshot(state.planPresets[name]);
+      state.activePlanPresetName = name;
+      $("planPresetName").value = name;
+      renderPlanPresetOptions();
+      savePlanState();
+      setBanner("计划预设已加载：" + name, "ok");
+    }
+
+    function deleteSelectedPlanPreset() {
+      const name = normalizePlanPresetName($("planPresetSelect").value);
+      if (!name || !state.planPresets[name]) {
+        setBanner("请选择要删除的计划预设。", "warn");
+        return;
+      }
+
+      delete state.planPresets[name];
+      if (state.activePlanPresetName === name) {
+        state.activePlanPresetName = "";
+      }
+      if (state.defaultPlanPresetName === name) {
+        state.defaultPlanPresetName = "";
+        saveDefaultPlanPresetName();
+      }
+      state.planPresetOrder = state.planPresetOrder.filter((item) => item !== name);
+      state.planPresetPinned = state.planPresetPinned.filter((item) => item !== name);
+      reconcilePlanPresetMeta();
+      clearPlanPresetOrderHistory();
+      savePlanPresets();
+      savePlanPresetMeta();
+      savePlanState();
+      renderPlanPresetOptions();
+      setBanner("计划预设已删除：" + name, "ok");
+    }
+
+    function setSelectedPlanPresetPinned(pinned) {
+      const name = normalizePlanPresetName($("planPresetSelect").value);
+      if (!name || !state.planPresets[name]) {
+        setBanner("请选择有效计划预设。", "warn");
+        return;
+      }
+
+      const pinnedSet = new Set(state.planPresetPinned);
+      if (pinned) {
+        if (pinnedSet.has(name)) {
+          setBanner("该计划预设已置顶。", "warn");
+          return;
+        }
+        rememberPlanPresetOrderUndo("置顶常用", { presetName: name });
+        state.planPresetPinned = [name].concat(state.planPresetPinned.filter((item) => item !== name));
+        state.planPresetOrder = [name].concat(state.planPresetOrder.filter((item) => item !== name));
+      } else {
+        if (!pinnedSet.has(name)) {
+          setBanner("该计划预设当前未置顶。", "warn");
+          return;
+        }
+        rememberPlanPresetOrderUndo("取消置顶", { presetName: name });
+        state.planPresetPinned = state.planPresetPinned.filter((item) => item !== name);
+      }
+
+      reconcilePlanPresetMeta();
+      savePlanPresetMeta();
+      renderPlanPresetOptions();
+      $("planPresetSelect").value = name;
+      $("planPresetName").value = name;
+      setBanner(pinned ? "计划预设已置顶：" + name : "计划预设已取消置顶：" + name, "ok");
+    }
+
+    function moveSelectedPlanPreset(offset) {
+      const name = normalizePlanPresetName($("planPresetSelect").value);
+      if (!name || !state.planPresets[name]) {
+        setBanner("请选择要移动的计划预设。", "warn");
+        return;
+      }
+
+      const ordered = getOrderedPlanPresetNames();
+      const index = ordered.indexOf(name);
+      if (index < 0) {
+        setBanner("未找到计划预设位置。", "warn");
+        return;
+      }
+      const nextIndex = index + offset;
+      if (nextIndex < 0 || nextIndex >= ordered.length) {
+        setBanner(offset < 0 ? "已经在最上方。" : "已经在最下方。", "warn");
+        return;
+      }
+
+      const pinnedSet = new Set(state.planPresetPinned);
+      const sourcePinned = pinnedSet.has(name);
+      const targetPinned = pinnedSet.has(ordered[nextIndex]);
+      if (sourcePinned !== targetPinned) {
+        setBanner("常用与非常用分区不能直接跨越，请先调整置顶状态。", "warn");
+        return;
+      }
+
+      const swapped = ordered.slice();
+      const temp = swapped[index];
+      swapped[index] = swapped[nextIndex];
+      swapped[nextIndex] = temp;
+
+      rememberPlanPresetOrderUndo(
+        offset < 0 ? "上移计划预设" : "下移计划预设",
+        { presetName: name });
+      state.planPresetOrder = swapped;
+      reconcilePlanPresetMeta();
+      savePlanPresetMeta();
+      renderPlanPresetOptions();
+      $("planPresetSelect").value = name;
+      $("planPresetName").value = name;
+      setBanner(offset < 0 ? "计划预设已上移：" + name : "计划预设已下移：" + name, "ok");
+    }
+
+    function moveSelectedPlanPresetUp() {
+      moveSelectedPlanPreset(-1);
+    }
+
+    function moveSelectedPlanPresetDown() {
+      moveSelectedPlanPreset(1);
+    }
+
+    function setSelectedPlanPresetAsDefault() {
+      const name = normalizePlanPresetName($("planPresetSelect").value);
+      if (!name || !state.planPresets[name]) {
+        setBanner("请选择要设为默认的计划预设。", "warn");
+        return;
+      }
+
+      state.defaultPlanPresetName = name;
+      saveDefaultPlanPresetName();
+      renderPlanPresetOptions();
+      $("planPresetSelect").value = name;
+      $("planPresetName").value = name;
+      setBanner("默认计划预设已设置：" + name, "ok");
+    }
+
+    function clearDefaultPlanPreset() {
+      if (!state.defaultPlanPresetName) {
+        setBanner("当前没有默认计划预设。", "warn");
+        return;
+      }
+
+      state.defaultPlanPresetName = "";
+      saveDefaultPlanPresetName();
+      renderPlanPresetOptions();
+      setBanner("默认计划预设已清除。", "ok");
+    }
+
+    function exportPlanPresets() {
+      const names = Object.keys(state.planPresets || {});
+      if (!names.length) {
+        setBanner("当前没有可导出的计划预设。", "warn");
+        return;
+      }
+
+      reconcilePlanPresetMeta();
+      const payload = {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        activePlanPresetName: state.activePlanPresetName || "",
+        defaultPlanPresetName: state.defaultPlanPresetName || "",
+        presetOrder: state.planPresetOrder,
+        pinnedPresetNames: state.planPresetPinned,
+        presets: state.planPresets
+      };
+      const fileName = "datahz-plan-presets-" + new Date().toISOString().replace(/[:.]/g, "-") + ".json";
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setBanner("计划预设已导出：" + fileName + "（" + names.length + " 个）", "ok");
+    }
+
+    async function importPlanPresets(file) {
+      if (!file) {
+        return;
+      }
+
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        const rawPresets = parsed?.presets && typeof parsed.presets === "object"
+          ? parsed.presets
+          : parsed;
+
+        if (!rawPresets || typeof rawPresets !== "object") {
+          setBanner("计划预设导入失败：文件结构无效。", "err");
+          return;
+        }
+
+        let imported = 0;
+        Object.entries(rawPresets).forEach(([name, snapshot]) => {
+          const normalizedName = normalizePlanPresetName(name);
+          if (!normalizedName) {
+            return;
+          }
+          const normalizedSnapshot = normalizePlanSnapshot(snapshot);
+          normalizedSnapshot.activePlanPresetName = normalizedName;
+          state.planPresets[normalizedName] = normalizedSnapshot;
+          imported += 1;
+        });
+
+        if (imported === 0) {
+          setBanner("计划预设导入失败：没有可用条目。", "warn");
+          return;
+        }
+
+        const activeName = normalizePlanPresetName(parsed?.activePlanPresetName || "");
+        if (activeName && state.planPresets[activeName]) {
+          state.activePlanPresetName = activeName;
+        }
+        const hasDefaultField = parsed && typeof parsed === "object"
+          && Object.prototype.hasOwnProperty.call(parsed, "defaultPlanPresetName");
+        if (hasDefaultField) {
+          const defaultName = normalizePlanPresetName(parsed?.defaultPlanPresetName || "");
+          state.defaultPlanPresetName = defaultName && state.planPresets[defaultName] ? defaultName : "";
+        }
+        const hasOrderField = parsed && typeof parsed === "object"
+          && Object.prototype.hasOwnProperty.call(parsed, "presetOrder");
+        if (hasOrderField) {
+          state.planPresetOrder = normalizePlanPresetNameList(parsed?.presetOrder);
+        }
+        const hasPinnedField = parsed && typeof parsed === "object"
+          && Object.prototype.hasOwnProperty.call(parsed, "pinnedPresetNames");
+        if (hasPinnedField) {
+          state.planPresetPinned = normalizePlanPresetNameList(parsed?.pinnedPresetNames);
+        }
+        reconcilePlanPresetMeta();
+        reconcileDefaultPlanPresetName();
+
+        clearPlanPresetOrderHistory();
+        savePlanPresets();
+        savePlanPresetMeta();
+        saveDefaultPlanPresetName();
+        savePlanState();
+        renderPlanPresetOptions();
+        setBanner("计划预设已导入：" + imported + " 个。", "ok");
+      } catch (error) {
+        setBanner("计划预设导入失败: " + error, "err");
+      } finally {
+        $("importPlanPresetsInput").value = "";
+      }
+    }
+
+    function clearAllPlanPresets() {
+      const names = Object.keys(state.planPresets || {});
+      if (!names.length) {
+        setBanner("当前没有可清空的计划预设。", "warn");
+        return;
+      }
+
+      const confirmed = window.confirm("确认清空全部计划预设（" + names.length + " 个）？");
+      if (!confirmed) {
+        return;
+      }
+
+      state.planPresets = {};
+      state.planPresetOrder = [];
+      state.planPresetPinned = [];
+      state.activePlanPresetName = "";
+      state.defaultPlanPresetName = "";
+      clearPlanPresetOrderHistory();
+      savePlanPresets();
+      savePlanPresetMeta();
+      saveDefaultPlanPresetName();
+      savePlanState();
+      renderPlanPresetOptions();
+      setBanner("已清空全部计划预设。", "ok");
+    }
+
+    function loadCredentials() {
+      $("apiKey").value = localStorage.getItem(API_KEY_STORAGE_KEY) || "";
+      $("bearerToken").value = localStorage.getItem(TOKEN_STORAGE_KEY) || "";
+    }
+
+    function applyPlanToInputs(plan) {
+      $("templatePath").value = plan.templatePath || "";
+      $("sourceDirectory").value = plan.sourceDirectory || "";
+      $("targetDirectory").value = plan.targetDirectory || "";
+      $("areaCodePath").value = plan.areaCodePath || "";
+      $("startIndex").value = String(plan.startIndex ?? 23);
+      $("endIndex").value = String(plan.endIndex ?? 148);
+    }
+
+    function fillExamplePlan() {
+      applyPlanToInputs(EXAMPLE_PLAN);
+      if (!$("idempotencyKey").value.trim()) {
+        $("idempotencyKey").value = "job-" + Date.now();
+      }
+      savePlanState();
+      setBanner("已填充示例参数，请根据实际路径调整。", "ok");
+    }
+
+    function exportPlanFile() {
+      savePlanState();
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        ...buildCurrentPlanSnapshot()
+      };
+
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const fileName = "datahz-workbench-plan-" + new Date().toISOString().replace(/[:.]/g, "-") + ".json";
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setBanner("参数文件已导出: " + fileName, "ok");
+    }
+
+    async function importPlanFile(file) {
+      if (!file) {
+        return;
+      }
+
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        const normalized = normalizePlanSnapshot(parsed?.plan ? parsed : { plan: parsed });
+        applyPlanSnapshot(normalized);
+        savePlanState();
+        setBanner("参数导入成功: " + file.name, "ok");
+      } catch (error) {
+        setBanner("参数导入失败: " + error, "err");
+      } finally {
+        $("importPlanInput").value = "";
+      }
+    }
+
+    async function refreshJobStats() {
+      try {
+        const response = await requestApi("/api/jobs/stats", "GET");
+        if (!response.ok) {
+          $("jobStats").textContent = "队列统计：加载失败（HTTP " + response.status + "）";
+          return;
+        }
+
+        const stats = response.body || {};
+        $("jobStats").textContent = [
+          "队列统计",
+          "total=" + (stats.total ?? 0),
+          "queued=" + (stats.queued ?? 0),
+          "running=" + (stats.running ?? 0),
+          "succeeded=" + (stats.succeeded ?? 0),
+          "failed=" + (stats.failed ?? 0),
+          "canceled=" + (stats.canceled ?? 0),
+          "cancelReq=" + (stats.cancellationRequested ?? 0)
+        ].join(" | ");
+      } catch (error) {
+        $("jobStats").textContent = "队列统计：加载失败（" + error + "）";
+      }
+    }
+
+    function stopAutoRefreshJobs() {
+      if (state.jobsTimer) {
+        clearInterval(state.jobsTimer);
+        state.jobsTimer = null;
+      }
+      if (state.filterTimer) {
+        clearTimeout(state.filterTimer);
+        state.filterTimer = null;
+      }
+    }
+
+    function startAutoRefreshJobs() {
+      stopAutoRefreshJobs();
+      state.jobsTimer = setInterval(async () => {
+        await refreshJobs(false);
+        if (state.selectedJobId) {
+          await loadJobDetail(state.selectedJobId, false);
+        }
+      }, JOB_REFRESH_MS);
+    }
+
+    function toggleAutoRefreshJobs() {
+      if ($("autoRefreshJobs").checked) {
+        startAutoRefreshJobs();
+      } else {
+        stopAutoRefreshJobs();
+      }
+    }
+
+    async function runOneClickFlow() {
+      if (!validatePlanInputs(true)) {
+        return;
+      }
+
+      savePlanState();
+      const plan = buildPlanPayload();
+      const submitPayload = buildSubmitPayload();
+      const steps = [];
+      setBanner("执行中: 一键流程（解析 -> 计划 -> 提交）", "warn");
+
+      try {
+        const parseResp = await requestApi("/api/templates/parse", "POST", { templatePath: plan.templatePath });
+        steps.push({ step: "parse", status: parseResp.status, body: parseResp.body });
+        if (!parseResp.ok) {
+          showOutput("一键流程", { flow: "parse->plan->submit", payload: submitPayload }, steps);
+          setBanner("一键流程失败（解析模板）: " + extractErrorMessage(parseResp.body, parseResp.status), "err");
+          return;
+        }
+
+        const planResp = await requestApi("/api/tasks/plan", "POST", plan);
+        steps.push({ step: "plan", status: planResp.status, body: planResp.body });
+        if (!planResp.ok) {
+          showOutput("一键流程", { flow: "parse->plan->submit", payload: submitPayload }, steps);
+          setBanner("一键流程失败（生成计划）: " + extractErrorMessage(planResp.body, planResp.status), "err");
+          return;
+        }
+
+        const submitResp = await requestApi("/api/jobs/submit", "POST", submitPayload);
+        steps.push({ step: "submit", status: submitResp.status, body: submitResp.body });
+        showOutput("一键流程", { flow: "parse->plan->submit", payload: submitPayload }, steps);
+
+        if (!submitResp.ok) {
+          setBanner("一键流程失败（提交作业）: " + extractErrorMessage(submitResp.body, submitResp.status), "err");
+          return;
+        }
+
+        await refreshJobs(false);
+        const jobId = submitResp.body?.jobId;
+        if (jobId) {
+          await loadJobDetail(jobId, false);
+        }
+        setBanner("一键流程成功。作业已提交。", "ok");
+      } catch (error) {
+        showOutput("一键流程", { flow: "parse->plan->submit", payload: submitPayload }, String(error));
+        setBanner("一键流程失败: " + error, "err");
+      }
+    }
+
+    async function refreshWhoAmI(showOutputPanel) {
+      try {
+        const response = await requestApi("/api/security/whoami", "GET");
+        if (!response.ok) {
+          $("identity").textContent = "Principal: - | Role: -";
+          if (showOutputPanel) {
+            showOutput("刷新身份", { url: "/api/security/whoami", method: "GET" }, { status: response.status, body: response.body });
+          }
+          setBanner("身份刷新失败: " + extractErrorMessage(response.body, response.status), "warn");
+          return;
+        }
+
+        const principal = response.body?.principal || "-";
+        const role = response.body?.role || "-";
+        const source = response.body?.source || "-";
+        $("identity").textContent = "Principal: " + principal + " | Role: " + role + " | Source: " + source;
+        if (showOutputPanel) {
+          showOutput("刷新身份", { url: "/api/security/whoami", method: "GET" }, { status: response.status, body: response.body });
+        }
+      } catch (error) {
+        $("identity").textContent = "Principal: - | Role: -";
+        if (showOutputPanel) {
+          showOutput("刷新身份", { url: "/api/security/whoami", method: "GET" }, String(error));
+        }
+        setBanner("身份刷新失败: " + error, "err");
+      }
+    }
+
+    function normalizeTake(value) {
+      const parsed = Number.parseInt(String(value || ""), 10);
+      if (!Number.isFinite(parsed)) {
+        return JOB_TAKE;
+      }
+      return Math.max(1, Math.min(200, parsed));
+    }
+
+    function getJobTake() {
+      const take = normalizeTake($("jobTake").value);
+      $("jobTake").value = String(take);
+      return take;
+    }
+
+    function normalizeBatchCancelConcurrency(value) {
+      const parsed = Number.parseInt(String(value || ""), 10);
+      if (!Number.isFinite(parsed)) {
+        return BATCH_CANCEL_CONCURRENCY_DEFAULT;
+      }
+      return Math.max(1, Math.min(20, parsed));
+    }
+
+    function getBatchCancelConcurrency() {
+      const value = normalizeBatchCancelConcurrency($("batchCancelConcurrency").value);
+      $("batchCancelConcurrency").value = String(value);
+      return value;
+    }
+
+    function getJobFilter() {
+      return {
+        q: $("jobSearch").value.trim().toLowerCase(),
+        status: $("jobStatusFilter").value.trim().toLowerCase(),
+        failureReason: state.failureReasonFilter
+      };
+    }
+
+    function normalizeSortBy(value) {
+      const raw = String(value || "").trim();
+      return raw === "status" || raw === "id" ? raw : "createdAt";
+    }
+
+    function normalizeSortDirection(value) {
+      return String(value || "").trim().toLowerCase() === "asc" ? "asc" : "desc";
+    }
+
+    function getJobSort() {
+      const by = normalizeSortBy($("jobSortBy").value);
+      const direction = normalizeSortDirection($("jobSortDirection").value);
+      $("jobSortBy").value = by;
+      $("jobSortDirection").value = direction;
+      return { by, direction };
+    }
+
+    function buildCurrentJobViewSnapshot() {
+      return {
+        q: $("jobSearch").value || "",
+        status: $("jobStatusFilter").value || "",
+        sortBy: normalizeSortBy($("jobSortBy").value),
+        sortDirection: normalizeSortDirection($("jobSortDirection").value),
+        take: getJobTake(),
+        autoRefresh: $("autoRefreshJobs").checked,
+        batchSelectStatus: $("batchSelectStatus").value || "",
+        batchCancelConcurrency: getBatchCancelConcurrency(),
+        skipTerminalOnBatchCancel: $("skipTerminalOnBatchCancel").checked,
+        failureReasonFilter: state.failureReasonFilter || "",
+        activePresetName: state.activeJobPresetName || ""
+      };
+    }
+
+    function applyJobViewSnapshot(snapshot) {
+      const parsed = snapshot || {};
+      $("jobSearch").value = parsed?.q || "";
+      $("jobStatusFilter").value = parsed?.status || "";
+      $("jobSortBy").value = normalizeSortBy(parsed?.sortBy);
+      $("jobSortDirection").value = normalizeSortDirection(parsed?.sortDirection);
+      $("jobTake").value = String(normalizeTake(parsed?.take));
+      $("autoRefreshJobs").checked = parsed?.autoRefresh !== false;
+      $("batchSelectStatus").value = parsed?.batchSelectStatus || "";
+      $("batchCancelConcurrency").value = String(normalizeBatchCancelConcurrency(parsed?.batchCancelConcurrency));
+      $("skipTerminalOnBatchCancel").checked = parsed?.skipTerminalOnBatchCancel !== false;
+      state.failureReasonFilter = parsed?.failureReasonFilter || "";
+      state.activeJobPresetName = normalizePresetName(parsed?.activePresetName || "");
+    }
+
+    function saveJobViewState() {
+      localStorage.setItem(JOB_VIEW_STORAGE_KEY, JSON.stringify(buildCurrentJobViewSnapshot()));
+    }
+
+    function loadJobViewState() {
+      const raw = localStorage.getItem(JOB_VIEW_STORAGE_KEY);
+      if (!raw) {
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(raw);
+        applyJobViewSnapshot(parsed);
+      } catch {
+        localStorage.removeItem(JOB_VIEW_STORAGE_KEY);
+      }
+    }
+
+    function normalizePresetName(value) {
+      const raw = String(value || "").trim();
+      return raw.slice(0, 64);
+    }
+
+    function normalizeJobViewSnapshot(snapshot) {
+      const raw = snapshot || {};
+      return {
+        q: String(raw.q || ""),
+        status: String(raw.status || ""),
+        sortBy: normalizeSortBy(raw.sortBy),
+        sortDirection: normalizeSortDirection(raw.sortDirection),
+        take: normalizeTake(raw.take),
+        autoRefresh: raw.autoRefresh !== false,
+        batchSelectStatus: String(raw.batchSelectStatus || ""),
+        batchCancelConcurrency: normalizeBatchCancelConcurrency(raw.batchCancelConcurrency),
+        skipTerminalOnBatchCancel: raw.skipTerminalOnBatchCancel !== false,
+        failureReasonFilter: String(raw.failureReasonFilter || ""),
+        activePresetName: normalizePresetName(raw.activePresetName || "")
+      };
+    }
+
+    function saveJobViewPresets() {
+      localStorage.setItem(JOB_PRESETS_STORAGE_KEY, JSON.stringify(state.jobViewPresets));
+    }
+
+    function loadJobViewPresets() {
+      const raw = localStorage.getItem(JOB_PRESETS_STORAGE_KEY);
+      if (!raw) {
+        state.jobViewPresets = {};
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== "object") {
+          state.jobViewPresets = {};
+          return;
+        }
+        const next = {};
+        Object.entries(parsed).forEach(([name, value]) => {
+          const normalizedName = normalizePresetName(name);
+          if (!normalizedName) {
+            return;
+          }
+          next[normalizedName] = normalizeJobViewSnapshot(value);
+        });
+        state.jobViewPresets = next;
+      } catch {
+        state.jobViewPresets = {};
+        localStorage.removeItem(JOB_PRESETS_STORAGE_KEY);
+      }
+    }
+
+    function renderJobPresetOptions() {
+      const select = $("jobPresetSelect");
+      const names = Object.keys(state.jobViewPresets || {}).sort((a, b) => a.localeCompare(b, "zh-CN"));
+      const options = ["<option value=\"\">预设: 无</option>"];
+      names.forEach((name) => {
+        const escaped = name
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;");
+        options.push("<option value=\"" + escaped + "\">" + escaped + "</option>");
+      });
+      select.innerHTML = options.join("");
+
+      if (state.activeJobPresetName && names.includes(state.activeJobPresetName)) {
+        select.value = state.activeJobPresetName;
+        $("jobPresetName").value = state.activeJobPresetName;
+      } else {
+        state.activeJobPresetName = "";
+        select.value = "";
+      }
+    }
+
+    function saveCurrentAsJobPreset() {
+      const name = normalizePresetName($("jobPresetName").value);
+      if (!name) {
+        setBanner("请输入预设名。", "warn");
+        return;
+      }
+
+      state.jobViewPresets[name] = normalizeJobViewSnapshot(buildCurrentJobViewSnapshot());
+      state.activeJobPresetName = name;
+      saveJobViewPresets();
+      saveJobViewState();
+      renderJobPresetOptions();
+      $("jobPresetSelect").value = name;
+      setBanner("筛选预设已保存：" + name, "ok");
+    }
+
+    function loadSelectedJobPreset() {
+      const name = normalizePresetName($("jobPresetSelect").value);
+      if (!name || !state.jobViewPresets[name]) {
+        setBanner("请选择有效预设。", "warn");
+        return;
+      }
+
+      state.activeJobPresetName = name;
+      applyJobViewSnapshot(state.jobViewPresets[name]);
+      $("jobPresetName").value = name;
+      renderFailureSummaryView();
+      renderJobPresetOptions();
+      saveJobViewState();
+      applyCurrentJobFilter(true);
+      toggleAutoRefreshJobs();
+      setBanner("筛选预设已加载：" + name, "ok");
+    }
+
+    function deleteSelectedJobPreset() {
+      const name = normalizePresetName($("jobPresetSelect").value);
+      if (!name || !state.jobViewPresets[name]) {
+        setBanner("请选择要删除的预设。", "warn");
+        return;
+      }
+
+      delete state.jobViewPresets[name];
+      if (state.activeJobPresetName === name) {
+        state.activeJobPresetName = "";
+      }
+      saveJobViewPresets();
+      saveJobViewState();
+      renderJobPresetOptions();
+      setBanner("筛选预设已删除：" + name, "ok");
+    }
+
+    function exportJobViewPresets() {
+      const names = Object.keys(state.jobViewPresets || {});
+      if (!names.length) {
+        setBanner("当前没有可导出的预设。", "warn");
+        return;
+      }
+
+      const payload = {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        activePresetName: state.activeJobPresetName || "",
+        presets: state.jobViewPresets
+      };
+      const fileName = "datahz-job-presets-" + new Date().toISOString().replace(/[:.]/g, "-") + ".json";
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setBanner("筛选预设已导出：" + fileName + "（" + names.length + " 个）", "ok");
+    }
+
+    async function importJobViewPresets(file) {
+      if (!file) {
+        return;
+      }
+
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        const rawPresets = parsed?.presets && typeof parsed.presets === "object"
+          ? parsed.presets
+          : parsed;
+
+        if (!rawPresets || typeof rawPresets !== "object") {
+          setBanner("预设导入失败：文件结构无效。", "err");
+          return;
+        }
+
+        let imported = 0;
+        Object.entries(rawPresets).forEach(([name, snapshot]) => {
+          const normalizedName = normalizePresetName(name);
+          if (!normalizedName) {
+            return;
+          }
+          state.jobViewPresets[normalizedName] = normalizeJobViewSnapshot(snapshot);
+          imported += 1;
+        });
+
+        if (imported === 0) {
+          setBanner("预设导入失败：没有可用条目。", "warn");
+          return;
+        }
+
+        const activeName = normalizePresetName(parsed?.activePresetName || "");
+        if (activeName && state.jobViewPresets[activeName]) {
+          state.activeJobPresetName = activeName;
+        }
+
+        saveJobViewPresets();
+        saveJobViewState();
+        renderJobPresetOptions();
+        setBanner("筛选预设已导入：" + imported + " 个。", "ok");
+      } catch (error) {
+        setBanner("预设导入失败: " + error, "err");
+      } finally {
+        $("importPresetsInput").value = "";
+      }
+    }
+
+    function clearAllJobViewPresets() {
+      const names = Object.keys(state.jobViewPresets || {});
+      if (!names.length) {
+        setBanner("当前没有可清空的预设。", "warn");
+        return;
+      }
+
+      const confirmed = window.confirm("确认清空全部筛选预设（" + names.length + " 个）？");
+      if (!confirmed) {
+        return;
+      }
+
+      state.jobViewPresets = {};
+      state.activeJobPresetName = "";
+      saveJobViewPresets();
+      saveJobViewState();
+      renderJobPresetOptions();
+      setBanner("已清空全部筛选预设。", "ok");
+    }
+
+    function scheduleApplyCurrentJobFilter() {
+      if (state.filterTimer) {
+        clearTimeout(state.filterTimer);
+      }
+      state.filterTimer = setTimeout(() => {
+        applyCurrentJobFilter(false);
+      }, JOB_FILTER_INPUT_DEBOUNCE_MS);
+    }
+
+    function jobMatchesFilter(job, filter) {
+      const status = String(job?.status || "").toLowerCase();
+      if (filter.status && status !== filter.status) {
+        return false;
+      }
+
+      if (filter.failureReason && state.lastBatchCancelFailureReasonIndex.has(filter.failureReason)) {
+        const relatedIds = state.lastBatchCancelFailureReasonIndex.get(filter.failureReason) || new Set();
+        if (!job?.id || !relatedIds.has(job.id)) {
+          return false;
+        }
+      }
+
+      if (!filter.q) {
+        return true;
+      }
+
+      const text = [
+        job?.id,
+        job?.status,
+        job?.idempotencyKey,
+        job?.request?.idempotencyKey,
+        job?.error,
+        job?.cancellationReason
+      ]
+        .filter((x) => x !== null && x !== undefined)
+        .join(" ")
+        .toLowerCase();
+      return text.includes(filter.q);
+    }
+
+    function getFilteredJobs(rows) {
+      const filter = getJobFilter();
+      const sort = getJobSort();
+      const filtered = rows.filter((job) => jobMatchesFilter(job, filter));
+      const directionMultiplier = sort.direction === "asc" ? 1 : -1;
+
+      filtered.sort((a, b) => {
+        let left;
+        let right;
+
+        if (sort.by === "status") {
+          left = String(a?.status || "").toLowerCase();
+          right = String(b?.status || "").toLowerCase();
+        } else if (sort.by === "id") {
+          left = String(a?.id || "");
+          right = String(b?.id || "");
+        } else {
+          left = Date.parse(a?.createdAt || "") || 0;
+          right = Date.parse(b?.createdAt || "") || 0;
+        }
+
+        if (left < right) return -1 * directionMultiplier;
+        if (left > right) return 1 * directionMultiplier;
+        return 0;
+      });
+      return filtered;
+    }
+
+    function setSelectedJobActionButtonsEnabled(enabled) {
+      $("cancelBtn").disabled = !enabled;
+      $("fillFromSelectedBtn").disabled = !enabled;
+      $("cloneSubmitSelectedBtn").disabled = !enabled;
+      $("copyTemplatePathBtn").disabled = !enabled;
+      $("copyPathBundleBtn").disabled = !enabled;
+      $("copySelectedJobJsonBtn").disabled = !enabled;
+      $("downloadSelectedJobJsonBtn").disabled = !enabled;
+    }
+
+    function updateBatchCancelButtonState() {
+      const selectedCount = state.selectedJobIds.size;
+      $("batchCancelBtn").disabled = selectedCount === 0;
+      const failedCount = state.lastBatchCancelFailedJobIds.length;
+      const retryBtn = $("retryFailedCancelBtn");
+      const copyBtn = $("copyFailedIdsBtn");
+      const downloadTxtBtn = $("downloadFailedTxtBtn");
+      const downloadJsonBtn = $("downloadFailedJsonBtn");
+      const clearHistoryBtn = $("clearFailedHistoryBtn");
+      retryBtn.disabled = failedCount === 0;
+      retryBtn.textContent = failedCount === 0
+        ? "重试上次失败取消"
+        : "重试失败取消(" + failedCount + ")";
+      copyBtn.disabled = failedCount === 0;
+      copyBtn.textContent = failedCount === 0
+        ? "复制失败作业ID"
+        : "复制失败ID(" + failedCount + ")";
+      downloadTxtBtn.disabled = failedCount === 0;
+      downloadJsonBtn.disabled = failedCount === 0;
+      clearHistoryBtn.disabled = failedCount === 0;
+      const topReason = state.lastBatchCancelFailureSummary.length > 0
+        ? state.lastBatchCancelFailureSummary[0].reason + " x" + state.lastBatchCancelFailureSummary[0].count
+        : "";
+      $("jobSelectionInfo").textContent = "勾选作业：" + selectedCount +
+        (failedCount > 0 ? " | 上次失败取消：" + failedCount : "") +
+        (topReason ? " | TopReason: " + topReason : "");
+    }
+
+    function syncSelectedJobsWithVisibleRows() {
+      const validIds = new Set(state.allJobs.map((job) => job.id));
+      const next = new Set();
+      state.selectedJobIds.forEach((id) => {
+        if (validIds.has(id)) {
+          next.add(id);
+        }
+      });
+      state.selectedJobIds = next;
+      updateBatchCancelButtonState();
+    }
+
+    function clearSelectedJobs() {
+      state.selectedJobIds = new Set();
+      updateBatchCancelButtonState();
+      renderJobs(state.filteredJobs);
+    }
+
+    function selectVisibleJobs() {
+      state.filteredJobs.forEach((job) => {
+        if (job?.id) {
+          state.selectedJobIds.add(job.id);
+        }
+      });
+      updateBatchCancelButtonState();
+      renderJobs(state.filteredJobs);
+    }
+
+    function selectVisibleJobsByStatus(status) {
+      const normalized = String(status || "").toLowerCase();
+      let count = 0;
+      state.filteredJobs.forEach((job) => {
+        const jobStatus = String(job?.status || "").toLowerCase();
+        if (!job?.id) {
+          return;
+        }
+        if (!normalized || jobStatus === normalized) {
+          state.selectedJobIds.add(job.id);
+          count += 1;
+        }
+      });
+      updateBatchCancelButtonState();
+      renderJobs(state.filteredJobs);
+      if (count === 0) {
+        setBanner("按状态勾选结果为空。请调整筛选条件。", "warn");
+      } else {
+        setBanner("按状态勾选完成：新增 " + count + " 条。", "ok");
+      }
+    }
+
+    function invertVisibleSelection() {
+      let changed = 0;
+      state.filteredJobs.forEach((job) => {
+        if (!job?.id) {
+          return;
+        }
+        if (state.selectedJobIds.has(job.id)) {
+          state.selectedJobIds.delete(job.id);
+        } else {
+          state.selectedJobIds.add(job.id);
+        }
+        changed += 1;
+      });
+      updateBatchCancelButtonState();
+      renderJobs(state.filteredJobs);
+      setBanner("已反选可见作业：" + changed + " 条。", "ok");
+    }
+
+    function escapeCsvField(value) {
+      const raw = value === null || value === undefined ? "" : String(value);
+      if (/[",\n\r]/.test(raw)) {
+        return "\"" + raw.replace(/"/g, "\"\"") + "\"";
+      }
+      return raw;
+    }
+
+    function exportFilteredJobsCsv() {
+      if (!Array.isArray(state.filteredJobs) || state.filteredJobs.length === 0) {
+        setBanner("当前筛选结果为空，无法导出 CSV。", "warn");
+        return;
+      }
+
+      const headers = [
+        "id",
+        "status",
+        "createdAt",
+        "startedAt",
+        "completedAt",
+        "dryRun",
+        "incremental",
+        "idempotencyKey",
+        "cancellationRequested",
+        "cancellationReason",
+        "error"
+      ];
+      const lines = [headers.join(",")];
+
+      state.filteredJobs.forEach((job) => {
+        const row = [
+          job?.id,
+          job?.status,
+          job?.createdAt,
+          job?.startedAt,
+          job?.completedAt,
+          job?.request?.dryRun ?? "",
+          job?.request?.incremental ?? "",
+          job?.request?.idempotencyKey || job?.idempotencyKey || "",
+          job?.cancellationRequested ?? "",
+          job?.cancellationReason || "",
+          job?.error || ""
+        ].map(escapeCsvField);
+        lines.push(row.join(","));
+      });
+
+      const content = "\uFEFF" + lines.join("\r\n");
+      const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const fileName = "datahz-jobs-filtered-" + new Date().toISOString().replace(/[:.]/g, "-") + ".csv";
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setBanner("已导出筛选结果 CSV：" + fileName + "（" + state.filteredJobs.length + " 条）", "ok");
+    }
+
+    function exportFilteredJobsJsonl() {
+      if (!Array.isArray(state.filteredJobs) || state.filteredJobs.length === 0) {
+        setBanner("当前筛选结果为空，无法导出 JSONL。", "warn");
+        return;
+      }
+
+      const content = state.filteredJobs
+        .map((job) => JSON.stringify(job))
+        .join("\r\n");
+      const blob = new Blob([content], { type: "application/x-ndjson;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const fileName = "datahz-jobs-filtered-" + new Date().toISOString().replace(/[:.]/g, "-") + ".jsonl";
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setBanner("已导出筛选结果 JSONL：" + fileName + "（" + state.filteredJobs.length + " 条）", "ok");
+    }
+
+    function applyCurrentJobFilter(showBanner) {
+      state.filteredJobs = getFilteredJobs(state.allJobs);
+      saveJobViewState();
+      renderJobs(state.filteredJobs);
+      if (showBanner) {
+        setBanner("筛选完成：显示 " + state.filteredJobs.length + " / " + state.allJobs.length + " 条作业。", "ok");
+      }
+    }
+
+    function renderJobs(rows) {
+      const body = $("jobsBody");
+      state.jobs.clear();
+
+      if (!Array.isArray(rows) || rows.length === 0) {
+        body.innerHTML = "<tr><td colspan=\"6\">暂无作业数据。</td></tr>";
+        setSelectedJobActionButtonsEnabled(false);
+        state.selectedJobId = null;
+        state.selectedJobRecord = null;
+        $("jobDetail").textContent = "暂无可查看的作业。";
+        updateBatchCancelButtonState();
+        return;
+      }
+
+      rows.forEach((job) => state.jobs.set(job.id, job));
+      if (state.selectedJobId && !state.jobs.has(state.selectedJobId)) {
+        state.selectedJobId = null;
+        state.selectedJobRecord = null;
+        setSelectedJobActionButtonsEnabled(false);
+        $("jobDetail").textContent = "先前选中的作业不在当前列表中，请重新选择。";
+      }
+      body.innerHTML = rows.map((job) => {
+        const selected = state.selectedJobId === job.id ? " selected" : "";
+        const statusCss = statusClass(job.status);
+        const dryRun = job.request?.dryRun === true ? "Y" : "N";
+        const incremental = job.request?.incremental === true ? "Y" : "N";
+        const checked = state.selectedJobIds.has(job.id) ? " checked" : "";
+        return "<tr class=\"job-row" + selected + "\" data-id=\"" + job.id + "\">" +
+          "<td><input class=\"job-check\" type=\"checkbox\" data-id=\"" + job.id + "\"" + checked + "></td>" +
+          "<td>" + String(job.id || "").slice(0, 8) + "</td>" +
+          "<td class=\"status " + statusCss + "\">" + (job.status || "-") + "</td>" +
+          "<td>" + formatDate(job.createdAt) + "</td>" +
+          "<td>" + dryRun + "</td>" +
+          "<td>" + incremental + "</td>" +
+          "</tr>";
+      }).join("");
+      updateBatchCancelButtonState();
+    }
+
+    async function focusLatestFailedJob(showOutputPanel) {
+      const failed = state.filteredJobs.filter((job) => String(job?.status || "").toLowerCase() === "failed");
+      if (!failed.length) {
+        setBanner("当前筛选结果中没有 failed 作业。", "warn");
+        return;
+      }
+
+      failed.sort((a, b) => (Date.parse(b?.createdAt || "") || 0) - (Date.parse(a?.createdAt || "") || 0));
+      const target = failed[0];
+      if (!target?.id) {
+        setBanner("未找到可定位的 failed 作业 ID。", "warn");
+        return;
+      }
+
+      await loadJobDetail(target.id, Boolean(showOutputPanel));
+      setBanner("已定位最新 failed 作业：" + String(target.id).slice(0, 8), "ok");
+    }
+
+    async function refreshJobs(showOutputPanel) {
+      const take = getJobTake();
+      const url = "/api/jobs?take=" + take;
+      try {
+        const response = await requestApi(url, "GET");
+        await refreshJobStats();
+        if (!response.ok) {
+          state.allJobs = [];
+          state.filteredJobs = [];
+          renderJobs([]);
+          if (showOutputPanel) {
+            showOutput("刷新作业列表", { url, method: "GET" }, { status: response.status, body: response.body });
+          }
+          setBanner("刷新作业失败: " + extractErrorMessage(response.body, response.status), "err");
+          return;
+        }
+
+        state.allJobs = Array.isArray(response.body) ? response.body : [];
+        syncSelectedJobsWithVisibleRows();
+        applyCurrentJobFilter(false);
+        if (showOutputPanel) {
+          showOutput("刷新作业列表", { url, method: "GET" }, { status: response.status, body: response.body });
+        }
+      } catch (error) {
+        state.allJobs = [];
+        state.filteredJobs = [];
+        renderJobs([]);
+        await refreshJobStats();
+        if (showOutputPanel) {
+          showOutput("刷新作业列表", { url, method: "GET" }, String(error));
+        }
+        setBanner("刷新作业失败: " + error, "err");
+      }
+    }
+
+    async function loadJobDetail(jobId, showOutputPanel) {
+      if (!jobId) {
+        return;
+      }
+
+      state.selectedJobId = jobId;
+      setSelectedJobActionButtonsEnabled(false);
+      const rows = $("jobsBody").querySelectorAll(".job-row");
+      rows.forEach((row) => row.classList.toggle("selected", row.dataset.id === jobId));
+
+      try {
+        const response = await requestApi("/api/jobs/" + jobId, "GET");
+        if (!response.ok) {
+          state.selectedJobRecord = null;
+          $("jobDetail").textContent = "加载作业详情失败: " + extractErrorMessage(response.body, response.status);
+          if (showOutputPanel) {
+            showOutput("作业详情", { url: "/api/jobs/" + jobId, method: "GET" }, { status: response.status, body: response.body });
+          }
+          return;
+        }
+
+        state.selectedJobRecord = response.body || null;
+        setSelectedJobActionButtonsEnabled(true);
+        $("jobDetail").textContent = serializeForOutput(response.body);
+        if (showOutputPanel) {
+          showOutput("作业详情", { url: "/api/jobs/" + jobId, method: "GET" }, { status: response.status, body: response.body });
+        }
+      } catch (error) {
+        state.selectedJobRecord = null;
+        $("jobDetail").textContent = "加载作业详情失败: " + error;
+        if (showOutputPanel) {
+          showOutput("作业详情", { url: "/api/jobs/" + jobId, method: "GET" }, String(error));
+        }
+      }
+    }
+
+    async function cancelSelectedJob() {
+      if (!state.selectedJobId) {
+        setBanner("请先选择一个作业。", "warn");
+        return;
+      }
+
+      const reason = $("cancelReason").value.trim();
+      await invokeEndpoint(
+        "取消作业",
+        "/api/jobs/" + state.selectedJobId + "/cancel",
+        "POST",
+        { reason: reason || null },
+        async () => {
+          await refreshJobs(false);
+          await loadJobDetail(state.selectedJobId, false);
+        });
+    }
+
+    async function getSelectedJobRecord() {
+      if (!state.selectedJobId) {
+        setBanner("请先选择一个作业。", "warn");
+        return null;
+      }
+
+      if (state.selectedJobRecord && state.selectedJobRecord.id === state.selectedJobId) {
+        return state.selectedJobRecord;
+      }
+
+      try {
+        const response = await requestApi("/api/jobs/" + state.selectedJobId, "GET");
+        if (!response.ok) {
+          setBanner("读取选中作业详情失败: " + extractErrorMessage(response.body, response.status), "err");
+          return null;
+        }
+
+        state.selectedJobRecord = response.body || null;
+        setSelectedJobActionButtonsEnabled(true);
+        return state.selectedJobRecord;
+      } catch (error) {
+        setBanner("读取选中作业详情失败: " + error, "err");
+        return null;
+      }
+    }
+
+    async function copyToClipboard(text, successMessage) {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const tmp = document.createElement("textarea");
+          tmp.value = text;
+          document.body.appendChild(tmp);
+          tmp.select();
+          document.execCommand("copy");
+          tmp.remove();
+        }
+        setBanner(successMessage, "ok");
+        return true;
+      } catch (error) {
+        setBanner("复制到剪贴板失败: " + error, "err");
+        return false;
+      }
+    }
+
+    async function getSelectedJobPlanOrWarn() {
+      const record = await getSelectedJobRecord();
+      const plan = record?.request?.plan;
+      if (!plan) {
+        setBanner("选中作业缺少 request.plan。", "warn");
+        return null;
+      }
+      return plan;
+    }
+
+    async function copySelectedTemplatePath() {
+      const plan = await getSelectedJobPlanOrWarn();
+      if (!plan) {
+        return;
+      }
+      if (!plan.templatePath) {
+        setBanner("选中作业没有 templatePath。", "warn");
+        return;
+      }
+      await copyToClipboard(plan.templatePath, "已复制模板路径。");
+    }
+
+    async function copySelectedPathBundle() {
+      const plan = await getSelectedJobPlanOrWarn();
+      if (!plan) {
+        return;
+      }
+      const lines = [
+        "templatePath=" + (plan.templatePath || ""),
+        "sourceDirectory=" + (plan.sourceDirectory || ""),
+        "targetDirectory=" + (plan.targetDirectory || ""),
+        "areaCodePath=" + (plan.areaCodePath || "")
+      ];
+      await copyToClipboard(lines.join("\n"), "已复制路径集。");
+    }
+
+    async function copySelectedJobJson() {
+      const record = await getSelectedJobRecord();
+      if (!record) {
+        return;
+      }
+
+      await copyToClipboard(JSON.stringify(record, null, 2), "已复制选中作业 JSON。");
+    }
+
+    async function downloadSelectedJobJson() {
+      const record = await getSelectedJobRecord();
+      if (!record) {
+        return;
+      }
+
+      const id = String(record.id || state.selectedJobId || "job");
+      const fileName = "datahz-job-" + id + ".json";
+      const blob = new Blob([JSON.stringify(record, null, 2)], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setBanner("已下载选中作业 JSON：" + fileName, "ok");
+    }
+
+    async function fillPlanFromSelectedJob() {
+      const record = await getSelectedJobRecord();
+      const request = record?.request;
+      const plan = request?.plan;
+      if (!plan) {
+        setBanner("选中作业缺少 request.plan，无法回填。", "warn");
+        return;
+      }
+
+      applyPlanToInputs({
+        templatePath: plan.templatePath || "",
+        sourceDirectory: plan.sourceDirectory || "",
+        targetDirectory: plan.targetDirectory || "",
+        areaCodePath: plan.areaCodePath || "",
+        startIndex: Number.isFinite(plan.startIndex) ? plan.startIndex : 23,
+        endIndex: Number.isFinite(plan.endIndex) ? plan.endIndex : 148
+      });
+      $("dryRun").checked = request?.dryRun !== false;
+      $("incremental").checked = request?.incremental !== false;
+      $("idempotencyKey").value = request?.idempotencyKey || "";
+      savePlanState();
+      setBanner("已回填选中作业参数到计划区。", "ok");
+    }
+
+    async function cloneSubmitSelectedJob() {
+      const record = await getSelectedJobRecord();
+      const request = record?.request;
+      const plan = request?.plan;
+      if (!request || !plan) {
+        setBanner("选中作业缺少 request.plan，无法克隆提交。", "warn");
+        return;
+      }
+
+      const baseKey = (request.idempotencyKey || "").trim();
+      const payload = {
+        plan: {
+          templatePath: plan.templatePath || "",
+          sourceDirectory: plan.sourceDirectory || "",
+          targetDirectory: plan.targetDirectory || "",
+          areaCodePath: plan.areaCodePath || "",
+          startIndex: Number.isFinite(plan.startIndex) ? plan.startIndex : 23,
+          endIndex: Number.isFinite(plan.endIndex) ? plan.endIndex : 148
+        },
+        dryRun: request.dryRun !== false,
+        incremental: request.incremental !== false,
+        idempotencyKey: (baseKey ? baseKey + "-clone-" : "clone-") + Date.now()
+      };
+
+      applyPlanToInputs(payload.plan);
+      $("dryRun").checked = payload.dryRun;
+      $("incremental").checked = payload.incremental;
+      $("idempotencyKey").value = payload.idempotencyKey;
+      savePlanState();
+
+      await invokeEndpoint(
+        "克隆提交选中作业",
+        "/api/jobs/submit",
+        "POST",
+        payload,
+        async (responseBody) => {
+          const jobId = responseBody?.jobId;
+          await refreshJobs(false);
+          if (jobId) {
+            await loadJobDetail(jobId, false);
+          }
+        });
+    }
+
+    function toUniqueIds(ids) {
+      return Array.from(new Set((ids || []).filter((x) => !!x)));
+    }
+
+    function extractFailureReason(status, payload) {
+      if (status === "exception") {
+        return String(payload || "exception");
+      }
+      if (payload && typeof payload === "object") {
+        if (payload.message) {
+          return String(payload.message);
+        }
+        if (payload.result && payload.result.message) {
+          return String(payload.result.message);
+        }
+      }
+      if (typeof payload === "string" && payload.trim()) {
+        return payload.trim();
+      }
+      return "HTTP " + status;
+    }
+
+    function buildFailureSummary(failureDetails) {
+      const map = new Map();
+      (failureDetails || []).forEach((item) => {
+        const reason = String(item?.reason || "unknown");
+        const current = map.get(reason) || { count: 0, ids: new Set() };
+        current.count += 1;
+        if (item?.id) {
+          current.ids.add(item.id);
+        }
+        map.set(reason, current);
+      });
+      return Array.from(map.entries())
+        .map(([reason, item]) => ({ reason, count: item.count, ids: Array.from(item.ids) }))
+        .sort((a, b) => b.count - a.count || a.reason.localeCompare(b.reason));
+    }
+
+    function setLastBatchCancelFailures(failureDetails) {
+      const details = Array.isArray(failureDetails) ? failureDetails : [];
+      state.lastBatchCancelFailureDetails = details;
+      state.lastBatchCancelFailedJobIds = toUniqueIds(details.map((x) => x?.id));
+      state.lastBatchCancelFailureSummary = buildFailureSummary(details);
+      const reasonIndex = new Map();
+      state.lastBatchCancelFailureSummary.forEach((item) => {
+        reasonIndex.set(item.reason, new Set(item.ids || []));
+      });
+      state.lastBatchCancelFailureReasonIndex = reasonIndex;
+      if (state.failureReasonFilter && !state.lastBatchCancelFailureReasonIndex.has(state.failureReasonFilter)) {
+        state.failureReasonFilter = "";
+      }
+      renderFailureSummaryView();
+      applyCurrentJobFilter(false);
+    }
+
+    function setFailureReasonFilter(reason) {
+      const normalized = String(reason || "");
+      state.failureReasonFilter = normalized;
+      renderFailureSummaryView();
+      saveJobViewState();
+      applyCurrentJobFilter(true);
+    }
+
+    function clearFailureReasonFilter(showBanner) {
+      state.failureReasonFilter = "";
+      renderFailureSummaryView();
+      saveJobViewState();
+      applyCurrentJobFilter(Boolean(showBanner));
+    }
+
+    function clearFailedCancelHistory() {
+      state.lastBatchCancelFailureDetails = [];
+      state.lastBatchCancelFailedJobIds = [];
+      state.lastBatchCancelFailureSummary = [];
+      state.lastBatchCancelFailureReasonIndex = new Map();
+      state.failureReasonFilter = "";
+      renderFailureSummaryView();
+      updateBatchCancelButtonState();
+      saveJobViewState();
+      applyCurrentJobFilter(false);
+      setBanner("已清空失败历史。", "ok");
+    }
+
+    function renderFailureSummaryView() {
+      const box = $("failureSummaryBox");
+      const info = $("failureReasonFilterInfo");
+      const summary = state.lastBatchCancelFailureSummary;
+      const currentReason = state.failureReasonFilter;
+
+      if (!summary.length) {
+        if (state.failureReasonFilter) {
+          state.failureReasonFilter = "";
+        }
+        box.innerHTML = "<span class=\"tiny\">失败原因摘要：无</span>";
+        info.textContent = "失败原因筛选：未启用";
+        return;
+      }
+
+      const chips = summary.map((item) => {
+        const escaped = String(item.reason || "unknown")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;");
+        const active = currentReason === item.reason ? " active" : "";
+        return "<button class=\"reason-chip" + active + "\" type=\"button\" data-reason-chip=\"" + escaped + "\">" +
+          escaped + " (" + item.count + ")" +
+          "</button>";
+      }).join("");
+      box.innerHTML = chips + "<button class=\"btn-neutral\" type=\"button\" id=\"clearFailureReasonFilterBtn\">清除原因筛选</button>";
+      info.textContent = currentReason
+        ? "失败原因筛选：已启用（" + currentReason + "）"
+        : "失败原因筛选：未启用";
+    }
+
+    function isTerminalJobStatus(status) {
+      const normalized = String(status || "").toLowerCase();
+      return normalized === "succeeded" || normalized === "failed" || normalized === "canceled";
+    }
+
+    async function runBatchCancel(ids, reason, concurrency, progressTitle, options) {
+      const skipTerminal = Boolean(options?.skipTerminal);
+      const knownStatusMap = options?.knownStatusMap instanceof Map ? options.knownStatusMap : new Map();
+      const details = [];
+      const failureDetails = [];
+      let success = 0;
+      let failed = 0;
+      let completed = 0;
+      let skipped = 0;
+      const queue = ids.slice();
+
+      async function worker() {
+        while (queue.length > 0) {
+          const id = queue.shift();
+          if (!id) {
+            return;
+          }
+
+          const knownStatus = knownStatusMap.get(id);
+          if (skipTerminal && isTerminalJobStatus(knownStatus)) {
+            details.push({ id, status: "skipped_terminal", knownStatus });
+            skipped += 1;
+            completed += 1;
+            continue;
+          }
+
+          try {
+            const response = await requestApi("/api/jobs/" + id + "/cancel", "POST", { reason: reason || null });
+            details.push({ id, status: response.status, body: response.body });
+            if (response.ok || response.status === 409) {
+              success += 1;
+            } else {
+              failed += 1;
+              failureDetails.push({
+                id,
+                status: response.status,
+                reason: extractFailureReason(response.status, response.body),
+                body: response.body
+              });
+            }
+          } catch (error) {
+            const errorText = String(error);
+            details.push({ id, status: "exception", body: errorText });
+            failed += 1;
+            failureDetails.push({
+              id,
+              status: "exception",
+              reason: extractFailureReason("exception", errorText),
+              body: errorText
+            });
+          } finally {
+            completed += 1;
+            if (completed === ids.length || completed % 5 === 0) {
+              setBanner(
+                progressTitle + "进行中：" + completed + "/" + ids.length + "，成功 " + success + "，失败 " + failed + "。",
+                "warn");
+            }
+          }
+        }
+      }
+
+      const workerCount = Math.min(concurrency, ids.length);
+      await Promise.all(Array.from({ length: workerCount }, () => worker()));
+
+      return {
+        success,
+        failed,
+        skipped,
+        details,
+        failedJobIds: toUniqueIds(failureDetails.map((x) => x.id)),
+        failureDetails,
+        failureSummary: buildFailureSummary(failureDetails)
+      };
+    }
+
+    async function batchCancelSelectedJobs() {
+      const ids = Array.from(state.selectedJobIds);
+      if (ids.length === 0) {
+        setBanner("请先勾选至少一个作业。", "warn");
+        return;
+      }
+
+      const reason = $("cancelReason").value.trim();
+      const concurrency = getBatchCancelConcurrency();
+      const skipTerminal = $("skipTerminalOnBatchCancel").checked;
+      const knownStatusMap = new Map(state.allJobs.map((job) => [job?.id, job?.status]));
+      const confirmed = window.confirm("确认批量取消 " + ids.length + " 个作业？");
+      if (!confirmed) {
+        return;
+      }
+
+      setBanner("执行中: 批量取消 " + ids.length + " 个作业（并发=" + concurrency + "）", "warn");
+      const result = await runBatchCancel(ids, reason, concurrency, "批量取消", { skipTerminal, knownStatusMap });
+      setLastBatchCancelFailures(result.failureDetails);
+
+      showOutput(
+        "批量取消作业",
+        { count: ids.length, ids, reason: reason || null, concurrency, skipTerminal },
+        {
+          success: result.success,
+          failed: result.failed,
+          skipped: result.skipped,
+          failedJobIds: result.failedJobIds,
+          failureSummary: result.failureSummary,
+          details: result.details
+        });
+
+      if (result.failed > 0) {
+        setBanner(
+          "批量取消完成：成功 " + result.success + "，失败 " + result.failed + "，跳过 " + result.skipped + "。可点击“重试失败取消”。",
+          "warn");
+      } else {
+        setBanner("批量取消完成：成功 " + result.success + "，跳过 " + result.skipped + "。", "ok");
+      }
+
+      clearSelectedJobs();
+      await refreshJobs(false);
+      if (state.selectedJobId) {
+        await loadJobDetail(state.selectedJobId, false);
+      }
+    }
+
+    async function retryFailedBatchCancelJobs() {
+      const ids = toUniqueIds(state.lastBatchCancelFailedJobIds);
+      if (ids.length === 0) {
+        setBanner("没有可重试的失败取消作业。", "warn");
+        return;
+      }
+
+      const reason = $("cancelReason").value.trim();
+      const concurrency = getBatchCancelConcurrency();
+      const skipTerminal = $("skipTerminalOnBatchCancel").checked;
+      const knownStatusMap = new Map(state.allJobs.map((job) => [job?.id, job?.status]));
+      const confirmed = window.confirm("确认重试取消上次失败的 " + ids.length + " 个作业？");
+      if (!confirmed) {
+        return;
+      }
+
+      setBanner("执行中: 重试失败取消 " + ids.length + " 个作业（并发=" + concurrency + "）", "warn");
+      const result = await runBatchCancel(ids, reason, concurrency, "重试失败取消", { skipTerminal, knownStatusMap });
+      setLastBatchCancelFailures(result.failureDetails);
+
+      showOutput(
+        "重试失败取消作业",
+        { count: ids.length, ids, reason: reason || null, concurrency, skipTerminal },
+        {
+          success: result.success,
+          failed: result.failed,
+          skipped: result.skipped,
+          remainingFailedJobIds: result.failedJobIds,
+          failureSummary: result.failureSummary,
+          details: result.details
+        });
+
+      if (result.failed > 0) {
+        setBanner("重试完成：成功 " + result.success + "，仍失败 " + result.failed + "，跳过 " + result.skipped + "。", "warn");
+      } else {
+        setBanner("重试完成：所有失败取消作业已处理成功（跳过 " + result.skipped + "）。", "ok");
+      }
+
+      await refreshJobs(false);
+      if (state.selectedJobId) {
+        await loadJobDetail(state.selectedJobId, false);
+      }
+    }
+
+    async function copyFailedCancelJobIds() {
+      const ids = toUniqueIds(state.lastBatchCancelFailedJobIds);
+      if (ids.length === 0) {
+        setBanner("没有可复制的失败作业 ID。", "warn");
+        return;
+      }
+
+      const text = ids.join("\n");
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const tmp = document.createElement("textarea");
+          tmp.value = text;
+          document.body.appendChild(tmp);
+          tmp.select();
+          document.execCommand("copy");
+          tmp.remove();
+        }
+        setBanner("已复制失败作业 ID：" + ids.length + " 条。", "ok");
+      } catch (error) {
+        setBanner("复制失败作业 ID 失败: " + error, "err");
+      }
+    }
+
+    function downloadLastFailedCancelTxt() {
+      const details = Array.isArray(state.lastBatchCancelFailureDetails) ? state.lastBatchCancelFailureDetails : [];
+      if (details.length === 0) {
+        setBanner("没有可下载的失败清单。", "warn");
+        return;
+      }
+
+      const lines = [];
+      lines.push("DataHz batch cancel failure report");
+      lines.push("generatedAt=" + new Date().toISOString());
+      lines.push("failedCount=" + details.length);
+      if (state.lastBatchCancelFailureSummary.length > 0) {
+        lines.push("summary:");
+        state.lastBatchCancelFailureSummary.forEach((item) => {
+          lines.push("- " + item.reason + " x" + item.count);
+        });
+      }
+      lines.push("");
+      lines.push("details:");
+      details.forEach((item) => {
+        lines.push(
+          (item.id || "-") +
+          " | status=" + (item.status || "-") +
+          " | reason=" + (item.reason || "-"));
+      });
+
+      const blob = new Blob([lines.join("\r\n")], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const fileName = "datahz-batch-cancel-failed-" + new Date().toISOString().replace(/[:.]/g, "-") + ".txt";
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setBanner("已下载失败清单 TXT：" + fileName, "ok");
+    }
+
+    function downloadLastFailedCancelJson() {
+      const details = Array.isArray(state.lastBatchCancelFailureDetails) ? state.lastBatchCancelFailureDetails : [];
+      if (details.length === 0) {
+        setBanner("没有可下载的失败清单。", "warn");
+        return;
+      }
+
+      const payload = {
+        generatedAt: new Date().toISOString(),
+        failedCount: details.length,
+        failedJobIds: toUniqueIds(details.map((x) => x.id)),
+        summary: state.lastBatchCancelFailureSummary,
+        details
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const fileName = "datahz-batch-cancel-failed-" + new Date().toISOString().replace(/[:.]/g, "-") + ".json";
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setBanner("已下载失败清单 JSON：" + fileName, "ok");
+    }
+
+    function bindEvents() {
+      $("saveCredentialBtn").addEventListener("click", () => {
+        saveCredentials();
+        refreshWhoAmI(false);
+      });
+      $("clearCredentialBtn").addEventListener("click", () => {
+        clearCredentials();
+        $("identity").textContent = "Principal: - | Role: -";
+      });
+      $("whoamiBtn").addEventListener("click", () => refreshWhoAmI(true));
+      $("fillExampleBtn").addEventListener("click", fillExamplePlan);
+      $("validateBtn").addEventListener("click", () => validatePlanInputs(true));
+      $("flowBtn").addEventListener("click", runOneClickFlow);
+      $("exportPlanBtn").addEventListener("click", exportPlanFile);
+      $("importPlanBtn").addEventListener("click", () => $("importPlanInput").click());
+      $("importPlanInput").addEventListener("change", (event) => {
+        const file = event.target.files && event.target.files[0];
+        importPlanFile(file);
+      });
+      $("savePlanPresetBtn").addEventListener("click", saveCurrentAsPlanPreset);
+      $("loadPlanPresetBtn").addEventListener("click", loadSelectedPlanPreset);
+      $("renamePlanPresetBtn").addEventListener("click", renameSelectedPlanPreset);
+      $("deletePlanPresetBtn").addEventListener("click", deleteSelectedPlanPreset);
+      $("pinPlanPresetBtn").addEventListener("click", () => setSelectedPlanPresetPinned(true));
+      $("unpinPlanPresetBtn").addEventListener("click", () => setSelectedPlanPresetPinned(false));
+      $("movePlanPresetUpBtn").addEventListener("click", moveSelectedPlanPresetUp);
+      $("movePlanPresetDownBtn").addEventListener("click", moveSelectedPlanPresetDown);
+      $("undoPlanPresetOrderBtn").addEventListener("click", undoPlanPresetOrderChange);
+      $("redoPlanPresetOrderBtn").addEventListener("click", redoPlanPresetOrderChange);
+      $("clearPlanPresetHistoryBtn").addEventListener("click", clearPlanPresetOrderHistoryAction);
+      $("exportPlanPresetHistoryBtn").addEventListener("click", exportPlanPresetHistory);
+      $("importPlanPresetHistoryBtn").addEventListener("click", () => $("importPlanPresetHistoryInput").click());
+      $("importPlanPresetHistoryInput").addEventListener("change", (event) => {
+        const file = event.target.files && event.target.files[0];
+        importPlanPresetHistory(file);
+      });
+      $("setDefaultPlanPresetBtn").addEventListener("click", setSelectedPlanPresetAsDefault);
+      $("clearDefaultPlanPresetBtn").addEventListener("click", clearDefaultPlanPreset);
+      $("exportPlanPresetsBtn").addEventListener("click", exportPlanPresets);
+      $("importPlanPresetsBtn").addEventListener("click", () => $("importPlanPresetsInput").click());
+      $("importPlanPresetsInput").addEventListener("change", (event) => {
+        const file = event.target.files && event.target.files[0];
+        importPlanPresets(file);
+      });
+      $("clearPlanPresetsBtn").addEventListener("click", clearAllPlanPresets);
+      $("planPresetOrderList").addEventListener("click", handlePlanPresetOrderListClick);
+      $("planPresetOrderList").addEventListener("dragstart", handlePlanPresetOrderDragStart);
+      $("planPresetOrderList").addEventListener("dragover", handlePlanPresetOrderDragOver);
+      $("planPresetOrderList").addEventListener("drop", handlePlanPresetOrderDrop);
+      $("planPresetOrderList").addEventListener("dragend", handlePlanPresetOrderDragEnd);
+      $("planPresetOrderList").addEventListener("keydown", (event) => {
+        handlePlanPresetUndoHotkey(event);
+      });
+      $("planPresetHistoryList").addEventListener("click", handlePlanPresetHistoryListClick);
+      $("planPresetSelect").addEventListener("change", () => {
+        const name = normalizePlanPresetName($("planPresetSelect").value);
+        state.activePlanPresetName = name;
+        $("planPresetName").value = name;
+        savePlanState();
+      });
+      $("planPresetSelect").addEventListener("keydown", (event) => {
+        if (handlePlanPresetUndoHotkey(event)) {
+          return;
+        }
+        if (event.altKey && event.key === "ArrowUp") {
+          event.preventDefault();
+          moveSelectedPlanPresetUp();
+          return;
+        }
+        if (event.altKey && event.key === "ArrowDown") {
+          event.preventDefault();
+          moveSelectedPlanPresetDown();
+        }
+      });
+      $("planPresetSelect").addEventListener("dblclick", () => {
+        if ($("planPresetSelect").value) {
+          loadSelectedPlanPreset();
+        }
+      });
+      $("planPresetName").addEventListener("keydown", (event) => {
+        if (handlePlanPresetUndoHotkey(event)) {
+          return;
+        }
+        if (event.altKey && event.key === "ArrowUp") {
+          event.preventDefault();
+          moveSelectedPlanPresetUp();
+          return;
+        }
+        if (event.altKey && event.key === "ArrowDown") {
+          event.preventDefault();
+          moveSelectedPlanPresetDown();
+          return;
+        }
+        if (event.key === "Enter") {
+          event.preventDefault();
+          saveCurrentAsPlanPreset();
+        }
+      });
+      $("savePresetBtn").addEventListener("click", saveCurrentAsJobPreset);
+      $("loadPresetBtn").addEventListener("click", loadSelectedJobPreset);
+      $("deletePresetBtn").addEventListener("click", deleteSelectedJobPreset);
+      $("exportPresetsBtn").addEventListener("click", exportJobViewPresets);
+      $("importPresetsBtn").addEventListener("click", () => $("importPresetsInput").click());
+      $("importPresetsInput").addEventListener("change", (event) => {
+        const file = event.target.files && event.target.files[0];
+        importJobViewPresets(file);
+      });
+      $("clearPresetsBtn").addEventListener("click", clearAllJobViewPresets);
+      $("jobPresetSelect").addEventListener("change", () => {
+        const name = normalizePresetName($("jobPresetSelect").value);
+        state.activeJobPresetName = name;
+        $("jobPresetName").value = name;
+        saveJobViewState();
+      });
+      $("jobPresetSelect").addEventListener("dblclick", () => {
+        if ($("jobPresetSelect").value) {
+          loadSelectedJobPreset();
+        }
+      });
+      $("jobPresetName").addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          saveCurrentAsJobPreset();
+        }
+      });
+      $("applyFilterBtn").addEventListener("click", () => applyCurrentJobFilter(true));
+      $("clearFilterBtn").addEventListener("click", () => {
+        $("jobSearch").value = "";
+        $("jobStatusFilter").value = "";
+        $("jobSortBy").value = "createdAt";
+        $("jobSortDirection").value = "desc";
+        state.failureReasonFilter = "";
+        renderFailureSummaryView();
+        saveJobViewState();
+        applyCurrentJobFilter(true);
+      });
+      $("jobSearch").addEventListener("input", () => {
+        saveJobViewState();
+        scheduleApplyCurrentJobFilter();
+      });
+      $("jobSearch").addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          applyCurrentJobFilter(true);
+        }
+      });
+      $("jobStatusFilter").addEventListener("change", () => {
+        saveJobViewState();
+        applyCurrentJobFilter(true);
+      });
+      $("jobSortBy").addEventListener("change", () => {
+        saveJobViewState();
+        applyCurrentJobFilter(true);
+      });
+      $("jobSortDirection").addEventListener("change", () => {
+        saveJobViewState();
+        applyCurrentJobFilter(true);
+      });
+      $("jobTake").addEventListener("change", () => {
+        saveJobViewState();
+        refreshJobs(false);
+      });
+      $("refreshJobsBtn").addEventListener("click", () => refreshJobs(true));
+      $("focusLatestFailedBtn").addEventListener("click", () => focusLatestFailedJob(true));
+      $("reloadSelectedBtn").addEventListener("click", () => loadJobDetail(state.selectedJobId, true));
+      $("selectVisibleBtn").addEventListener("click", selectVisibleJobs);
+      $("selectByStatusBtn").addEventListener("click", () => {
+        saveJobViewState();
+        selectVisibleJobsByStatus($("batchSelectStatus").value);
+      });
+      $("invertSelectedBtn").addEventListener("click", invertVisibleSelection);
+      $("clearSelectedBtn").addEventListener("click", clearSelectedJobs);
+      $("batchCancelBtn").addEventListener("click", batchCancelSelectedJobs);
+      $("retryFailedCancelBtn").addEventListener("click", retryFailedBatchCancelJobs);
+      $("copyFailedIdsBtn").addEventListener("click", copyFailedCancelJobIds);
+      $("downloadFailedTxtBtn").addEventListener("click", downloadLastFailedCancelTxt);
+      $("downloadFailedJsonBtn").addEventListener("click", downloadLastFailedCancelJson);
+      $("clearFailedHistoryBtn").addEventListener("click", clearFailedCancelHistory);
+      $("exportFilteredCsvBtn").addEventListener("click", exportFilteredJobsCsv);
+      $("exportFilteredJsonlBtn").addEventListener("click", exportFilteredJobsJsonl);
+      $("cancelBtn").addEventListener("click", cancelSelectedJob);
+      $("autoRefreshJobs").addEventListener("change", () => {
+        saveJobViewState();
+        toggleAutoRefreshJobs();
+      });
+      $("batchSelectStatus").addEventListener("change", saveJobViewState);
+      $("skipTerminalOnBatchCancel").addEventListener("change", saveJobViewState);
+      $("batchCancelConcurrency").addEventListener("change", () => {
+        getBatchCancelConcurrency();
+        saveJobViewState();
+      });
+      $("fillFromSelectedBtn").addEventListener("click", fillPlanFromSelectedJob);
+      $("cloneSubmitSelectedBtn").addEventListener("click", cloneSubmitSelectedJob);
+      $("copyTemplatePathBtn").addEventListener("click", copySelectedTemplatePath);
+      $("copyPathBundleBtn").addEventListener("click", copySelectedPathBundle);
+      $("copySelectedJobJsonBtn").addEventListener("click", copySelectedJobJson);
+      $("downloadSelectedJobJsonBtn").addEventListener("click", downloadSelectedJobJson);
+      $("failureSummaryBox").addEventListener("click", (event) => {
+        const chip = event.target.closest("[data-reason-chip]");
+        if (chip) {
+          const reason = chip.getAttribute("data-reason-chip") || "";
+          setFailureReasonFilter(reason);
+          return;
+        }
+        const clearBtn = event.target.closest("#clearFailureReasonFilterBtn");
+        if (clearBtn) {
+          clearFailureReasonFilter(true);
+        }
+      });
+
+      $("parseBtn").addEventListener("click", async () => {
+        if (!validateTemplateOnly(true)) {
+          return;
+        }
+        savePlanState();
+        const plan = buildPlanPayload();
+        await invokeEndpoint(
+          "解析模板",
+          "/api/templates/parse",
+          "POST",
+          { templatePath: plan.templatePath },
+          null);
+      });
+
+      $("planBtn").addEventListener("click", async () => {
+        if (!validatePlanInputs(true)) {
+          return;
+        }
+        savePlanState();
+        await invokeEndpoint(
+          "生成计划",
+          "/api/tasks/plan",
+          "POST",
+          buildPlanPayload(),
+          null);
+      });
+
+      $("executeBtn").addEventListener("click", async () => {
+        if (!validatePlanInputs(true)) {
+          return;
+        }
+        savePlanState();
+        await invokeEndpoint(
+          "同步执行",
+          "/api/tasks/execute",
+          "POST",
+          buildExecutePayload(),
+          null);
+      });
+
+      $("submitBtn").addEventListener("click", async () => {
+        if (!validatePlanInputs(true)) {
+          return;
+        }
+        savePlanState();
+        await invokeEndpoint(
+          "提交异步作业",
+          "/api/jobs/submit",
+          "POST",
+          buildSubmitPayload(),
+          async (responseBody) => {
+            const jobId = responseBody?.jobId;
+            await refreshJobs(false);
+            if (jobId) {
+              await loadJobDetail(jobId, false);
+            }
+          });
+      });
+
+      $("jobsBody").addEventListener("click", (event) => {
+        const check = event.target.closest(".job-check");
+        if (check && check.dataset.id) {
+          if (check.checked) {
+            state.selectedJobIds.add(check.dataset.id);
+          } else {
+            state.selectedJobIds.delete(check.dataset.id);
+          }
+          updateBatchCancelButtonState();
+          event.stopPropagation();
+          return;
+        }
+
+        const row = event.target.closest(".job-row");
+        if (row && row.dataset.id) {
+          loadJobDetail(row.dataset.id, true);
+        }
+      });
+
+      window.addEventListener("beforeunload", stopAutoRefreshJobs);
+    }
+
+    async function init() {
+      loadCredentials();
+      loadPlanPresets();
+      loadPlanPresetMeta();
+      if (reconcilePlanPresetMeta()) {
+        savePlanPresetMeta();
+      }
+      loadPlanPresetHistory();
+      reconcilePlanPresetHistoryWithCurrentPresets();
+      loadDefaultPlanPresetName();
+      loadPlanState();
+      applyDefaultPlanPresetIfNeeded();
+      loadJobViewPresets();
+      loadJobViewState();
+      bindEvents();
+      renderPlanPresetOptions();
+      renderJobPresetOptions();
+      clearValidationState();
+      renderFailureSummaryView();
+      updateBatchCancelButtonState();
+      setSelectedJobActionButtonsEnabled(false);
+      await refreshWhoAmI(false);
+      await refreshJobs(false);
+      toggleAutoRefreshJobs();
+      setBanner("就绪。你可以从“解析模板”开始逐步验证参数，也可以直接提交异步作业。");
+    }
+
+    init();
+  </script>
+</body>
+</html>
