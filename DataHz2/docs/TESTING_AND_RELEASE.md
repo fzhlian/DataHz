@@ -592,3 +592,13 @@ What changed:
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
 - Expect `smoke-detail-redacts-secrets` and `smoke-baseurl-query-secrets-redacted` to pass with no raw multi-level encoded bracket-suffix secret fragments in outputs.
+
+## 2026-03-05 baseUrl triple-encoded guard parity fix
+
+What changed:
+- `check-deploy-guards.ps1` updates `smoke-baseurl-query-secrets-redacted` to include triple-encoded bracket key variants (`%25255B...%25255D`, including nested forms) in both query and fragment `BaseUrl` fixtures.
+- The expected redacted `report.baseUrl` string and forbidden-secret assertions now include the same triple-encoded variants, keeping this guard in parity with `smoke-detail-redacts-secrets`.
+
+How to validate:
+- Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
+- Expect `smoke-baseurl-query-secrets-redacted` to fail if any triple-encoded bracket-suffix secret value appears in report/stdout/stderr.
