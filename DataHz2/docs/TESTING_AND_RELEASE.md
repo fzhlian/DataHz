@@ -581,3 +581,14 @@ What changed:
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
 - Expect `smoke-detail-redacts-secrets` and `smoke-baseurl-query-secrets-redacted` to pass with no raw double-encoded bracket-suffix secret fragments in outputs.
+
+## 2026-03-05 generalized multi-level encoded bracket redaction hardening
+
+What changed:
+- `smoke-test-api.ps1` now generalizes encoded bracket matching to multi-level `%25` prefixes (for example `%5B...%5D`, `%255B...%255D`, `%25255B...%25255D`) for sensitive key suffixes in key-value diagnostics and URL query/fragment text.
+- `check-deploy-guards.ps1` extends `smoke-detail-redacts-secrets` with triple-encoded bracket key variants (including nested forms) in payload and echoed `target_url`, and asserts raw values never appear.
+- `smoke-baseurl-query-secrets-redacted` now injects the same triple-encoded keys in query and fragment sections and validates `report.baseUrl` keeps keys while redacting values.
+
+How to validate:
+- Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
+- Expect `smoke-detail-redacts-secrets` and `smoke-baseurl-query-secrets-redacted` to pass with no raw multi-level encoded bracket-suffix secret fragments in outputs.
