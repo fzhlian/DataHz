@@ -333,6 +333,7 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             note_api_key = "X-Api-Key: guard-freeform-xapikey-should-redact"
                             note_basic = "free-text basic=Basic guard-freeform-basic-should-redact"
                             single_quote_note = "single-quote pairs: 'api_key'='guard-single-quote-apikey-should-redact'; 'sessionIdBackup%5Bmeta%5D'='guard-single-quote-sessionid-encoded-meta-should-redact'; 'client_secret_stage': 'guard-single-quote-client-secret-stage-should-redact'"
+                            escaped_unicode_quote_note = "escaped unicode quote pairs: \u0027api_key\u0027=\u0027guard-escaped-unicode-quote-apikey-should-redact\u0027; \u0027sessionIdBackup%5Bmeta%5D\u0027:\u0027guard-escaped-unicode-quote-sessionid-meta-should-redact\u0027"
                             x_api_key = $apiKeyHeader
                             "x.api.key.alt" = "guard-x-dot-api-key-alt-should-redact"
                             "api.key.alt" = "guard-api-dot-key-alt-should-redact"
@@ -417,6 +418,7 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             note_api_key = "X-Api-Key: guard-freeform-xapikey-should-redact"
                             note_basic = "free-text basic=Basic guard-freeform-basic-should-redact"
                             single_quote_note = "single-quote pairs: 'api_key'='guard-single-quote-apikey-should-redact'; 'sessionIdBackup%5Bmeta%5D'='guard-single-quote-sessionid-encoded-meta-should-redact'; 'client_secret_stage': 'guard-single-quote-client-secret-stage-should-redact'"
+                            escaped_unicode_quote_note = "escaped unicode quote pairs: \u0027api_key\u0027=\u0027guard-escaped-unicode-quote-apikey-should-redact\u0027; \u0027sessionIdBackup%5Bmeta%5D\u0027:\u0027guard-escaped-unicode-quote-sessionid-meta-should-redact\u0027"
                             x_api_key = $apiKeyHeader
                             "x.api.key.alt" = "guard-x-dot-api-key-alt-should-redact"
                             "api.key.alt" = "guard-api-dot-key-alt-should-redact"
@@ -1775,6 +1777,8 @@ try {
                     "guard-single-quote-apikey-should-redact",
                     "guard-single-quote-sessionid-encoded-meta-should-redact",
                     "guard-single-quote-client-secret-stage-should-redact",
+                    "guard-escaped-unicode-quote-apikey-should-redact",
+                    "guard-escaped-unicode-quote-sessionid-meta-should-redact",
                     "guard-client-dot-secret-stage-should-redact",
                     "guard-freeform-bearer-should-redact",
                     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.guardpayload.guardsignature",

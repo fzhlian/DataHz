@@ -673,7 +673,9 @@ What changed:
 - `smoke-test-api.ps1` extends key-value secret redaction to support single-quoted key/value formats, for example `'api_key'='...'` and `'client_secret_stage': '...'`, in addition to existing double-quote/plain styles.
 - `smoke-test-api.ps1` now normalizes JSON-escaped quote sequences (`\\u0027`, `\\u0022`) before key-value redaction so single-quote diagnostics serialized by `ConvertTo-Json` are also sanitized.
 - `check-deploy-guards.ps1` extends `smoke-detail-redacts-secrets` payload fixtures (health + error branches) with single-quote diagnostic samples and adds matching forbidden-secret assertions (`guard-single-quote-*`).
+- `smoke-test-api.ps1` now accepts one-or-more backslashes before escaped quote sequences (for example `\\u0027`, `\\\\u0027`) to cover double-escaped JSON diagnostics.
+- `check-deploy-guards.ps1` adds escaped-unicode quote samples and forbidden assertions (`guard-escaped-unicode-quote-*`) to prevent regression in that path.
 
 How to validate:
 - Run: `./DataHz2/scripts/check-deploy-guards.ps1 -PackageZip ./DataHz2/artifacts/packages/datahz2-api-win-x64.zip`
-- Expect `smoke-detail-redacts-secrets` to pass with no raw `guard-single-quote-*` values in report/stdout/stderr outputs.
+- Expect `smoke-detail-redacts-secrets` to pass with no raw `guard-single-quote-*` or `guard-escaped-unicode-quote-*` values in report/stdout/stderr outputs.

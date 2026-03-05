@@ -123,8 +123,8 @@ function Redact-SensitiveText([string]$Text) {
     )
 
     # Normalize JSON-escaped quote sequences so quote-aware key/value redaction can match.
-    $sanitized = [System.Text.RegularExpressions.Regex]::Replace($sanitized, '(?i)\\u0027', "'")
-    $sanitized = [System.Text.RegularExpressions.Regex]::Replace($sanitized, '(?i)\\u0022', '"')
+    $sanitized = [System.Text.RegularExpressions.Regex]::Replace($sanitized, '(?i)(?:\\)+u0027', "'")
+    $sanitized = [System.Text.RegularExpressions.Regex]::Replace($sanitized, '(?i)(?:\\)+u0022', '"')
 
     $sanitized = [System.Text.RegularExpressions.Regex]::Replace(
         $sanitized,
