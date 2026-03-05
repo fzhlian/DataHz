@@ -335,6 +335,7 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             single_quote_note = "single-quote pairs: 'api_key'='guard-single-quote-apikey-should-redact'; 'sessionIdBackup%5Bmeta%5D'='guard-single-quote-sessionid-encoded-meta-should-redact'; 'client_secret_stage': 'guard-single-quote-client-secret-stage-should-redact'"
                             escaped_unicode_quote_note = "escaped unicode quote pairs: \u0027api_key\u0027=\u0027guard-escaped-unicode-quote-apikey-should-redact\u0027; \u0027sessionIdBackup%5Bmeta%5D\u0027:\u0027guard-escaped-unicode-quote-sessionid-meta-should-redact\u0027"
                             double_escaped_unicode_quote_note = "double escaped unicode quote pairs: \\u0027api_key\\u0027=\\u0027guard-double-escaped-unicode-quote-apikey-should-redact\\u0027; \\u0027client_secret_stage\\u0027=\\u0027guard-double-escaped-unicode-quote-client-secret-stage-should-redact\\u0027"
+                            escaped_target_url = "http:\\/\\/guard-escaped-url-user:guard-escaped-url-pass@127.0.0.1\\/escaped?api_key=guard-escaped-url-apikey-should-redact&sessionIdBackup=guard-escaped-url-sessionid-should-redact#access_token=guard-escaped-url-fragment-token-should-redact"
                             x_api_key = $apiKeyHeader
                             "x.api.key.alt" = "guard-x-dot-api-key-alt-should-redact"
                             "api.key.alt" = "guard-api-dot-key-alt-should-redact"
@@ -421,6 +422,7 @@ function Start-SecretEchoSmokeServer([int]$Port) {
                             single_quote_note = "single-quote pairs: 'api_key'='guard-single-quote-apikey-should-redact'; 'sessionIdBackup%5Bmeta%5D'='guard-single-quote-sessionid-encoded-meta-should-redact'; 'client_secret_stage': 'guard-single-quote-client-secret-stage-should-redact'"
                             escaped_unicode_quote_note = "escaped unicode quote pairs: \u0027api_key\u0027=\u0027guard-escaped-unicode-quote-apikey-should-redact\u0027; \u0027sessionIdBackup%5Bmeta%5D\u0027:\u0027guard-escaped-unicode-quote-sessionid-meta-should-redact\u0027"
                             double_escaped_unicode_quote_note = "double escaped unicode quote pairs: \\u0027api_key\\u0027=\\u0027guard-double-escaped-unicode-quote-apikey-should-redact\\u0027; \\u0027client_secret_stage\\u0027=\\u0027guard-double-escaped-unicode-quote-client-secret-stage-should-redact\\u0027"
+                            escaped_target_url = "http:\\/\\/guard-escaped-url-user:guard-escaped-url-pass@127.0.0.1\\/escaped?api_key=guard-escaped-url-apikey-should-redact&sessionIdBackup=guard-escaped-url-sessionid-should-redact#access_token=guard-escaped-url-fragment-token-should-redact"
                             x_api_key = $apiKeyHeader
                             "x.api.key.alt" = "guard-x-dot-api-key-alt-should-redact"
                             "api.key.alt" = "guard-api-dot-key-alt-should-redact"
@@ -1783,6 +1785,12 @@ try {
                     "guard-escaped-unicode-quote-sessionid-meta-should-redact",
                     "guard-double-escaped-unicode-quote-apikey-should-redact",
                     "guard-double-escaped-unicode-quote-client-secret-stage-should-redact",
+                    "guard-escaped-url-user",
+                    "guard-escaped-url-pass",
+                    "guard-escaped-url-user:guard-escaped-url-pass@",
+                    "guard-escaped-url-apikey-should-redact",
+                    "guard-escaped-url-sessionid-should-redact",
+                    "guard-escaped-url-fragment-token-should-redact",
                     "guard-client-dot-secret-stage-should-redact",
                     "guard-freeform-bearer-should-redact",
                     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.guardpayload.guardsignature",
