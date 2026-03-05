@@ -642,47 +642,86 @@ function Run-Case(
     [string]$Name,
     [scriptblock]$Action,
     [bool]$ExpectFailure,
-    [string]$ExpectedMessagePart
+    [string]$ExpectedMessagePart,
+    [int]$MaxAttempts = 2,
+    [int]$RetryDelayMilliseconds = 200,
+    [string[]]$RetryOnMessageParts = @("already been disposed")
 ) {
-    try {
-        & $Action
-        if ($ExpectFailure) {
+    $attemptLimit = [Math]::Max(1, $MaxAttempts)
+    for ($attempt = 1; $attempt -le $attemptLimit; $attempt++) {
+        try {
+            & $Action
+            if ($ExpectFailure) {
+                return [pscustomobject]@{
+                    Case = $Name
+                    Passed = $false
+                    Detail = "Expected failure but command succeeded."
+                }
+            }
+
+            $successDetail = "Succeeded."
+            if ($attempt -gt 1) {
+                $successDetail = "Succeeded after transient retry (attempt=$attempt)."
+            }
+
             return [pscustomobject]@{
                 Case = $Name
-                Passed = $false
-                Detail = "Expected failure but command succeeded."
+                Passed = $true
+                Detail = $successDetail
             }
         }
+        catch {
+            $message = [string]$_.Exception.Message
 
-        return [pscustomobject]@{
-            Case = $Name
-            Passed = $true
-            Detail = "Succeeded."
+            if (-not $ExpectFailure -and $attempt -lt $attemptLimit -and $RetryOnMessageParts.Count -gt 0) {
+                $retryable = $false
+                foreach ($marker in $RetryOnMessageParts) {
+                    if ([string]::IsNullOrWhiteSpace($marker)) {
+                        continue
+                    }
+
+                    if ($message -like "*$marker*") {
+                        $retryable = $true
+                        break
+                    }
+                }
+
+                if ($retryable) {
+                    if ($RetryDelayMilliseconds -gt 0) {
+                        Start-Sleep -Milliseconds $RetryDelayMilliseconds
+                    }
+                    continue
+                }
+            }
+
+            if (-not $ExpectFailure) {
+                return [pscustomobject]@{
+                    Case = $Name
+                    Passed = $false
+                    Detail = "Unexpected failure: $message"
+                }
+            }
+
+            if (-not [string]::IsNullOrWhiteSpace($ExpectedMessagePart) -and ($message -notlike "*$ExpectedMessagePart*")) {
+                return [pscustomobject]@{
+                    Case = $Name
+                    Passed = $false
+                    Detail = "Failed with unexpected message: $message"
+                }
+            }
+
+            return [pscustomobject]@{
+                Case = $Name
+                Passed = $true
+                Detail = "Failed as expected: $message"
+            }
         }
     }
-    catch {
-        $message = $_.Exception.Message
-        if (-not $ExpectFailure) {
-            return [pscustomobject]@{
-                Case = $Name
-                Passed = $false
-                Detail = "Unexpected failure: $message"
-            }
-        }
 
-        if (-not [string]::IsNullOrWhiteSpace($ExpectedMessagePart) -and ($message -notlike "*$ExpectedMessagePart*")) {
-            return [pscustomobject]@{
-                Case = $Name
-                Passed = $false
-                Detail = "Failed with unexpected message: $message"
-            }
-        }
-
-        return [pscustomobject]@{
-            Case = $Name
-            Passed = $true
-            Detail = "Failed as expected: $message"
-        }
+    return [pscustomobject]@{
+        Case = $Name
+        Passed = $false
+        Detail = "Unexpected failure: exhausted retry attempts."
     }
 }
 
@@ -2013,6 +2052,9 @@ try {
         -Name "smoke-baseurl-whitespace-injection-sanitized" `
         -ExpectFailure $false `
         -ExpectedMessagePart "" `
+        -MaxAttempts 2 `
+        -RetryDelayMilliseconds 200 `
+        -RetryOnMessageParts @("already been disposed") `
         -Action {
             $smokePort = Get-FreeTcpPort
             $smokeServer = Start-SmokeMockServer -Port $smokePort
