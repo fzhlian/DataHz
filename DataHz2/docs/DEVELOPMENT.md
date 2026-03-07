@@ -46,3 +46,9 @@ dotnet test .\DataHz2.sln -c Release
 1. 功能分支命名建议：`feat/*`、`fix/*`、`docs/*`。
 2. 建议提交信息：`type(scope): summary`。
 3. PR 合并前需通过 CI 与文档同步检查。
+
+## Browser Launch (run-api.ps1)
+- Default behavior now tries to open the default browser after /health is reachable.
+- Disable auto-launch: ./scripts/run-api.ps1 -NoBrowser
+- Open dashboard directly: ./scripts/run-api.ps1 -LaunchPath /dashboard/
+- Override base URL: ./scripts/run-api.ps1 -BaseUrl "http://127.0.0.1:5080"
