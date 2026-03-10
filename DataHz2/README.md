@@ -1,6 +1,6 @@
 # DataHz 2.0（中文项目总览）
 
-最后更新：2026-03-06
+最后更新：2026-03-10
 
 `DataHz 2.0` 是对旧版 VB6 多数据库汇总工具的重构版本，核心目标是：
 
@@ -27,11 +27,16 @@ cd .\DataHz2
 
 启动后默认入口：
 
-- 首页：`http://localhost:5080/`
-- Swagger：`http://localhost:5080/swagger`
-- Dashboard：`http://localhost:5080/dashboard/`
-- Workbench：`http://localhost:5080/workbench/`
-- 健康检查：`http://localhost:5080/health`
+- 首页：`http://127.0.0.1:5080/`
+- Swagger：`http://127.0.0.1:5080/swagger`
+- Dashboard：`http://127.0.0.1:5080/dashboard/`
+- Workbench：`http://127.0.0.1:5080/workbench/`
+- 健康检查：`http://127.0.0.1:5080/health`
+
+`run-api.ps1` 默认会在健康检查就绪后自动打开浏览器到首页，可通过以下参数调整：
+
+- 禁用自动打开：`./scripts/run-api.ps1 -NoBrowser`
+- 指定打开地址：`./scripts/run-api.ps1 -BaseUrl "http://127.0.0.1:5080" -LaunchPath "/workbench/"`
 
 ## 图形界面（Workbench）
 
@@ -44,7 +49,7 @@ cd .\DataHz2
 
 ### 如何使用与验证
 
-1. 启动 API 服务后访问 `http://localhost:5080/`，点击 `Task Workbench`。
+1. 启动 API 服务后访问 `http://127.0.0.1:5080/`，点击 `Task Workbench`。
 2. 在 Workbench 中填写 `TemplatePath/SourceDirectory/TargetDirectory/AreaCodePath` 与索引范围，按顺序执行：
    - `解析模板`（`POST /api/templates/parse`）
    - `生成计划`（`POST /api/tasks/plan`）
@@ -103,16 +108,16 @@ dotnet test .\DataHz2.sln -c Release
 
 ## 文档导航
 
-- 文档索引：[docs/README.md](/d:/fzhlian/Code/DataHz/DataHz2/docs/README.md)
-- 架构设计：[docs/ARCHITECTURE.md](/d:/fzhlian/Code/DataHz/DataHz2/docs/ARCHITECTURE.md)
-- API 说明：[docs/API.md](/d:/fzhlian/Code/DataHz/DataHz2/docs/API.md)
-- 配置说明：[docs/CONFIGURATION.md](/d:/fzhlian/Code/DataHz/DataHz2/docs/CONFIGURATION.md)
-- 开发规范：[docs/DEVELOPMENT.md](/d:/fzhlian/Code/DataHz/DataHz2/docs/DEVELOPMENT.md)
-- 测试与发布：[docs/TESTING_AND_RELEASE.md](/d:/fzhlian/Code/DataHz/DataHz2/docs/TESTING_AND_RELEASE.md)
-- 运维手册：[docs/OPERATIONS.md](/d:/fzhlian/Code/DataHz/DataHz2/docs/OPERATIONS.md)
-- 文档维护策略：[docs/DOCUMENTATION_POLICY.md](/d:/fzhlian/Code/DataHz/DataHz2/docs/DOCUMENTATION_POLICY.md)
-- 迁移映射：[docs/MIGRATION.md](/d:/fzhlian/Code/DataHz/DataHz2/docs/MIGRATION.md)
-- SSO 加固：[docs/SSO_HARDENING_RUNBOOK.md](/d:/fzhlian/Code/DataHz/DataHz2/docs/SSO_HARDENING_RUNBOOK.md)
+- 文档索引：[docs/README.md](./docs/README.md)
+- 架构设计：[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)
+- API 说明：[docs/API.md](./docs/API.md)
+- 配置说明：[docs/CONFIGURATION.md](./docs/CONFIGURATION.md)
+- 开发规范：[docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md)
+- 测试与发布：[docs/TESTING_AND_RELEASE.md](./docs/TESTING_AND_RELEASE.md)
+- 运维手册：[docs/OPERATIONS.md](./docs/OPERATIONS.md)
+- 文档维护策略：[docs/DOCUMENTATION_POLICY.md](./docs/DOCUMENTATION_POLICY.md)
+- 迁移映射：[docs/MIGRATION.md](./docs/MIGRATION.md)
+- SSO 加固：[docs/SSO_HARDENING_RUNBOOK.md](./docs/SSO_HARDENING_RUNBOOK.md)
 
 ## 文档自动同步机制
 
