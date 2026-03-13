@@ -1,6 +1,6 @@
 # 配置说明
 
-最后更新：2026-03-03
+最后更新：2026-03-14
 
 ## 配置文件位置
 
@@ -52,7 +52,16 @@
 ## `Audit`
 
 - `Enabled`：启用审计。
-- `FilePath`：审计日志输出路径。
+- `FilePath`：审计日志输出路径，默认 `.datahz-jobs/audit.log`。可通过 `appsettings.json` 或环境特定配置文件覆盖，建议始终使用 `/` 或绝对路径，避免在非 Windows 环境下把 `\` 解析成普通文件名。
+
+本次变更：
+
+- 将默认审计日志路径统一为 `.datahz-jobs/audit.log`，避免默认值带 Windows 路径分隔符时在 Linux/macOS 下落成错误文件名。
+
+使用与验证：
+
+- 保持默认配置启动 API 后，确认内容根目录下生成 `.datahz-jobs/audit.log`。
+- 如需自定义位置，覆盖 `Audit:FilePath` 到绝对路径或相对内容根目录的路径。
 
 ## `Monitoring`
 

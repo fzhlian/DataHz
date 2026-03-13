@@ -1,6 +1,6 @@
 # 运维手册
 
-最后更新：2026-03-03
+最后更新：2026-03-14
 
 ## 部署方式
 
@@ -40,8 +40,17 @@
 
 - `artifacts\releases\deploy-history.json`：部署和回滚历史。
 - `artifacts\releases\active-release.txt`：当前活动版本。
-- `.datahz-jobs\jobs.json`：任务队列持久化数据。
-- `.datahz-jobs\audit.log`：审计日志。
+- `.datahz-jobs/jobs.json`：任务队列持久化数据。
+- `.datahz-jobs/audit.log`：审计日志。
+
+本次变更：
+
+- 默认运行状态文件示例统一改为 `/` 分隔符，其中审计日志默认路径与应用配置保持一致，避免跨平台路径歧义。
+
+使用与验证：
+
+- 启动 API 后检查内容根目录下是否存在 `.datahz-jobs/jobs.json` 与 `.datahz-jobs/audit.log`。
+- 如运行在 Windows，自定义配置仍可使用绝对 Windows 路径；如使用相对路径，优先写成 `/` 分隔符形式。
 
 ## 常见问题
 

@@ -62,7 +62,7 @@ public sealed class FileAuditTrail : IAuditTrail
     {
         if (string.IsNullOrWhiteSpace(configuredPath))
         {
-            configuredPath = ".datahz-jobs\\audit.log";
+            configuredPath = ".datahz-jobs/audit.log";
         }
 
         return Path.IsPathRooted(configuredPath)

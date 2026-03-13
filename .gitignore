@@ -4,3 +4,18 @@
 # .NET build outputs
 **/bin/
 **/obj/
+
+# OpenClaw agent/runtime artifacts
+/.openclaw/
+/HEARTBEAT.md
+/IDENTITY.md
+/SOUL.md
+/TOOLS.md
+/USER.md
+/BOOTSTRAP.md
+/MEMORY.md
+
+# Local IDE solution file
+/DataHz.sln
+
+# 临时测试注释
