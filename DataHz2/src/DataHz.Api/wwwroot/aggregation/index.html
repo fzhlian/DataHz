@@ -1,0 +1,1218 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DataHz Directory Aggregation</title>
+  <style>
+    :root {
+      --bg-a: #09131a;
+      --bg-b: #1d3943;
+      --bg-c: #775536;
+      --panel: rgba(8, 19, 26, 0.72);
+      --panel-strong: rgba(8, 19, 26, 0.9);
+      --line: rgba(171, 197, 202, 0.28);
+      --ink: #edf8f7;
+      --ink-dim: #9cb8bc;
+      --accent: #63d0c1;
+      --accent-2: #f0b56a;
+      --ok: #43c17b;
+      --warn: #efb14d;
+      --err: #ef6c68;
+      --shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "Bahnschrift", "Microsoft YaHei UI", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 8% 10%, rgba(99, 208, 193, 0.16), transparent 34%),
+        radial-gradient(circle at 88% 0%, rgba(240, 181, 106, 0.18), transparent 36%),
+        linear-gradient(135deg, var(--bg-a), var(--bg-b) 48%, var(--bg-c));
+    }
+
+    .page {
+      width: min(1240px, 95vw);
+      margin: 24px auto 32px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      overflow: hidden;
+    }
+
+    .hero {
+      padding: 24px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .title-row,
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 42px);
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .sub {
+      color: var(--ink-dim);
+      max-width: 760px;
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    .nav a {
+      color: #f3fbff;
+      text-decoration: none;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 13px;
+      background: rgba(29, 57, 67, 0.76);
+      font-size: 12px;
+    }
+
+    .banner {
+      border: 1px solid rgba(99, 208, 193, 0.38);
+      border-radius: 12px;
+      padding: 11px 13px;
+      font-size: 13px;
+      white-space: pre-wrap;
+      background: rgba(29, 57, 67, 0.62);
+    }
+
+    .banner.ok { border-color: rgba(67, 193, 123, 0.52); color: #d7ffe8; }
+    .banner.warn { border-color: rgba(239, 177, 77, 0.58); color: #ffe8c1; }
+    .banner.err { border-color: rgba(239, 108, 104, 0.58); color: #ffd7d4; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(420px, 1.1fr) minmax(340px, 0.9fr);
+      gap: 16px;
+    }
+
+    .body {
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .section-title {
+      margin: 0;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-dim);
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    label {
+      font-size: 12px;
+      color: var(--ink-dim);
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    input[type="number"],
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      color: var(--ink);
+      background: rgba(29, 57, 67, 0.72);
+      font-size: 13px;
+      font-family: "Cascadia Mono", "Consolas", monospace;
+    }
+
+    textarea {
+      min-height: 74px;
+      resize: vertical;
+    }
+
+    input.invalid,
+    textarea.invalid {
+      border-color: rgba(239, 108, 104, 0.85);
+      box-shadow: 0 0 0 2px rgba(239, 108, 104, 0.16);
+    }
+
+    .hint,
+    .mini {
+      color: var(--ink-dim);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .inline {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .checks,
+    .actions,
+    .stats {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .checks label {
+      text-transform: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 14px;
+      color: #effbff;
+      background: rgba(29, 57, 67, 0.78);
+      cursor: pointer;
+      font-size: 13px;
+      font-family: inherit;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      filter: brightness(1.06);
+    }
+
+    button:disabled {
+      opacity: 0.56;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #1d7569, #278f7f);
+    }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, #805632, #9f7344);
+    }
+
+    .pill-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 10px;
+      text-align: center;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--ink-dim);
+      background: rgba(29, 57, 67, 0.42);
+    }
+
+    .pill.active {
+      border-color: rgba(240, 181, 106, 0.9);
+      color: #fff0d4;
+      background: rgba(128, 86, 50, 0.68);
+    }
+
+    .pill.done {
+      border-color: rgba(67, 193, 123, 0.9);
+      color: #ddffea;
+      background: rgba(24, 92, 58, 0.72);
+    }
+
+    .progress-track {
+      height: 12px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(29, 57, 67, 0.55);
+      border: 1px solid rgba(171, 197, 202, 0.18);
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      transition: width 220ms ease;
+    }
+
+    .result-box {
+      border: 1px solid rgba(171, 197, 202, 0.22);
+      border-radius: 14px;
+      background: rgba(29, 57, 67, 0.46);
+      padding: 12px;
+      font-size: 12px;
+      white-space: pre-wrap;
+      line-height: 1.55;
+      font-family: "Cascadia Mono", "Consolas", monospace;
+      max-height: 300px;
+      overflow: auto;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .summary-item {
+      border: 1px solid rgba(171, 197, 202, 0.18);
+      border-radius: 14px;
+      padding: 12px;
+      background: rgba(29, 57, 67, 0.36);
+    }
+
+    .summary-item strong {
+      display: block;
+      font-size: 22px;
+      margin-top: 6px;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 10, 14, 0.7);
+      display: none;
+      place-items: center;
+      padding: 20px;
+    }
+
+    .modal.open {
+      display: grid;
+    }
+
+    .modal-card {
+      width: min(920px, 96vw);
+      max-height: 86vh;
+      overflow: hidden;
+      border-radius: 20px;
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+    }
+
+    .modal-head,
+    .modal-actions {
+      padding: 16px 18px;
+      border-bottom: 1px solid rgba(171, 197, 202, 0.14);
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .modal-actions {
+      border-top: 1px solid rgba(171, 197, 202, 0.14);
+      border-bottom: 0;
+    }
+
+    .breadcrumb {
+      color: var(--ink-dim);
+      font-size: 12px;
+      font-family: "Cascadia Mono", "Consolas", monospace;
+      word-break: break-all;
+    }
+
+    .browser-list {
+      padding: 10px 18px 18px;
+      overflow: auto;
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+
+    .entry {
+      border: 1px solid rgba(171, 197, 202, 0.18);
+      border-radius: 14px;
+      background: rgba(29, 57, 67, 0.42);
+      padding: 10px 12px;
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .entry-name {
+      font-family: "Cascadia Mono", "Consolas", monospace;
+      font-size: 13px;
+      word-break: break-all;
+    }
+
+    .entry-kind {
+      color: var(--ink-dim);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    @media (max-width: 980px) {
+      .layout,
+      .inline,
+      .summary-grid,
+      .pill-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="card hero">
+      <div class="title-row">
+        <div>
+          <h1>Directory Aggregation</h1>
+          <div class="sub">面向操作员的目录汇总界面。先选择模板文件、源数据目录和输出目录，系统会先做参数校验与计划预览，再提交异步汇总任务并持续展示进度与结果。</div>
+        </div>
+        <nav class="nav">
+          <a href="/">Home</a>
+          <a href="/workbench/">Workbench</a>
+          <a href="/dashboard/">Monitor</a>
+          <a href="/swagger">Swagger</a>
+        </nav>
+      </div>
+      <div id="banner" class="banner">准备就绪。请填写汇总参数。</div>
+      <div id="identity" class="mini">Principal: - | Role: -</div>
+    </section>
+
+    <section class="layout">
+      <article class="card">
+        <div class="body">
+          <h2 class="section-title">Aggregation Setup</h2>
+          <div class="grid">
+            <div class="field">
+              <label for="apiKey">X-Api-Key</label>
+              <input id="apiKey" type="password" placeholder="可选：API Key">
+            </div>
+            <div class="field">
+              <label for="bearerToken">Bearer Token</label>
+              <textarea id="bearerToken" placeholder="可选：JWT（不含 Bearer 前缀）"></textarea>
+            </div>
+            <div class="actions">
+              <button id="saveCredentialBtn" type="button">保存凭据</button>
+              <button id="clearCredentialBtn" type="button">清空凭据</button>
+              <button id="whoamiBtn" type="button">刷新身份</button>
+            </div>
+
+            <div class="field">
+              <label for="templatePath">模板文件</label>
+              <div class="field-row">
+                <input id="templatePath" type="text" placeholder="从服务端模板目录选择 .ini / .xlsx">
+                <button type="button" data-picker-target="templatePath" data-selection="template">选择</button>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="sourceDirectory">源数据目录</label>
+              <div class="field-row">
+                <input id="sourceDirectory" type="text" placeholder="选择待汇总数据库所在目录">
+                <button type="button" data-picker-target="sourceDirectory" data-selection="directory">选择</button>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="targetDirectory">输出目录</label>
+              <div class="field-row">
+                <input id="targetDirectory" type="text" placeholder="选择汇总结果输出目录">
+                <button type="button" data-picker-target="targetDirectory" data-selection="directory">选择</button>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="areaCodePath">区划代码文件</label>
+              <div class="field-row">
+                <input id="areaCodePath" type="text" placeholder="选择 codes.txt 或等价文件">
+                <button type="button" data-picker-target="areaCodePath" data-selection="file" data-extensions=".txt,.csv">选择</button>
+              </div>
+            </div>
+
+            <div class="inline">
+              <div class="field">
+                <label for="startIndex">开始列号</label>
+                <input id="startIndex" type="number" value="23">
+              </div>
+              <div class="field">
+                <label for="endIndex">结束列号</label>
+                <input id="endIndex" type="number" value="148">
+              </div>
+            </div>
+
+            <div class="checks">
+              <label><input id="dryRun" type="checkbox" checked> Dry Run</label>
+              <label><input id="incremental" type="checkbox" checked> Incremental</label>
+            </div>
+
+            <div class="actions">
+              <button id="validateBtn" class="btn-secondary" type="button">校验参数</button>
+              <button id="startBtn" class="btn-primary" type="button">开始汇总</button>
+            </div>
+            <div id="validationBox" class="result-box">校验结果会显示在这里。</div>
+            <div class="hint">说明：目录选择器浏览的是 API 服务所在机器的文件系统，不是浏览器本机沙箱目录。若输出目录与源数据目录相同，请确认不会覆盖历史产物。</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="body">
+          <h2 class="section-title">Progress & Result</h2>
+          <div class="pill-row">
+            <div id="stagePlan" class="pill">Plan</div>
+            <div id="stageQueued" class="pill">Queued</div>
+            <div id="stageRunning" class="pill">Running</div>
+            <div id="stageDone" class="pill">Done</div>
+          </div>
+          <div class="progress-track">
+            <div id="progressBar" class="progress-bar"></div>
+          </div>
+          <div id="progressText" class="mini">尚未开始任务。</div>
+          <div id="jobInfo" class="mini">Job: -</div>
+
+          <div class="summary-grid">
+            <div class="summary-item">
+              计划县区数
+              <strong id="plannedCount">-</strong>
+            </div>
+            <div class="summary-item">
+              已处理县区数
+              <strong id="processedCount">-</strong>
+            </div>
+            <div class="summary-item">
+              缓存复用数
+              <strong id="cachedCount">-</strong>
+            </div>
+            <div class="summary-item">
+              缺失数据库数
+              <strong id="missingCount">-</strong>
+            </div>
+          </div>
+
+          <div class="stats">
+            <span id="resultStatus" class="mini">状态: -</span>
+            <span id="resultTime" class="mini">时间: -</span>
+          </div>
+
+          <div>
+            <div class="section-title">结果摘要</div>
+            <div id="resultSummary" class="result-box">尚无结果。</div>
+          </div>
+          <div>
+            <div class="section-title">日志 / 错误</div>
+            <div id="resultLogs" class="result-box">尚无日志。</div>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <section id="pickerModal" class="modal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <div id="pickerTitle">选择路径</div>
+          <div id="pickerBreadcrumb" class="breadcrumb">/</div>
+        </div>
+        <button id="closePickerBtn" type="button">关闭</button>
+      </div>
+      <div class="modal-head">
+        <div class="actions">
+          <button id="pickerRootBtn" type="button">根目录</button>
+          <button id="pickerUpBtn" type="button">上一级</button>
+          <button id="chooseCurrentBtn" type="button">选择当前目录</button>
+        </div>
+        <div id="pickerModeHint" class="mini">模式: -</div>
+      </div>
+      <div id="browserList" class="browser-list"></div>
+      <div class="modal-actions">
+        <div id="pickerStatus" class="mini">准备加载。</div>
+        <button id="closePickerBtnBottom" type="button">完成</button>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    const API_KEY_STORAGE_KEY = "datahz.aggregation.apikey";
+    const TOKEN_STORAGE_KEY = "datahz.aggregation.token";
+    const PLAN_STORAGE_KEY = "datahz.aggregation.plan.v1";
+    const POLL_INTERVAL_MS = 2500;
+    const $ = (id) => document.getElementById(id);
+
+    const state = {
+      activeJobId: "",
+      plannedCount: 0,
+      pollTimer: null,
+      picker: {
+        open: false,
+        targetId: "",
+        selection: "directory",
+        extensions: "",
+        currentPath: "",
+        parentPath: null,
+        chooseCurrent: true
+      }
+    };
+
+    function getAuthHeaders() {
+      const headers = {};
+      const apiKey = $("apiKey").value.trim();
+      const token = $("bearerToken").value.trim();
+      if (apiKey) {
+        headers["X-Api-Key"] = apiKey;
+      }
+      if (token) {
+        headers["Authorization"] = "Bearer " + token;
+      }
+      return headers;
+    }
+
+    function setBanner(text, tone) {
+      const box = $("banner");
+      box.className = "banner";
+      if (tone) {
+        box.classList.add(tone);
+      }
+      box.textContent = text;
+    }
+
+    function setValidationMessages(messages, tone) {
+      $("validationBox").textContent = messages.length ? messages.join("\n") : "参数校验通过。";
+      if (messages.length) {
+        setBanner("参数校验失败，请先修正输入项。", tone || "err");
+      }
+    }
+
+    function markInvalid(id, invalid) {
+      $(id).classList.toggle("invalid", Boolean(invalid));
+    }
+
+    function clearInvalid() {
+      ["templatePath", "sourceDirectory", "targetDirectory", "areaCodePath", "startIndex", "endIndex"].forEach((id) => markInvalid(id, false));
+    }
+
+    function validateInputs(showBanner) {
+      clearInvalid();
+      const errors = [];
+      const warnings = [];
+      const required = [
+        ["templatePath", "模板文件不能为空。"],
+        ["sourceDirectory", "源数据目录不能为空。"],
+        ["targetDirectory", "输出目录不能为空。"],
+        ["areaCodePath", "区划代码文件不能为空。"]
+      ];
+
+      required.forEach(([id, message]) => {
+        if (!$(id).value.trim()) {
+          errors.push(message);
+          markInvalid(id, true);
+        }
+      });
+
+      const start = Number.parseInt($("startIndex").value.trim(), 10);
+      const end = Number.parseInt($("endIndex").value.trim(), 10);
+
+      if (!Number.isInteger(start)) {
+        errors.push("开始列号必须是整数。");
+        markInvalid("startIndex", true);
+      }
+      if (!Number.isInteger(end)) {
+        errors.push("结束列号必须是整数。");
+        markInvalid("endIndex", true);
+      }
+      if (Number.isInteger(start) && Number.isInteger(end) && start > end) {
+        errors.push("开始列号不能大于结束列号。");
+        markInvalid("startIndex", true);
+        markInvalid("endIndex", true);
+      }
+
+      if ($("sourceDirectory").value.trim() && $("sourceDirectory").value.trim() === $("targetDirectory").value.trim()) {
+        warnings.push("源数据目录与输出目录相同，请确认不会覆盖已有汇总结果。");
+      }
+
+      if (showBanner) {
+        const lines = errors.concat(warnings.map((item) => "[提示] " + item));
+        $("validationBox").textContent = lines.length ? lines.join("\n") : "参数校验通过。";
+        if (errors.length) {
+          setBanner("参数校验失败，请先修正输入项。", "err");
+        } else if (warnings.length) {
+          setBanner("参数校验通过，但存在风险提示。", "warn");
+        } else {
+          setBanner("本地参数校验通过，可继续执行计划预览或开始汇总。", "ok");
+        }
+      }
+
+      return { valid: errors.length === 0, errors, warnings };
+    }
+
+    function buildPlanPayload() {
+      return {
+        templatePath: $("templatePath").value.trim(),
+        sourceDirectory: $("sourceDirectory").value.trim(),
+        targetDirectory: $("targetDirectory").value.trim(),
+        areaCodePath: $("areaCodePath").value.trim(),
+        startIndex: Number.parseInt($("startIndex").value.trim(), 10),
+        endIndex: Number.parseInt($("endIndex").value.trim(), 10)
+      };
+    }
+
+    function buildSubmitPayload() {
+      return {
+        plan: buildPlanPayload(),
+        dryRun: $("dryRun").checked,
+        incremental: $("incremental").checked,
+        idempotencyKey: "aggregation-" + Date.now()
+      };
+    }
+
+    async function requestApi(url, options) {
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          ...getAuthHeaders(),
+          ...(options && options.headers ? options.headers : {})
+        }
+      });
+
+      let body = null;
+      const text = await response.text();
+      if (text) {
+        try {
+          body = JSON.parse(text);
+        } catch {
+          body = text;
+        }
+      }
+
+      if (!response.ok) {
+        const message = body && body.message ? body.message : ("HTTP " + response.status);
+        throw new Error(message);
+      }
+
+      return body;
+    }
+
+    function saveCredentials() {
+      localStorage.setItem(API_KEY_STORAGE_KEY, $("apiKey").value.trim());
+      localStorage.setItem(TOKEN_STORAGE_KEY, $("bearerToken").value.trim());
+      setBanner("凭据已保存到当前浏览器。", "ok");
+    }
+
+    function clearCredentials() {
+      $("apiKey").value = "";
+      $("bearerToken").value = "";
+      localStorage.removeItem(API_KEY_STORAGE_KEY);
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      setBanner("凭据已清空。", "warn");
+    }
+
+    function savePlanState() {
+      localStorage.setItem(PLAN_STORAGE_KEY, JSON.stringify({
+        templatePath: $("templatePath").value,
+        sourceDirectory: $("sourceDirectory").value,
+        targetDirectory: $("targetDirectory").value,
+        areaCodePath: $("areaCodePath").value,
+        startIndex: $("startIndex").value,
+        endIndex: $("endIndex").value,
+        dryRun: $("dryRun").checked,
+        incremental: $("incremental").checked
+      }));
+    }
+
+    function loadSavedState() {
+      $("apiKey").value = localStorage.getItem(API_KEY_STORAGE_KEY) || "";
+      $("bearerToken").value = localStorage.getItem(TOKEN_STORAGE_KEY) || "";
+
+      const raw = localStorage.getItem(PLAN_STORAGE_KEY);
+      if (!raw) {
+        return;
+      }
+
+      try {
+        const plan = JSON.parse(raw);
+        $("templatePath").value = plan.templatePath || "";
+        $("sourceDirectory").value = plan.sourceDirectory || "";
+        $("targetDirectory").value = plan.targetDirectory || "";
+        $("areaCodePath").value = plan.areaCodePath || "";
+        $("startIndex").value = plan.startIndex || "23";
+        $("endIndex").value = plan.endIndex || "148";
+        $("dryRun").checked = plan.dryRun !== false;
+        $("incremental").checked = plan.incremental !== false;
+      } catch {
+        localStorage.removeItem(PLAN_STORAGE_KEY);
+      }
+    }
+
+    async function refreshIdentity() {
+      try {
+        const whoami = await requestApi("/api/security/whoami", { method: "GET" });
+        $("identity").textContent = "Principal: " + whoami.principal + " | Role: " + whoami.role + " | Source: " + whoami.source;
+      } catch (error) {
+        $("identity").textContent = "Principal: unknown | " + error.message;
+      }
+    }
+
+    function formatDate(value) {
+      if (!value) {
+        return "-";
+      }
+      return new Date(value).toLocaleString("zh-CN", { hour12: false });
+    }
+
+    function setStage(status) {
+      const map = {
+        plan: ["stagePlan"],
+        queued: ["stagePlan", "stageQueued"],
+        running: ["stagePlan", "stageQueued", "stageRunning"],
+        succeeded: ["stagePlan", "stageQueued", "stageRunning", "stageDone"],
+        failed: ["stagePlan", "stageQueued", "stageRunning", "stageDone"],
+        canceled: ["stagePlan", "stageQueued", "stageRunning", "stageDone"]
+      };
+
+      ["stagePlan", "stageQueued", "stageRunning", "stageDone"].forEach((id) => {
+        $(id).className = "pill";
+      });
+
+      const doneStages = map[status] || [];
+      doneStages.forEach((id, index) => {
+        $(id).classList.add(index === doneStages.length - 1 && status !== "succeeded" ? "active" : "done");
+      });
+
+      if (status === "running") {
+        $("stageRunning").className = "pill active";
+      }
+      if (status === "queued") {
+        $("stageQueued").className = "pill active";
+      }
+      if (status === "plan") {
+        $("stagePlan").className = "pill active";
+      }
+      if (status === "failed" || status === "canceled") {
+        $("stageDone").className = "pill active";
+      }
+    }
+
+    function setProgress(percent, text) {
+      $("progressBar").style.width = Math.max(0, Math.min(100, percent)) + "%";
+      $("progressText").textContent = text;
+    }
+
+    function renderPlanPreview(planResponse) {
+      state.plannedCount = Array.isArray(planResponse.counties) ? planResponse.counties.length : 0;
+      $("plannedCount").textContent = String(state.plannedCount);
+      const issues = Array.isArray(planResponse.issues) ? planResponse.issues : [];
+      const lines = [
+        "计划预览成功。",
+        "模板: " + (planResponse.template?.templateName || "-"),
+        "源目录: " + (planResponse.sourceDirectory || "-"),
+        "输出目录: " + (planResponse.targetDirectory || "-"),
+        "县区数: " + state.plannedCount,
+        ""
+      ];
+
+      if (issues.length) {
+        lines.push("发现计划问题:");
+        issues.forEach((issue) => lines.push("- " + JSON.stringify(issue)));
+        setBanner("计划预览完成，但存在待确认问题。", "warn");
+      } else {
+        lines.push("未发现计划问题。");
+        setBanner("计划预览完成，可开始汇总。", "ok");
+      }
+
+      $("validationBox").textContent = lines.join("\n");
+      $("jobInfo").textContent = "Job: 未提交";
+      setStage("plan");
+      setProgress(18, "计划已生成，等待提交汇总任务。");
+    }
+
+    async function previewPlan() {
+      try {
+        const { valid } = validateInputs(true);
+        if (!valid) {
+          return null;
+        }
+
+        savePlanState();
+        const planResponse = await requestApi("/api/tasks/plan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(buildPlanPayload())
+        });
+        renderPlanPreview(planResponse);
+        return planResponse;
+      } catch (error) {
+        $("validationBox").textContent = "计划预览失败:\n" + error.message;
+        setBanner("计划预览失败，请检查路径和权限。", "err");
+        return null;
+      }
+    }
+
+    function renderResult(record) {
+      const result = record.result || null;
+      $("resultStatus").textContent = "状态: " + (record.status || "-");
+      $("resultTime").textContent = "时间: " + formatDate(record.completedAt || record.startedAt || record.createdAt);
+      $("processedCount").textContent = result ? String(result.processedCounties) : "-";
+      $("cachedCount").textContent = result ? String(result.cachedCounties) : "-";
+      $("missingCount").textContent = result ? String(result.missingDatabases) : "-";
+
+      const summary = [];
+      summary.push("作业ID: " + (record.id || "-"));
+      summary.push("状态: " + (record.status || "-"));
+      summary.push("创建时间: " + formatDate(record.createdAt));
+      summary.push("开始时间: " + formatDate(record.startedAt));
+      summary.push("完成时间: " + formatDate(record.completedAt));
+      summary.push("取消请求: " + (record.cancellationRequested ? "是" : "否"));
+      if (record.error) {
+        summary.push("错误: " + record.error);
+      }
+      if (record.planIssues && record.planIssues.length) {
+        summary.push("");
+        summary.push("计划问题:");
+        record.planIssues.forEach((issue) => summary.push("- " + JSON.stringify(issue)));
+      }
+      if (result) {
+        summary.push("");
+        summary.push("结果统计:");
+        summary.push("- Success: " + result.success);
+        summary.push("- TotalCounties: " + result.totalCounties);
+        summary.push("- ExistingDatabases: " + result.existingDatabases);
+        summary.push("- ProcessedCounties: " + result.processedCounties);
+        summary.push("- CachedCounties: " + result.cachedCounties);
+        summary.push("- MissingDatabases: " + result.missingDatabases);
+        summary.push("- OutputFiles: " + (result.outputFiles || []).join(", "));
+      }
+      $("resultSummary").textContent = summary.join("\n");
+
+      const logLines = [];
+      if (result && Array.isArray(result.logs) && result.logs.length) {
+        logLines.push("Logs:");
+        result.logs.forEach((line) => logLines.push(line));
+      }
+      if (result && Array.isArray(result.errors) && result.errors.length) {
+        if (logLines.length) {
+          logLines.push("");
+        }
+        logLines.push("Errors:");
+        result.errors.forEach((line) => logLines.push(line));
+      }
+      if (record.error) {
+        if (logLines.length) {
+          logLines.push("");
+        }
+        logLines.push("Exception:");
+        logLines.push(record.error);
+      }
+      $("resultLogs").textContent = logLines.length ? logLines.join("\n") : "尚无日志。";
+    }
+
+    async function pollJob() {
+      if (!state.activeJobId) {
+        return;
+      }
+
+      try {
+        const record = await requestApi("/api/jobs/" + state.activeJobId, { method: "GET" });
+        $("jobInfo").textContent = "Job: " + state.activeJobId;
+        renderResult(record);
+
+        const status = String(record.status || "").toLowerCase();
+        if (status === "queued") {
+          setStage("queued");
+          setProgress(34, "作业已入队，等待后台开始处理。");
+          setBanner("汇总作业已提交，正在排队。", "warn");
+          return;
+        }
+
+        if (status === "running") {
+          setStage("running");
+          setProgress(72, "后台正在执行目录汇总，请稍候。");
+          setBanner("汇总任务正在执行。", "warn");
+          return;
+        }
+
+        if (status === "succeeded") {
+          setStage("succeeded");
+          setProgress(100, "汇总完成。");
+          setBanner("汇总任务执行成功。", "ok");
+          stopPolling();
+          return;
+        }
+
+        if (status === "failed") {
+          setStage("failed");
+          setProgress(100, "汇总失败，请查看错误明细。");
+          setBanner("汇总任务失败。", "err");
+          stopPolling();
+          return;
+        }
+
+        if (status === "canceled") {
+          setStage("canceled");
+          setProgress(100, "汇总已取消。");
+          setBanner("汇总任务已取消。", "warn");
+          stopPolling();
+        }
+      } catch (error) {
+        setBanner("轮询作业状态失败: " + error.message, "err");
+        stopPolling();
+      }
+    }
+
+    function stopPolling() {
+      if (state.pollTimer) {
+        clearInterval(state.pollTimer);
+        state.pollTimer = null;
+      }
+    }
+
+    function startPolling() {
+      stopPolling();
+      state.pollTimer = setInterval(pollJob, POLL_INTERVAL_MS);
+    }
+
+    async function startAggregation() {
+      try {
+        $("startBtn").disabled = true;
+        const preview = await previewPlan();
+        if (!preview) {
+          return;
+        }
+
+        const submitResponse = await requestApi("/api/jobs/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(buildSubmitPayload())
+        });
+
+        state.activeJobId = submitResponse.jobId || "";
+        $("jobInfo").textContent = "Job: " + state.activeJobId;
+        setStage("queued");
+        setProgress(30, "作业已提交，准备轮询执行进度。");
+        setBanner("目录汇总任务已提交。", "ok");
+        await pollJob();
+        startPolling();
+      } catch (error) {
+        setBanner("启动汇总失败: " + error.message, "err");
+      } finally {
+        $("startBtn").disabled = false;
+      }
+    }
+
+    async function openPicker(targetId, selection, extensions) {
+      state.picker.open = true;
+      state.picker.targetId = targetId;
+      state.picker.selection = selection || "directory";
+      state.picker.extensions = extensions || "";
+      state.picker.currentPath = inferBrowserStartPath($(targetId).value.trim());
+      const field = $(targetId).closest(".field");
+      const label = field ? field.querySelector("label") : null;
+      $("pickerTitle").textContent = "选择" + (label ? " " + label.textContent : "路径");
+      $("pickerModeHint").textContent = "模式: " + state.picker.selection;
+      $("chooseCurrentBtn").disabled = state.picker.selection !== "directory";
+      $("pickerModal").classList.add("open");
+      await loadBrowser(state.picker.currentPath);
+    }
+
+    function inferBrowserStartPath(value) {
+      if (!value) {
+        return "";
+      }
+
+      if (value.endsWith(".ini") || value.endsWith(".xlsx") || value.endsWith(".txt") || value.endsWith(".csv")) {
+        const slash = Math.max(value.lastIndexOf("\\"), value.lastIndexOf("/"));
+        return slash >= 0 ? value.slice(0, slash) : "";
+      }
+
+      return value;
+    }
+
+    async function loadBrowser(path) {
+      try {
+        $("pickerStatus").textContent = "正在加载...";
+        const search = new URLSearchParams();
+        if (path) {
+          search.set("path", path);
+        }
+        search.set("selection", state.picker.selection);
+        if (state.picker.extensions) {
+          search.set("extensions", state.picker.extensions);
+        }
+        const data = await requestApi("/api/fs/entries?" + search.toString(), { method: "GET" });
+        state.picker.currentPath = data.currentPath || "";
+        state.picker.parentPath = data.parentPath || "";
+        $("pickerBreadcrumb").textContent = state.picker.currentPath || "根目录";
+        renderBrowserEntries(data);
+        $("pickerStatus").textContent = "已加载 " + ((data.directories || []).length + (data.files || []).length) + " 项。";
+      } catch (error) {
+        $("pickerStatus").textContent = "加载失败: " + error.message;
+        $("browserList").textContent = "";
+      }
+    }
+
+    function renderBrowserEntries(data) {
+      const list = $("browserList");
+      list.innerHTML = "";
+      const directories = data.directories || [];
+      const files = data.files || [];
+
+      if (!directories.length && !files.length) {
+        list.textContent = "当前目录无可选项。";
+        return;
+      }
+
+      directories.forEach((entry) => {
+        const row = document.createElement("div");
+        const actions = state.picker.selection === "directory"
+          ? `<button type="button" data-action="open-dir" data-path="${escapeAttribute(entry.path)}">打开</button>
+             <button type="button" data-action="pick-dir" data-path="${escapeAttribute(entry.path)}">选择</button>`
+          : `<button type="button" data-action="open-dir" data-path="${escapeAttribute(entry.path)}">打开</button>`;
+        row.className = "entry";
+        row.innerHTML = `
+          <div>
+            <div class="entry-name">${escapeHtml(entry.name)}</div>
+            <div class="entry-kind">directory</div>
+          </div>
+          <div class="actions">${actions}</div>`;
+        list.appendChild(row);
+      });
+
+      files.forEach((entry) => {
+        const row = document.createElement("div");
+        row.className = "entry";
+        row.innerHTML = `
+          <div>
+            <div class="entry-name">${escapeHtml(entry.name)}</div>
+            <div class="entry-kind">${escapeHtml(entry.extension || "file")}</div>
+          </div>
+          <div class="actions">
+            <button type="button" data-action="pick-file" data-path="${escapeAttribute(entry.path)}">选择</button>
+          </div>`;
+        list.appendChild(row);
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;");
+    }
+
+    function escapeAttribute(value) {
+      return escapeHtml(value).replace(/'/g, "&#39;");
+    }
+
+    function choosePath(path) {
+      $(state.picker.targetId).value = path;
+      savePlanState();
+      closePicker();
+      validateInputs(false);
+    }
+
+    function closePicker() {
+      $("pickerModal").classList.remove("open");
+      state.picker.open = false;
+    }
+
+    function bindEvents() {
+      $("saveCredentialBtn").addEventListener("click", saveCredentials);
+      $("clearCredentialBtn").addEventListener("click", clearCredentials);
+      $("whoamiBtn").addEventListener("click", refreshIdentity);
+      $("validateBtn").addEventListener("click", previewPlan);
+      $("startBtn").addEventListener("click", startAggregation);
+      $("pickerRootBtn").addEventListener("click", () => loadBrowser(""));
+      $("pickerUpBtn").addEventListener("click", () => loadBrowser(state.picker.parentPath || ""));
+      $("chooseCurrentBtn").addEventListener("click", () => {
+        if (state.picker.selection === "directory" && state.picker.currentPath) {
+          choosePath(state.picker.currentPath);
+        }
+      });
+      $("closePickerBtn").addEventListener("click", closePicker);
+      $("closePickerBtnBottom").addEventListener("click", closePicker);
+      $("pickerModal").addEventListener("click", (event) => {
+        if (event.target === $("pickerModal")) {
+          closePicker();
+        }
+      });
+
+      document.querySelectorAll("[data-picker-target]").forEach((button) => {
+        button.addEventListener("click", () => {
+          openPicker(
+            button.getAttribute("data-picker-target") || "",
+            button.getAttribute("data-selection") || "directory",
+            button.getAttribute("data-extensions") || ""
+          );
+        });
+      });
+
+      $("browserList").addEventListener("click", (event) => {
+        const action = event.target.getAttribute("data-action");
+        const path = event.target.getAttribute("data-path") || "";
+        if (!action || !path) {
+          return;
+        }
+        if (action === "open-dir") {
+          loadBrowser(path);
+        } else if (action === "pick-dir" || action === "pick-file") {
+          choosePath(path);
+        }
+      });
+
+      ["templatePath", "sourceDirectory", "targetDirectory", "areaCodePath", "startIndex", "endIndex"].forEach((id) => {
+        $(id).addEventListener("input", () => {
+          validateInputs(false);
+          savePlanState();
+        });
+      });
+    }
+
+    loadSavedState();
+    bindEvents();
+    refreshIdentity();
+    validateInputs(false);
+  </script>
+</body>
+</html>
