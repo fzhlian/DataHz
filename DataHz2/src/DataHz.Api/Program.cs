@@ -261,6 +261,12 @@ app.Use(async (context, next) =>
         return;
     }
 
+    if (context.Request.Path.Equals("/aggregation", StringComparison.OrdinalIgnoreCase))
+    {
+        context.Response.Redirect("/aggregation/");
+        return;
+    }
+
     await next();
 });
 
@@ -430,6 +436,82 @@ app.MapGet("/api/runtime/dotnet", () =>
     .WithTags("系统")
     .WithSummary(".NET 运行时信息")
     .WithDescription("返回当前进程的 .NET、操作系统与位数信息。");
+
+app.MapGet("/api/fs/entries", (string? path, string? selection, string? extensions) =>
+{
+    try
+    {
+        var normalizedSelection = NormalizeFsSelection(selection);
+        var normalizedPath = NormalizeBrowsePath(path);
+        var allowedExtensions = ResolveBrowseExtensions(normalizedSelection, extensions);
+
+        if (normalizedPath is null)
+        {
+            var roots = GetBrowseRoots()
+                .Select(x => new
+                {
+                    name = x,
+                    path = x,
+                    kind = "directory"
+                })
+                .ToArray();
+
+            return Results.Ok(new
+            {
+                selection = normalizedSelection,
+                currentPath = string.Empty,
+                parentPath = (string?)null,
+                roots,
+                directories = roots,
+                files = Array.Empty<object>()
+            });
+        }
+
+        if (!Directory.Exists(normalizedPath))
+        {
+            return Results.BadRequest(new { message = $"Directory not found: {normalizedPath}" });
+        }
+
+        return Results.Ok(new
+        {
+            selection = normalizedSelection,
+            currentPath = normalizedPath,
+            parentPath = Directory.GetParent(normalizedPath)?.FullName,
+            roots = GetBrowseRoots().Select(x => new
+            {
+                name = x,
+                path = x,
+                kind = "directory"
+            }),
+            directories = SafeEnumerateDirectories(normalizedPath).Select(x => new
+            {
+                name = x.Name,
+                path = x.FullName,
+                kind = "directory"
+            }),
+            files = normalizedSelection == "directory"
+                ? Array.Empty<object>()
+                : SafeEnumerateFiles(normalizedPath, allowedExtensions).Select(x => new
+                {
+                    name = x.Name,
+                    path = x.FullName,
+                    extension = x.Extension,
+                    kind = "file"
+                })
+        });
+    }
+    catch (UnauthorizedAccessException ex)
+    {
+        return Results.BadRequest(new { message = $"Access denied: {ex.Message}" });
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(new { message = ex.Message });
+    }
+})
+    .WithTags("文件系统")
+    .WithSummary("浏览服务端文件系统")
+    .WithDescription("按目录列出可选子目录与文件，供聚合界面选择模板文件、源目录、输出目录与区划代码文件。");
 
 app.MapGet("/api/monitor/overview", (int? jobs, int? audit, IExecutionJobQueue queue, IAuditLogReader auditReader) =>
 {
@@ -1041,6 +1123,11 @@ static AccessRole? ResolveRequiredRole(string path, string method)
         return AccessRole.Viewer;
     }
 
+    if (path.StartsWith("/api/fs", StringComparison.OrdinalIgnoreCase))
+    {
+        return AccessRole.Operator;
+    }
+
     if (path.StartsWith("/api/audit", StringComparison.OrdinalIgnoreCase))
     {
         return AccessRole.Admin;
@@ -1076,6 +1163,88 @@ static string? NormalizeQueryFilter(string? value)
     }
 
     return value.Trim();
+}
+
+static string NormalizeFsSelection(string? selection)
+{
+    var normalized = string.IsNullOrWhiteSpace(selection)
+        ? "directory"
+        : selection.Trim().ToLowerInvariant();
+
+    return normalized is "directory" or "template" or "file"
+        ? normalized
+        : "directory";
+}
+
+static string? NormalizeBrowsePath(string? path)
+{
+    if (string.IsNullOrWhiteSpace(path))
+    {
+        return null;
+    }
+
+    return Path.GetFullPath(path.Trim());
+}
+
+static IReadOnlyList<string> ResolveBrowseExtensions(string selection, string? extensions)
+{
+    if (!string.IsNullOrWhiteSpace(extensions))
+    {
+        return extensions
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(x => x.StartsWith('.') ? x.ToLowerInvariant() : "." + x.ToLowerInvariant())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    return selection == "template"
+        ? new[] { ".ini", ".xlsx" }
+        : Array.Empty<string>();
+}
+
+static IReadOnlyList<string> GetBrowseRoots()
+{
+    if (OperatingSystem.IsWindows())
+    {
+        return DriveInfo.GetDrives()
+            .Where(x => x.IsReady)
+            .Select(x => x.RootDirectory.FullName)
+            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    return new[] { Path.GetPathRoot(Environment.CurrentDirectory) ?? "/" };
+}
+
+static IReadOnlyList<DirectoryInfo> SafeEnumerateDirectories(string path)
+{
+    try
+    {
+        return new DirectoryInfo(path)
+            .EnumerateDirectories()
+            .OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+    catch
+    {
+        return Array.Empty<DirectoryInfo>();
+    }
+}
+
+static IReadOnlyList<FileInfo> SafeEnumerateFiles(string path, IReadOnlyList<string> extensions)
+{
+    try
+    {
+        return new DirectoryInfo(path)
+            .EnumerateFiles()
+            .Where(x => extensions.Count == 0 || extensions.Contains(x.Extension, StringComparer.OrdinalIgnoreCase))
+            .OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+    catch
+    {
+        return Array.Empty<FileInfo>();
+    }
 }
 
 static string NormalizeExternalProviderAlias(string? provider)

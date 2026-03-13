@@ -1,6 +1,6 @@
 # API 接口说明
 
-最后更新：2026-03-03
+最后更新：2026-03-14
 
 ## 基础信息
 
@@ -24,6 +24,7 @@
 - `/api/security/hardening`：`Admin`
 - `/api/monitor/external-secrets/reset`：`Admin`
 - `/api/runtime/*`、`/api/monitor/*`：`Viewer`
+- `/api/fs/*`：`Operator`
 - `/api/audit/*`：`Admin`
 - `/api/jobs`：`GET` 为 `Viewer`，`POST` 为 `Operator`
 - `/api/tasks/*`、`/api/templates/*`：`Operator`
@@ -34,6 +35,7 @@
 
 - `GET /health`
 - `GET /api/runtime/dotnet`
+- `GET /api/fs/entries?path=&selection=&extensions=`
 - `GET /api/security/whoami`
 - `GET /api/security/hardening`
 
@@ -88,6 +90,37 @@
   "idempotencyKey": "job-20260303-001"
 }
 ```
+
+## 浏览服务端文件系统
+
+用于聚合页面选择模板文件、输入目录、输出目录和区划代码文件。需要 `Operator` 角色。
+
+- 请求：`GET /api/fs/entries?path=&selection=&extensions=`
+- `path`：可选，目标目录绝对路径；为空时返回系统可访问根目录列表。
+- `selection`：可选，支持 `directory`、`template`、`file`，默认 `directory`。
+- `extensions`：可选，逗号分隔扩展名白名单；未传时 `template` 默认仅返回 `.ini`、`.xlsx`，其他模式默认不过滤。
+
+示例：
+
+```http
+GET /api/fs/entries?path=D%3A%5CDataHz2%5Ctemp&selection=template
+Authorization: Bearer <token>
+```
+
+成功响应字段：
+
+- `selection`：服务端归一化后的选择模式。
+- `currentPath`：当前浏览目录。
+- `parentPath`：上级目录，不存在时为 `null`。
+- `roots`：根目录列表。
+- `directories`：当前目录下的可见子目录列表。
+- `files`：符合筛选条件的文件列表；当 `selection=directory` 时为空数组。
+
+验证方式：
+
+- 不传 `path` 调用一次，确认返回根目录集合。
+- 传入存在目录并指定 `selection=template`，确认仅返回 `.ini` 或 `.xlsx` 文件。
+- 传入不存在目录，确认返回 `400` 与错误消息。
 
 ## 常见状态码
 
