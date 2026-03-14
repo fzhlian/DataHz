@@ -1183,7 +1183,26 @@ static string? NormalizeBrowsePath(string? path)
         return null;
     }
 
-    return Path.GetFullPath(path.Trim());
+    var normalized = Path.GetFullPath(path.Trim());
+    if (File.Exists(normalized))
+    {
+        return Path.GetDirectoryName(normalized);
+    }
+
+    if (Directory.Exists(normalized))
+    {
+        return normalized;
+    }
+
+    var parent = Path.GetDirectoryName(normalized);
+    if (!string.IsNullOrWhiteSpace(parent) &&
+        !string.IsNullOrWhiteSpace(Path.GetExtension(normalized)) &&
+        Directory.Exists(parent))
+    {
+        return parent;
+    }
+
+    return normalized;
 }
 
 static IReadOnlyList<string> ResolveBrowseExtensions(string selection, string? extensions)

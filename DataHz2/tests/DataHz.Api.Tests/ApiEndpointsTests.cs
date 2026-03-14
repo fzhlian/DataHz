@@ -24,6 +24,70 @@ public sealed class ApiEndpointsTests
     }
 
     [Fact]
+    public async Task FsEntries_Should_Normalize_File_Path_To_Parent_Directory()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), "datahz-tests-fs", Guid.NewGuid().ToString("N"));
+        var templateDir = Path.Combine(tempRoot, "templates");
+        Directory.CreateDirectory(templateDir);
+        var templatePath = Path.Combine(templateDir, "Monthly.XLSX");
+        await File.WriteAllTextAsync(templatePath, "stub");
+
+        try
+        {
+            using var factory = new ApiTestFactory();
+            using var client = factory.CreateClient();
+
+            var response = await client.GetAsync($"/api/fs/entries?path={Uri.EscapeDataString(templatePath)}&selection=template");
+            response.EnsureSuccessStatusCode();
+
+            var json = await ReadJsonAsync(response);
+            Assert.Equal(templateDir, json.GetProperty("currentPath").GetString());
+            Assert.Contains(json.GetProperty("files").EnumerateArray(), x =>
+                string.Equals(x.GetProperty("path").GetString(), templatePath, StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            TryDeleteDirectory(tempRoot);
+        }
+    }
+
+    [Fact]
+    public async Task FsEntries_Should_Filter_Files_By_Extension_Case_Insensitively()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), "datahz-tests-fs", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempRoot);
+        var iniPath = Path.Combine(tempRoot, "alpha.INI");
+        var xlsxPath = Path.Combine(tempRoot, "beta.xlsx");
+        var txtPath = Path.Combine(tempRoot, "notes.txt");
+        await File.WriteAllTextAsync(iniPath, "stub");
+        await File.WriteAllTextAsync(xlsxPath, "stub");
+        await File.WriteAllTextAsync(txtPath, "stub");
+
+        try
+        {
+            using var factory = new ApiTestFactory();
+            using var client = factory.CreateClient();
+
+            var response = await client.GetAsync($"/api/fs/entries?path={Uri.EscapeDataString(tempRoot)}&selection=template");
+            response.EnsureSuccessStatusCode();
+
+            var json = await ReadJsonAsync(response);
+            var files = json.GetProperty("files").EnumerateArray()
+                .Select(x => x.GetProperty("name").GetString())
+                .OfType<string>()
+                .ToArray();
+
+            Assert.Contains("alpha.INI", files);
+            Assert.Contains("beta.xlsx", files);
+            Assert.DoesNotContain("notes.txt", files);
+        }
+        finally
+        {
+            TryDeleteDirectory(tempRoot);
+        }
+    }
+
+    [Fact]
     public async Task ApiKey_Should_Block_Api_When_Header_Missing()
     {
         using var factory = new ApiTestFactory(settings =>

@@ -96,7 +96,7 @@
 用于聚合页面选择模板文件、输入目录、输出目录和区划代码文件。需要 `Operator` 角色。
 
 - 请求：`GET /api/fs/entries?path=&selection=&extensions=`
-- `path`：可选，目标目录绝对路径；为空时返回系统可访问根目录列表。
+- `path`：可选，目标目录绝对路径；为空时返回系统可访问根目录列表。若传入的是已存在文件路径，或带扩展名且其父目录存在的文件样式路径，服务端会自动折算到该文件所在目录。
 - `selection`：可选，支持 `directory`、`template`、`file`，默认 `directory`。
 - `extensions`：可选，逗号分隔扩展名白名单；未传时 `template` 默认仅返回 `.ini`、`.xlsx`，其他模式默认不过滤。
 
@@ -120,6 +120,7 @@ Authorization: Bearer <token>
 
 - 不传 `path` 调用一次，确认返回根目录集合。
 - 传入存在目录并指定 `selection=template`，确认仅返回 `.ini` 或 `.xlsx` 文件。
+- 传入模板文件或区划代码文件的绝对路径，确认 `currentPath` 自动归一化到其父目录。
 - 传入不存在目录，确认返回 `400` 与错误消息。
 
 ## 常见状态码

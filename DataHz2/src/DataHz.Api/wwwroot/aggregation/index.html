@@ -367,6 +367,12 @@
       align-content: start;
     }
 
+    .picker-jump {
+      padding: 0 18px 12px;
+      display: grid;
+      gap: 8px;
+    }
+
     .entry {
       border: 1px solid rgba(171, 197, 202, 0.18);
       border-radius: 14px;
@@ -565,6 +571,14 @@
           <button id="chooseCurrentBtn" type="button">选择当前目录</button>
         </div>
         <div id="pickerModeHint" class="mini">模式: -</div>
+      </div>
+      <div class="picker-jump">
+        <label for="pickerPathInput">直接跳转路径</label>
+        <div class="field-row">
+          <input id="pickerPathInput" type="text" placeholder="输入服务端目录或文件路径后回车">
+          <button id="pickerGoBtn" type="button">跳转</button>
+        </div>
+        <div class="mini">支持粘贴现有目录路径，或粘贴模板/区划代码文件路径后自动折算到所在目录。</div>
       </div>
       <div id="browserList" class="browser-list"></div>
       <div class="modal-actions">
@@ -1052,6 +1066,7 @@
       $("pickerModeHint").textContent = "模式: " + state.picker.selection;
       $("chooseCurrentBtn").disabled = state.picker.selection !== "directory";
       $("pickerModal").classList.add("open");
+      $("pickerPathInput").value = state.picker.currentPath;
       await loadBrowser(state.picker.currentPath);
     }
 
@@ -1060,12 +1075,21 @@
         return "";
       }
 
-      if (value.endsWith(".ini") || value.endsWith(".xlsx") || value.endsWith(".txt") || value.endsWith(".csv")) {
-        const slash = Math.max(value.lastIndexOf("\\"), value.lastIndexOf("/"));
-        return slash >= 0 ? value.slice(0, slash) : "";
+      const normalized = value.trim();
+      const fileExtension = normalized.includes(".") ? normalized.slice(normalized.lastIndexOf(".")).toLowerCase() : "";
+      if (fileExtension) {
+        const slash = Math.max(normalized.lastIndexOf("\\"), normalized.lastIndexOf("/"));
+        if (slash >= 0) {
+          return normalized.slice(0, slash);
+        }
       }
 
-      return value;
+      return normalized;
+    }
+
+    function jumpToPickerPath() {
+      const targetPath = $("pickerPathInput").value.trim();
+      loadBrowser(targetPath);
     }
 
     async function loadBrowser(path) {
@@ -1082,6 +1106,7 @@
         const data = await requestApi("/api/fs/entries?" + search.toString(), { method: "GET" });
         state.picker.currentPath = data.currentPath || "";
         state.picker.parentPath = data.parentPath || "";
+        $("pickerPathInput").value = state.picker.currentPath || "";
         $("pickerBreadcrumb").textContent = state.picker.currentPath || "根目录";
         renderBrowserEntries(data);
         $("pickerStatus").textContent = "已加载 " + ((data.directories || []).length + (data.files || []).length) + " 项。";
@@ -1168,6 +1193,13 @@
       $("chooseCurrentBtn").addEventListener("click", () => {
         if (state.picker.selection === "directory" && state.picker.currentPath) {
           choosePath(state.picker.currentPath);
+        }
+      });
+      $("pickerGoBtn").addEventListener("click", jumpToPickerPath);
+      $("pickerPathInput").addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          jumpToPickerPath();
         }
       });
       $("closePickerBtn").addEventListener("click", closePicker);
