@@ -2,18 +2,6 @@
 	"folders": [
 		{
 			"path": "."
-		},
-		{
-			"name": "OpenClaw Skill",
-			"path": "/home/fzhlian/.openclaw/skills/codex-dev"
-		},
-		{
-			"name": "OpenClaw Agent",
-			"path": "/home/fzhlian/.openclaw/workspace-datahz-codex"
-		},
-		{
-			"name": "OpenClaw Bin",
-			"path": "/home/fzhlian/bin"
 		}
 	],
 	"settings": {}
